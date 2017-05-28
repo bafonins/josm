@@ -1,0 +1,5 @@
+/netbeans/build/
+/netbeans/dist/
+*.iml
+.idea
+.josm-local
