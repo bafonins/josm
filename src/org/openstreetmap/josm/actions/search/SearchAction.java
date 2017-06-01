@@ -298,7 +298,7 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
         additionalSettings.setBorder(BorderFactory.createTitledBorder(tr("Additional settings")));
         additionalSettings.add(caseSensitive, GBC.eol());
 
-        if (Main.pref.getBoolean("expert", false)){
+        if (Main.pref.getBoolean("expert", false)) {
             additionalSettings.add(allElements, GBC.eol());
             additionalSettings.add(addOnToolbar, GBC.eop());
 
@@ -311,7 +311,7 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
             left.add(selectionSettings, GBC.eol().fill(GBC.BOTH));
             left.add(additionalSettings, GBC.eol().fill(GBC.BOTH));
             left.add(searchOptions, GBC.eol().fill(GBC.BOTH));
-        }else{
+        } else {
             left.add(selectionSettings, GBC.eol().fill(GBC.BOTH));
             left.add(additionalSettings, GBC.eol().fill(GBC.BOTH));
         }
