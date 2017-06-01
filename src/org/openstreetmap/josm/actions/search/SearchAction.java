@@ -9,6 +9,7 @@ import static org.openstreetmap.josm.tools.I18n.trn;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -35,6 +36,7 @@ import javax.swing.JRadioButton;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.ActionParameter;
@@ -66,6 +68,9 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
 
     private static final String SEARCH_EXPRESSION = "searchExpression";
 
+    /**
+     * Search mode.
+     */
     public enum SearchMode {
         /** replace selection */
         replace('R'),
@@ -261,15 +266,24 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
         JRadioButton add = new JRadioButton(tr("add to selection"), initialValues.mode == SearchMode.add);
         JRadioButton remove = new JRadioButton(tr("remove from selection"), initialValues.mode == SearchMode.remove);
         JRadioButton inSelection = new JRadioButton(tr("find in selection"), initialValues.mode == SearchMode.in_selection);
+        ButtonGroup bg = new ButtonGroup();
+        bg.add(replace);
+        bg.add(add);
+        bg.add(remove);
+        bg.add(inSelection);
 
-        JCheckBox caseSensitive = new JCheckBox(tr("case sensitive"), initialValues.caseSensitive);
+        final JCheckBox caseSensitive = new JCheckBox(tr("case sensitive"), initialValues.caseSensitive);
         JCheckBox allElements = new JCheckBox(tr("all objects"), initialValues.allElements);
         allElements.setToolTipText(tr("Also include incomplete and deleted objects in search."));
         JCheckBox addOnToolbar = new JCheckBox(tr("add toolbar button"), false);
 
-        JRadioButton standardSearch = new JRadioButton(tr("standard"), !initialValues.regexSearch && !initialValues.mapCSSSearch);
-        JRadioButton regexSearch = new JRadioButton(tr("regular expression"), initialValues.regexSearch);
-        JRadioButton mapCSSSearch = new JRadioButton(tr("MapCSS selector"), initialValues.mapCSSSearch);
+        final JRadioButton standardSearch = new JRadioButton(tr("standard"), !initialValues.regexSearch && !initialValues.mapCSSSearch);
+        final JRadioButton regexSearch = new JRadioButton(tr("regular expression"), initialValues.regexSearch);
+        final JRadioButton mapCSSSearch = new JRadioButton(tr("MapCSS selector"), initialValues.mapCSSSearch);
+        final ButtonGroup bg2 = new ButtonGroup();
+        bg2.add(standardSearch);
+        bg2.add(regexSearch);
+        bg2.add(mapCSSSearch);
 
         JPanel left = new JPanel(new GridBagLayout());
 
@@ -343,9 +357,7 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
         ExtendedDialog dialog = new ExtendedDialog(
                 Main.parent,
                 initialValues instanceof Filter ? tr("Filter") : tr("Search"),
-                        new String[] {
-                    initialValues instanceof Filter ? tr("Submit filter") : tr("Start Search"),
-                            tr("Cancel")}
+                initialValues instanceof Filter ? tr("Submit filter") : tr("Start Search"), tr("Cancel")
         ) {
             @Override
             protected void buttonAction(int buttonIndex, ActionEvent evt) {
@@ -371,13 +383,11 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
                 }
             }
         };
-        dialog.setButtonIcons(new String[] {"dialogs/search", "cancel"});
+        dialog.setButtonIcons("dialogs/search", "cancel");
         dialog.configureContextsensitiveHelp("/Action/Search", true /* show help button */);
         dialog.setContent(p);
-        dialog.showDialog();
-        int result = dialog.getValue();
 
-        if (result != 1) return null;
+        if (dialog.showDialog().getValue() != 1) return null;
 
         // User pressed OK - let's perform the search
         SearchMode mode = replace.isSelected() ? SearchAction.SearchMode.replace
@@ -604,13 +614,17 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
                 } else {
                     msg = null;
                 }
-                Main.map.statusLine.setHelpText(msg);
-                JOptionPane.showMessageDialog(
-                        Main.parent,
-                        msg,
-                        tr("Warning"),
-                        JOptionPane.WARNING_MESSAGE
-                );
+                if (Main.map != null) {
+                    Main.map.statusLine.setHelpText(msg);
+                }
+                if (!GraphicsEnvironment.isHeadless()) {
+                    JOptionPane.showMessageDialog(
+                            Main.parent,
+                            msg,
+                            tr("Warning"),
+                            JOptionPane.WARNING_MESSAGE
+                    );
+                }
             } else {
                 Main.map.statusLine.setHelpText(tr("Found {0} matches", foundMatches));
             }
