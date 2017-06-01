@@ -408,7 +408,7 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
 
     private static JPanel buildHintsSection(HistoryComboBox hcbSearchString) {
         JPanel hintPanel = new JPanel(new GridBagLayout());
-        hintPanel.setBorder(BorderFactory.createTitledBorder("Search examples"));
+        hintPanel.setBorder(BorderFactory.createTitledBorder(tr("Search hints")));
 
         hintPanel.add(new SearchKeywordRow(hcbSearchString)
                 .addTitle(tr("basics"))
