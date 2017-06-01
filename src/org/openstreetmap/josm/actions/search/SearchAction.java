@@ -411,14 +411,17 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
                 .addKeyword("-<i>key</i>:<i>valuefragment</i>", null, tr("''valuefragment'' nowhere in ''key''"))
                 .addKeyword("<i>key</i>=<i>value</i>", null, tr("''key'' with exactly ''value''"))
                 .addKeyword("<i>key</i>=*", null, tr("''key'' with any value"))
-                .addKeyword("*=<i>value</i>", null, tr("''value'' in any key"))
+                .addKeyword("*=<i>value</i>", null, tr("''value'' in any key")),
+                GBC.eol());
+        GBC constraint = GBC.eol(); constraint.anchor(GBC.CENTER);
+        right.add(new SearchKeywordRow(hcbSearchString)
                 .addKeyword("<i>key</i>=", null, tr("matches if ''key'' exists"))
                 .addKeyword("<i>key</i>><i>value</i>", null, tr("matches if ''key'' is greater than ''value'' (analogously, less than)"))
                 .addKeyword("\"key\"=\"value\"", "\"\"=\"\"",
                         tr("to quote operators.<br>Within quoted strings the <b>\"</b> and <b>\\</b> characters need to be escaped " +
-                           "by a preceding <b>\\</b> (e.g. <b>\\\"</b> and <b>\\\\</b>)."),
+                                "by a preceding <b>\\</b> (e.g. <b>\\\"</b> and <b>\\\\</b>)."),
                         "\"addr:street\""),
-                GBC.eol());
+                constraint);
         right.add(new SearchKeywordRow(hcbSearchString)
                 .addTitle(tr("combinators"))
                 .addKeyword("<i>expr</i> <i>expr</i>", null, tr("logical and (both expressions have to be satisfied)"))
