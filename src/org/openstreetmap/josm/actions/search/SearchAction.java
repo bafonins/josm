@@ -357,7 +357,8 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
         ExtendedDialog dialog = new ExtendedDialog(
                 Main.parent,
                 initialValues instanceof Filter ? tr("Filter") : tr("Search"),
-                initialValues instanceof Filter ? tr("Submit filter") : tr("Start Search"), tr("Cancel")
+                initialValues instanceof Filter ? tr("Submit filter") : tr("Start Search"),
+                tr("Cancel")
         ) {
             @Override
             protected void buttonAction(int buttonIndex, ActionEvent evt) {
