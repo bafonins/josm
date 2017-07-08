@@ -39,7 +39,6 @@ import org.openstreetmap.josm.actions.downloadtasks.PostDownloadHandler;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.preferences.CollectionProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
-import org.openstreetmap.josm.gui.HelpAwareOptionPane;
 import org.openstreetmap.josm.gui.download.DownloadDialog;
 import org.openstreetmap.josm.gui.preferences.server.OverpassServerPreference;
 import org.openstreetmap.josm.gui.util.GuiHelper;
@@ -164,13 +163,12 @@ public class OverpassDownloadAction extends JosmAction {
                         overpassQuery.setText(OverpassTurboQueryWizard.getInstance().constructQuery(overpassWizardText));
                     } catch (UncheckedParseException ex) {
                         Main.error(ex);
-                        HelpAwareOptionPane.showOptionDialog(
-                                Main.parent,
+                        JOptionPane.showMessageDialog(
+                                OverpassDownloadDialog.this,
                                 tr("<html>The Overpass wizard could not parse the following query:"
                                         + Utils.joinAsHtmlUnorderedList(Collections.singleton(overpassWizardText))),
                                 tr("Parse error"),
-                                JOptionPane.ERROR_MESSAGE,
-                                null
+                                JOptionPane.ERROR_MESSAGE
                         );
                     }
                 }
