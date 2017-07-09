@@ -4,10 +4,7 @@ package org.openstreetmap.josm.actions;
 import static org.openstreetmap.josm.gui.help.HelpUtil.ht;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.GridLayout;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -20,17 +17,7 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.Future;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ActionMap;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
+import javax.swing.*;
 import javax.swing.plaf.basic.BasicArrowButton;
 
 import org.openstreetmap.josm.Main;
@@ -39,6 +26,7 @@ import org.openstreetmap.josm.actions.downloadtasks.PostDownloadHandler;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.preferences.CollectionProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
+import org.openstreetmap.josm.gui.ExtendedDialog;
 import org.openstreetmap.josm.gui.download.DownloadDialog;
 import org.openstreetmap.josm.gui.preferences.server.OverpassServerPreference;
 import org.openstreetmap.josm.gui.util.GuiHelper;
@@ -150,54 +138,72 @@ public class OverpassDownloadAction extends JosmAction {
 
             pnl.add(new JLabel(), GBC.eol()); // needed for the invisible checkboxes cbDownloadGpxData, cbDownloadNotes
 
-            final String tooltip = tr("Builds an Overpass query using the Overpass Turbo query wizard");
+            String tooltip = tr("Build an Overpass query using the Overpass Turbo query wizard");
             overpassWizard = new HistoryComboBox();
             overpassWizard.setToolTipText(tooltip);
             overpassWizard.getEditorComponent().addFocusListener(disableActionsFocusListener);
-            final JButton buildQuery = new JButton(tr("Build query"));
-            final Action buildQueryAction = new AbstractAction() {
+            JButton buildQuery = new JButton("Query Wizard");
+            Action buildQueryAction = new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    final String overpassWizardText = overpassWizard.getText();
-                    try {
-                        overpassQuery.setText(OverpassTurboQueryWizard.getInstance().constructQuery(overpassWizardText));
-                    } catch (UncheckedParseException ex) {
-                        Main.error(ex);
-                        JOptionPane.showMessageDialog(
-                                OverpassDownloadDialog.this,
-                                tr("<html>The Overpass wizard could not parse the following query:"
-                                        + Utils.joinAsHtmlUnorderedList(Collections.singleton(overpassWizardText))),
-                                tr("Parse error"),
-                                JOptionPane.ERROR_MESSAGE
-                        );
-                    }
+//                    final String overpassWizardText = overpassWizard.getText();
+//                    try {
+//                        overpassQuery.setText(OverpassTurboQueryWizard.getInstance().constructQuery(overpassWizardText));
+//                    } catch (UncheckedParseException ex) {
+//                        Main.error(ex);
+//                        JOptionPane.showMessageDialog(
+//                                OverpassDownloadDialog.this,
+//                                tr("<html>The Overpass wizard could not parse the following query:"
+//                                        + Utils.joinAsHtmlUnorderedList(Collections.singleton(overpassWizardText))),
+//                                tr("Parse error"),
+//                                JOptionPane.ERROR_MESSAGE
+//                        );
+//                    }
+                    ExtendedDialog queryWizardDialog = new QueryWizardDialog();
                 }
             };
             buildQuery.addActionListener(buildQueryAction);
             buildQuery.setToolTipText(tooltip);
             pnl.add(buildQuery, GBC.std().insets(5, 5, 5, 5));
-            pnl.add(overpassWizard, GBC.eol().fill(GBC.HORIZONTAL));
+//            pnl.add(overpassWizard, GBC.eol().fill(GBC.HORIZONTAL));
             InputMapUtils.addEnterAction(overpassWizard.getEditorComponent(), buildQueryAction);
 
-            overpassQuery = new JosmTextArea("", 8, 80);
+            overpassQuery = new JosmTextArea(
+                    "/*\n" +
+                    "Place your Overpass query below or\n" +
+                    "generate one using the Overpass Turbo Query Wizard\n" +
+                    "*/\n",
+                    8,
+                    80);
             overpassQuery.setFont(GuiHelper.getMonospacedFont(overpassQuery));
             overpassQuery.addFocusListener(disableActionsFocusListener);
+            overpassQuery.addFocusListener(new FocusListener() {
+                @Override
+                public void focusGained(FocusEvent e) {
+                    overpassQuery.selectAll();
+                }
+
+                @Override
+                public void focusLost(FocusEvent e) {
+
+                }
+            });
+
             JScrollPane scrollPane = new JScrollPane(overpassQuery);
-            final JPanel pane = new JPanel(new BorderLayout());
-            final BasicArrowButton arrowButton = new BasicArrowButton(BasicArrowButton.SOUTH);
+            BasicArrowButton arrowButton = new BasicArrowButton(BasicArrowButton.SOUTH);
             arrowButton.addActionListener(new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
                     OverpassQueryHistoryPopup.show(arrowButton, OverpassDownloadDialog.this);
                 }
             });
+
+            JPanel pane = new JPanel(new BorderLayout());
             pane.add(scrollPane, BorderLayout.CENTER);
             pane.add(arrowButton, BorderLayout.EAST);
-            pnl.add(new JLabel(tr("Overpass query: ")), GBC.std().insets(5, 5, 5, 5));
             GBC gbc = GBC.eol().fill(GBC.HORIZONTAL);
             gbc.ipady = 200;
             pnl.add(pane, gbc);
-
         }
 
         public String getOverpassQuery() {
@@ -226,6 +232,49 @@ public class OverpassDownloadAction extends JosmAction {
         protected void updateSizeCheck() {
             displaySizeCheckResult(false);
         }
+    }
+
+    private static class QueryWizardDialog extends ExtendedDialog {
+
+        private static final String DESCRIPTION_STYLE = "<style type=\"text/css\">\n"
+                + "body {font-family: sans-serif;}\n"
+                + "h3 {text-align: center; }\n"
+                + "</style>\n";
+
+        public QueryWizardDialog() {
+            super(Main.parent, "Overpass Turbo Query Wizard",
+                    tr("Build query"), tr("Build query and execute"), tr("Cancel"));
+
+            JPanel panel = new JPanel(new GridBagLayout());
+
+            JLabel searchLabel = new JLabel(tr("Search :"));
+            HistoryComboBox queryWizard = new HistoryComboBox();
+            JLabel description = new JLabel(this.getDescriptionContent());
+
+            panel.add(searchLabel, GBC.std().anchor(GBC.SOUTHEAST));
+            panel.add(queryWizard, GBC.eol().fill(GBC.HORIZONTAL).anchor(GBC.SOUTH));
+            panel.add(description, GBC.eol().fill(GBC.HORIZONTAL).anchor(GBC.CENTER));
+
+            setContent(panel, false);
+
+            super.showDialog();
+        }
+
+        private String getDescriptionContent() {
+            return new StringBuilder("<html>")
+                    .append(DESCRIPTION_STYLE)
+                    .append("<body>")
+                    .append("<h3>Query Wizard</h3>")
+                    .append("<p>")
+                    .append("Allows you to interact with <i>Overpass API</i> by writting declarative, human-readable terms. ")
+                    .append("The <i>Query Wizard</i> tool will transform those to a valid overpass query. ")
+                    .append("For more detailed description see <a href=\"http://wiki.openstreetmap.org/wiki/Overpass_turbo/Wizard\">OSM wiki</a>.")
+                    .append("</p>")
+                    .append("</body>")
+                    .append("</html>")
+                    .toString();
+        }
+
     }
 
     static class OverpassQueryHistoryPopup extends JPopupMenu {
