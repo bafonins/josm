@@ -266,9 +266,10 @@ public class OverpassDownloadAction extends JosmAction {
                     .append("<body>")
                     .append("<h3>Query Wizard</h3>")
                     .append("<p>")
-                    .append("Allows you to interact with <i>Overpass API</i> by writting declarative, human-readable terms. ")
-                    .append("The <i>Query Wizard</i> tool will transform those to a valid overpass query. ")
-                    .append("For more detailed description see <a href=\"http://wiki.openstreetmap.org/wiki/Overpass_turbo/Wizard\">OSM wiki</a>.")
+                    .append(tr("Allows you to interact with <i>Overpass API</i> by writing declarative, human-readable terms. "))
+                    .append(tr("The <i>Query Wizard</i> tool will transform those to a valid overpass query. "))
+                    .append(tr("For more detailed description see {0}",
+                            "<a href=\"http://wiki.openstreetmap.org/wiki/Overpass_turbo/Wizard\">OSM wiki</a>."))
                     .append("</p>")
                     .append("</body>")
                     .append("</html>")
