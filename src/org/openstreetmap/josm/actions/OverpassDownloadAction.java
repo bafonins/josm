@@ -4,7 +4,11 @@ package org.openstreetmap.josm.actions;
 import static org.openstreetmap.josm.gui.help.HelpUtil.ht;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -17,7 +21,17 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.Future;
 
-import javax.swing.*;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.event.HyperlinkEvent;
 import javax.swing.plaf.basic.BasicArrowButton;
 
 import org.openstreetmap.josm.Main;
@@ -27,14 +41,17 @@ import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.preferences.CollectionProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
 import org.openstreetmap.josm.gui.ExtendedDialog;
+import org.openstreetmap.josm.gui.GettingStarted;
 import org.openstreetmap.josm.gui.download.DownloadDialog;
 import org.openstreetmap.josm.gui.preferences.server.OverpassServerPreference;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.widgets.HistoryComboBox;
+import org.openstreetmap.josm.gui.widgets.HtmlPanel;
 import org.openstreetmap.josm.gui.widgets.JosmTextArea;
 import org.openstreetmap.josm.io.OverpassDownloadReader;
 import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.InputMapUtils;
+import org.openstreetmap.josm.tools.OpenBrowser;
 import org.openstreetmap.josm.tools.OverpassTurboQueryWizard;
 import org.openstreetmap.josm.tools.Shortcut;
 import org.openstreetmap.josm.tools.UncheckedParseException;
@@ -249,11 +266,16 @@ public class OverpassDownloadAction extends JosmAction {
 
             JLabel searchLabel = new JLabel(tr("Search :"));
             HistoryComboBox queryWizard = new HistoryComboBox();
-            JLabel description = new JLabel(this.getDescriptionContent());
+            HtmlPanel desc = new HtmlPanel(this.getDescriptionContent());
+            desc.getEditorPane().addHyperlinkListener(e -> {
+                if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())){
+                    OpenBrowser.displayUrl(e.getURL().toString());
+                }
+            });
 
             panel.add(searchLabel, GBC.std().anchor(GBC.SOUTHEAST));
             panel.add(queryWizard, GBC.eol().fill(GBC.HORIZONTAL).anchor(GBC.SOUTH));
-            panel.add(description, GBC.eol().fill(GBC.HORIZONTAL).anchor(GBC.CENTER));
+            panel.add(desc, GBC.eol().fill(GBC.HORIZONTAL).anchor(GBC.CENTER));
 
             setContent(panel, false);
 
@@ -268,8 +290,8 @@ public class OverpassDownloadAction extends JosmAction {
                     .append("<p>")
                     .append(tr("Allows you to interact with <i>Overpass API</i> by writing declarative, human-readable terms. "))
                     .append(tr("The <i>Query Wizard</i> tool will transform those to a valid overpass query. "))
-                    .append(tr("For more detailed description see {0}",
-                            "<a href=\"http://wiki.openstreetmap.org/wiki/Overpass_turbo/Wizard\">OSM wiki</a>."))
+                    .append(tr("For more detailed description see "))
+                    .append(tr("<a href=\"{0}\">{1} Wiki</a>.", Main.getOSMWebsite() + "/wiki/Overpass_turbo/Wizard", "OSM"))
                     .append("</p>")
                     .append("</body>")
                     .append("</html>")
