@@ -15,8 +15,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.concurrent.Future;
@@ -26,6 +26,7 @@ import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -41,20 +42,16 @@ import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.preferences.CollectionProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
 import org.openstreetmap.josm.gui.ExtendedDialog;
-import org.openstreetmap.josm.gui.GettingStarted;
 import org.openstreetmap.josm.gui.download.DownloadDialog;
 import org.openstreetmap.josm.gui.preferences.server.OverpassServerPreference;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.widgets.HistoryComboBox;
-import org.openstreetmap.josm.gui.widgets.HtmlPanel;
 import org.openstreetmap.josm.gui.widgets.JosmTextArea;
 import org.openstreetmap.josm.io.OverpassDownloadReader;
 import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.InputMapUtils;
 import org.openstreetmap.josm.tools.OpenBrowser;
-import org.openstreetmap.josm.tools.OverpassTurboQueryWizard;
 import org.openstreetmap.josm.tools.Shortcut;
-import org.openstreetmap.josm.tools.UncheckedParseException;
 import org.openstreetmap.josm.tools.Utils;
 
 /**
@@ -85,6 +82,7 @@ public class OverpassDownloadAction extends JosmAction {
             Bounds area = dialog.getSelectedDownloadArea();
             DownloadOsmTask task = new DownloadOsmTask();
             task.setZoomAfterDownload(dialog.isZoomToDownloadedDataRequired());
+            Main.info("OverpassServer =  " + OverpassServerPreference.getOverpassServer());
             Future<?> future = task.download(
                     new OverpassDownloadReader(area, OverpassServerPreference.getOverpassServer(), dialog.getOverpassQuery()),
                     dialog.isNewLayerRequired(), area, null);
@@ -165,6 +163,7 @@ public class OverpassDownloadAction extends JosmAction {
                 public void actionPerformed(ActionEvent e) {
 //                    final String overpassWizardText = overpassWizard.getText();
 //                    try {
+//                        Main.info(OverpassTurboQueryWizard.getInstance().constructQuery(overpassWizardText));
 //                        overpassQuery.setText(OverpassTurboQueryWizard.getInstance().constructQuery(overpassWizardText));
 //                    } catch (UncheckedParseException ex) {
 //                        Main.error(ex);
@@ -182,7 +181,7 @@ public class OverpassDownloadAction extends JosmAction {
             buildQuery.addActionListener(buildQueryAction);
             buildQuery.setToolTipText(tooltip);
             pnl.add(buildQuery, GBC.std().insets(5, 5, 5, 5));
-//            pnl.add(overpassWizard, GBC.eol().fill(GBC.HORIZONTAL));
+            pnl.add(overpassWizard, GBC.eol().fill(GBC.HORIZONTAL));
             InputMapUtils.addEnterAction(overpassWizard.getEditorComponent(), buildQueryAction);
 
             overpassQuery = new JosmTextArea(
@@ -255,7 +254,10 @@ public class OverpassDownloadAction extends JosmAction {
 
         private static final String DESCRIPTION_STYLE = "<style type=\"text/css\">\n"
                 + "body {font-family: sans-serif;}\n"
-                + "h3 {text-align: center; }\n"
+                + "table { border-collapse: collapse;} \n"
+                + "h3 {text-align: center; padding: 8px;}\n"
+                + "td {border: 2px solid #dddddd; text-align: left; padding: 8px;}\n"
+                + "#desc {width: 350px;}"
                 + "</style>\n";
 
         public QueryWizardDialog() {
@@ -266,16 +268,21 @@ public class OverpassDownloadAction extends JosmAction {
 
             JLabel searchLabel = new JLabel(tr("Search :"));
             HistoryComboBox queryWizard = new HistoryComboBox();
-            HtmlPanel desc = new HtmlPanel(this.getDescriptionContent());
-            desc.getEditorPane().addHyperlinkListener(e -> {
+            JEditorPane descPane = new JEditorPane("text/html", this.getDescriptionContent());
+            descPane.setEditable(false);
+            descPane.addHyperlinkListener(e -> {
                 if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())){
                     OpenBrowser.displayUrl(e.getURL().toString());
                 }
             });
+            JScrollPane scroll = new JScrollPane(descPane,
+                    JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                    JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            scroll.getVerticalScrollBar().setUnitIncrement(10); // improve scrolling
 
-            panel.add(searchLabel, GBC.std().anchor(GBC.SOUTHEAST));
-            panel.add(queryWizard, GBC.eol().fill(GBC.HORIZONTAL).anchor(GBC.SOUTH));
-            panel.add(desc, GBC.eol().fill(GBC.HORIZONTAL).anchor(GBC.CENTER));
+            panel.add(searchLabel, GBC.std().insets(0, 0, 0, 20).anchor(GBC.SOUTHEAST));
+            panel.add(queryWizard, GBC.eol().insets(0, 0, 0, 15).fill(GBC.HORIZONTAL).anchor(GBC.SOUTH));
+            panel.add(scroll, GBC.eol().fill(GBC.BOTH).anchor(GBC.CENTER));
 
             setContent(panel, false);
 
@@ -293,6 +300,39 @@ public class OverpassDownloadAction extends JosmAction {
                     .append(tr("For more detailed description see "))
                     .append(tr("<a href=\"{0}\">{1} Wiki</a>.", Main.getOSMWebsite() + "/wiki/Overpass_turbo/Wizard", "OSM"))
                     .append("</p>")
+                    .append(tr("<h3>Hints</h3>"))
+                    .append("<table>").append("<tr>").append("<td>")
+                    .append(Utils.joinAsHtmlUnorderedList(Arrays.asList("<i>type:node</i>", "<i>type:relation</i>", "<i>type:way</i>")))
+                    .append("</td>").append("<td>")
+                    .append(tr("<span>Download objects of a certain type.</span>"))
+                    .append("</td>").append("</tr>")
+                    .append("<tr>").append("<td>")
+                    .append(Utils.joinAsHtmlUnorderedList(
+                            Arrays.asList("<i>key=value in <u>location</u></i>",
+                                    "<i>key=value around <u>location</u></i>",
+                                    "<i>key=value in bbox</i>")))
+                    .append("</td>").append("<td>")
+                    .append(tr("Download object by specifying a specific location. For example,"))
+                    .append(Utils.joinAsHtmlUnorderedList(Arrays.asList(
+                            tr("{0} all objects having {1} as attribute are downloaded.", "<i>tourism=hotel in Berlin</i> -", "'tourism=hotel'"),
+                            tr("{0} all object with the corresponding key/value pair located around Berlin. Note, the default value for radius is " +
+                                    "set to 1000m, but it can be changed in the generated query.", "<i>tourism=hotel around Berlin</i> -"),
+                            tr("{0} all objects within the current selection that have {1} as attribute.", "<i>tourism=hotel in bbox</i> -", "'tourism=hotel'"))))
+                    .append(tr("<span>Instead of <i>location</i> any valid place name can be used like address, city, etc.</span>"))
+                    .append("</td>").append("</tr>")
+                    .append("<tr>").append("<td>")
+                    .append(Utils.joinAsHtmlUnorderedList(Arrays.asList("<i>key=value</i>", "<i>key=*</i>", "<i>key~regex</i>",
+                            "<i>key!=value</i>", "<i>key!~regex</i>", "<i>key=\"combined value\"</i>")))
+                    .append("</td>").append("<td>")
+                    .append(tr("<span>Download objects that have some concrete key/value pair, only the key with any contents for the value, the value matching" +
+                            " some regular expression. 'Not equal' operators are supported as well.</span>"))
+                    .append("</td>").append("</tr>")
+                    .append("<tr>").append("<td>")
+                    .append(Utils.joinAsHtmlUnorderedList(Arrays.asList("<i>expression1 or expression2</i>", "<i>expression1 and expression2</i>")))
+                    .append("</td>").append("<td>")
+                    .append(tr("<span>Basic logical operators can be used to create more sophisticated queries. Instead of 'or' - '|', '||' can be used, and " +
+                            "instead of 'and' - '&', '&&'.</span>"))
+                    .append("</td>").append("</tr>").append("</table>")
                     .append("</body>")
                     .append("</html>")
                     .toString();
