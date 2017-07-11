@@ -253,10 +253,10 @@ public class OverpassDownloadAction extends JosmAction {
     private static class QueryWizardDialog extends ExtendedDialog {
 
         private static final String DESCRIPTION_STYLE = "<style type=\"text/css\">\n"
-                + "body {font-family: sans-serif;}\n"
-                + "table { border-collapse: collapse;} \n"
-                + "h3 {text-align: center; padding: 8px;}\n"
-                + "td {border: 2px solid #dddddd; text-align: left; padding: 8px;}\n"
+                + "body {font-family: sans-serif; }\n"
+                + "table { border-spacing: 0pt;}\n"
+                + "h3 {text-align: center; padding: 8px; }\n"
+                + "td {border: 1px solid #dddddd; text-align: left; padding: 8px; }\n"
                 + "#desc {width: 350px;}"
                 + "</style>\n";
 
