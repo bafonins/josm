@@ -153,7 +153,7 @@ public class OverpassDownloadAction extends JosmAction {
 
             pnl.add(new JLabel(), GBC.eol()); // needed for the invisible checkboxes cbDownloadGpxData, cbDownloadNotes
 
-            String tooltip = tr("Build an Overpass query using the Overpass Turbo query wizard");
+            String tooltip = tr("Build an Overpass query using the {0} tool", "Overpass Turbo Query Wizard");
             overpassWizard = new HistoryComboBox();
             overpassWizard.setToolTipText(tooltip);
             overpassWizard.getEditorComponent().addFocusListener(disableActionsFocusListener);
@@ -341,7 +341,7 @@ public class OverpassDownloadAction extends JosmAction {
                             " some regular expression. 'Not equal' operators are supported as well.</span>"))
                     .append("</td>").append("</tr>")
                     .append("<tr>").append("<td>")
-                    .append(Utils.joinAsHtmlUnorderedList(Arrays.asList("<i>expression1 or expression2</i>", "<i>expression1 and expression2</i>")))
+                    .append(Utils.joinAsHtmlUnorderedList(Arrays.asList("<i>{0}1 or {0}2</i>", "<i>{0}1 and {0}2</i>", "expression")))
                     .append("</td>").append("<td>")
                     .append(tr("<span>Basic logical operators can be used to create more sophisticated queries. Instead of 'or' - '|', '||' can be used, and " +
                             "instead of 'and' - '&', '&&'.</span>"))
