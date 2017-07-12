@@ -175,7 +175,7 @@ public class OverpassDownloadAction extends JosmAction {
 //                                JOptionPane.ERROR_MESSAGE
 //                        );
 //                    }
-                    ExtendedDialog queryWizardDialog = new QueryWizardDialog();
+                    ExtendedDialog queryWizardDialog = QueryWizardDialog.getInstance();
                 }
             };
             buildQuery.addActionListener(buildQueryAction);
@@ -251,6 +251,19 @@ public class OverpassDownloadAction extends JosmAction {
     }
 
     private static class QueryWizardDialog extends ExtendedDialog {
+
+        private static QueryWizardDialog dialog;
+
+        /**
+         * Create a new instance of {@link QueryWizardDialog}
+         */
+        public static QueryWizardDialog getInstance() {
+            if (dialog == null) {
+                dialog = new QueryWizardDialog();
+            }
+
+            return dialog;
+        }
 
         private static final String DESCRIPTION_STYLE = "<style type=\"text/css\">\n"
                 + "body {font-family: sans-serif; }\n"
