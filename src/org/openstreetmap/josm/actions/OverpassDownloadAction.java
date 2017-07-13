@@ -294,7 +294,7 @@ public class OverpassDownloadAction extends JosmAction {
             panel.add(scroll, GBC.eol().fill(GBC.BOTH).anchor(GBC.CENTER));
 
             setCancelButton(CANCEL);
-            setDefaultButton(BUILD_AN_EXECUTE_QUERY); // Build and execute button
+            setDefaultButton(BUILD_AN_EXECUTE_QUERY + 1); // Build and execute button
             setContent(panel, false);
         }
 
