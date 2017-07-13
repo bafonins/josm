@@ -253,6 +253,7 @@ public class OverpassDownloadAction extends JosmAction {
         // dialog buttons
         private static final int BUILD_QUERY = 0;
         private static final int BUILD_AN_EXECUTE_QUERY = 1;
+        private static final int CANCEL = 2;
 
         /**
          * Get an instance of {@link QueryWizardDialog}.
@@ -292,14 +293,14 @@ public class OverpassDownloadAction extends JosmAction {
             panel.add(queryWizard, GBC.eol().insets(0, 0, 0, 15).fill(GBC.HORIZONTAL).anchor(GBC.SOUTH));
             panel.add(scroll, GBC.eol().fill(GBC.BOTH).anchor(GBC.CENTER));
 
-            setCancelButton(2);
-            setDefaultButton(1); // Build and execute button
+            setCancelButton(CANCEL);
+            setDefaultButton(BUILD_AN_EXECUTE_QUERY); // Build and execute button
             setContent(panel, false);
         }
 
         @Override
         public void buttonAction(int buttonIndex, ActionEvent evt) {
-            super.buttonAction(buttonIndex, evt);
+//            super.buttonAction(buttonIndex, evt);
             switch (buttonIndex) {
                 case BUILD_QUERY: // Build query button
                     if (this.buildQueryAction()) {
