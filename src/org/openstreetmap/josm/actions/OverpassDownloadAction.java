@@ -300,7 +300,6 @@ public class OverpassDownloadAction extends JosmAction {
 
         @Override
         public void buttonAction(int buttonIndex, ActionEvent evt) {
-//            super.buttonAction(buttonIndex, evt);
             switch (buttonIndex) {
                 case BUILD_QUERY: // Build query button
                     if (this.buildQueryAction()) {
