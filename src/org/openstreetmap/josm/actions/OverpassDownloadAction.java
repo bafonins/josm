@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Future;
 
 import javax.swing.AbstractAction;
@@ -234,6 +236,13 @@ public class OverpassDownloadAction extends JosmAction {
         protected void updateSizeCheck() {
             displaySizeCheckResult(false);
         }
+
+        /**
+         * Triggers the download action to fire.
+         */
+        private void triggerDownload() {
+            super.btnDownload.doClick();
+        }
     }
 
     private static final class QueryWizardDialog extends ExtendedDialog {
@@ -241,6 +250,10 @@ public class OverpassDownloadAction extends JosmAction {
         private static QueryWizardDialog dialog;
         private final HistoryComboBox queryWizard;
         private final OverpassTurboQueryWizard overpassQueryBuilder;
+
+        // dialog buttons
+        private static final int BUILD_QUERY = 0;
+        private static final int BUILD_AN_EXECUTE_QUERY = 1;
 
         /**
          * Get an instance of {@link QueryWizardDialog}.
@@ -263,7 +276,7 @@ public class OverpassDownloadAction extends JosmAction {
                 + "</style>\n";
 
         private QueryWizardDialog() {
-            super(Main.parent, "Overpass Turbo Query Wizard",
+            super(OverpassDownloadDialog.getInstance(), "Overpass Turbo Query Wizard",
                     tr("Build query"), tr("Build query and execute"), tr("Cancel"));
 
             this.queryWizard = new HistoryComboBox();
@@ -289,36 +302,62 @@ public class OverpassDownloadAction extends JosmAction {
         public void buttonAction(int buttonIndex, ActionEvent evt) {
             super.buttonAction(buttonIndex, evt);
             switch (buttonIndex) {
-                case 0: // Build query button
-                    this.buildQueryAction();
+                case BUILD_QUERY: // Build query button
+                    if (this.buildQueryAction()) {
+                        super.buttonAction(BUILD_QUERY, evt);
+                    }
                     break;
-                case 1: // Build query and execute
-                    this.buildAndExecuteAction();
-                    break;
+                case BUILD_AN_EXECUTE_QUERY: // Build query and execute
+                    if (this.buildQueryAction()) {
+                        super.buttonAction(BUILD_AN_EXECUTE_QUERY, evt);
+
+                        OverpassDownloadDialog.getInstance().triggerDownload();
+                    }
             }
         }
 
-        private void buildQueryAction() {
-            final String wizardSearchTerm = this.queryWizard.getText();
-
+        /**
+         * Tries to process a search term using {@link OverpassTurboQueryWizard}
+         * @param searchTerm The search term to parse.
+         * @return {@link Optional#empty()} if an exception was thrown when parsing, meaning
+         * that the term cannot be processed, or non-empty {@link Optional} containing the result
+         * of parsing.
+         */
+        private Optional<String> tryParseSearchTerm(String searchTerm) {
             try {
-                String query = this.overpassQueryBuilder.constructQuery(wizardSearchTerm);
-                OverpassDownloadDialog.getInstance().setOverpassQuery(query);
+                String query = this.overpassQueryBuilder.constructQuery(searchTerm);
+
+                return Optional.of(query);
             } catch (UncheckedParseException ex) {
                 Main.error(ex);
                 JOptionPane.showMessageDialog(
                         OverpassDownloadDialog.getInstance(),
                         tr("<html>The Overpass wizard could not parse the following query:"
-                                + Utils.joinAsHtmlUnorderedList(Collections.singleton(wizardSearchTerm))),
+                                + Utils.joinAsHtmlUnorderedList(Collections.singleton(searchTerm))),
                         tr("Parse error"),
                         JOptionPane.ERROR_MESSAGE
                 );
+
+                return Optional.empty();
             }
         }
 
-        private void buildAndExecuteAction() {
-            this.buildQueryAction();
-            // TODO: finish
+        /**
+         * Builds an Overpass query out from {@link QueryWizardDialog#queryWizard} contents.
+         * @return {@code true} if the query successfully built, {@code false} otherwise.
+         */
+        private boolean buildQueryAction() {
+            final String wizardSearchTerm = this.queryWizard.getText();
+
+            Optional<String> q = this.tryParseSearchTerm(wizardSearchTerm);
+            if (q.isPresent()) {
+                String query = q.get();
+                OverpassDownloadDialog.getInstance().setOverpassQuery(query);
+
+                return true;
+            }
+
+            return false;
         }
 
         private JTextComponent buildDescriptionSection() {
