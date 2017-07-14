@@ -268,10 +268,9 @@ public class OverpassDownloadAction extends JosmAction {
 
         private static final String DESCRIPTION_STYLE =
                 "<style type=\"text/css\">\n"
-                + "body {font-family: sans-serif; }\n"
                 + "table { border-spacing: 0pt;}\n"
-                + "h3 {text-align: center; padding: 8px; }\n"
-                + "td {border: 1px solid #dddddd; text-align: left; padding: 8px; }\n"
+                + "h3 {text-align: center; padding: 8px;}\n"
+                + "td {border: 1px solid #dddddd; text-align: left; padding: 8px;}\n"
                 + "#desc {width: 350px;}"
                 + "</style>\n";
 
@@ -301,17 +300,21 @@ public class OverpassDownloadAction extends JosmAction {
         @Override
         public void buttonAction(int buttonIndex, ActionEvent evt) {
             switch (buttonIndex) {
-                case BUILD_QUERY: // Build query button
+                case BUILD_QUERY:
                     if (this.buildQueryAction()) {
                         super.buttonAction(BUILD_QUERY, evt);
                     }
                     break;
-                case BUILD_AN_EXECUTE_QUERY: // Build query and execute
+                case BUILD_AN_EXECUTE_QUERY:
                     if (this.buildQueryAction()) {
                         super.buttonAction(BUILD_AN_EXECUTE_QUERY, evt);
 
                         OverpassDownloadDialog.getInstance().triggerDownload();
                     }
+                    break;
+                default:
+                    super.buttonAction(buttonIndex, evt);
+
             }
         }
 
