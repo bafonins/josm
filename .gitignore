@@ -1,0 +1,9 @@
+*.idea
+/build
+/build2
+/data/*
+/out/
+/test/test.iml
+/dist
+josm.iml
+*.swp
