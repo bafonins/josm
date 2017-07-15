@@ -239,16 +239,8 @@ public class OverpassDownloadAction extends JosmAction {
         }
 
         @Override
-        public void restoreSettings() {
-            super.restoreSettings();
-            overpassWizard.setPossibleItems(OVERPASS_WIZARD_HISTORY.get());
-        }
-
-        @Override
         public void rememberSettings() {
             super.rememberSettings();
-            overpassWizard.addCurrentItemToHistory();
-            OVERPASS_WIZARD_HISTORY.put(overpassWizard.getHistory());
             OverpassQueryHistoryPopup.addToHistory(getOverpassQuery());
         }
 
@@ -270,6 +262,8 @@ public class OverpassDownloadAction extends JosmAction {
         private static QueryWizardDialog dialog;
         private final HistoryComboBox queryWizard;
         private final OverpassTurboQueryWizard overpassQueryBuilder;
+        private static final CollectionProperty OVERPASS_WIZARD_HISTORY =
+                new CollectionProperty("download.overpass.wizard", new ArrayList<String>());
 
         // dialog buttons
         private static final int BUILD_QUERY = 0;
@@ -313,6 +307,8 @@ public class OverpassDownloadAction extends JosmAction {
             panel.add(queryWizard, GBC.eol().insets(0, 0, 0, 15).fill(GBC.HORIZONTAL).anchor(GBC.SOUTH));
             panel.add(scroll, GBC.eol().fill(GBC.BOTH).anchor(GBC.CENTER));
 
+            queryWizard.setPossibleItems(OVERPASS_WIZARD_HISTORY.get());
+
             setCancelButton(CANCEL);
             setDefaultButton(BUILD_AN_EXECUTE_QUERY + 1); // Build and execute button
             setContent(panel, false);
@@ -323,11 +319,13 @@ public class OverpassDownloadAction extends JosmAction {
             switch (buttonIndex) {
                 case BUILD_QUERY:
                     if (this.buildQueryAction()) {
+                        this.saveHistory();
                         super.buttonAction(BUILD_QUERY, evt);
                     }
                     break;
                 case BUILD_AN_EXECUTE_QUERY:
                     if (this.buildQueryAction()) {
+                        this.saveHistory();
                         super.buttonAction(BUILD_AN_EXECUTE_QUERY, evt);
 
                         OverpassDownloadDialog.getInstance().triggerDownload();
@@ -337,6 +335,14 @@ public class OverpassDownloadAction extends JosmAction {
                     super.buttonAction(buttonIndex, evt);
 
             }
+        }
+
+        /**
+         * Saves the latest, successfully parsed search term.
+         */
+        private void saveHistory() {
+            queryWizard.addCurrentItemToHistory();
+            OVERPASS_WIZARD_HISTORY.put(queryWizard.getHistory());
         }
 
         /**
