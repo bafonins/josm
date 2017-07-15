@@ -152,7 +152,6 @@ public class OverpassDownloadAction extends JosmAction {
 
     private static final class OverpassDownloadDialog extends DownloadDialog {
 
-        private HistoryComboBox overpassWizard;
         private JosmTextArea overpassQuery;
         private static OverpassDownloadDialog instance;
         private static final CollectionProperty OVERPASS_WIZARD_HISTORY =
@@ -190,10 +189,6 @@ public class OverpassDownloadAction extends JosmAction {
                 }
             };
 
-            this.overpassWizard = new HistoryComboBox();
-            this.overpassWizard.getEditorComponent().addFocusListener(disableActionsFocusListener);
-            InputMapUtils.addEnterAction(overpassWizard.getEditorComponent(), queryWizardAction);
-
             JButton openQueryWizard = new JButton("Query Wizard");
             openQueryWizard.setToolTipText(tooltip);
             openQueryWizard.addActionListener(queryWizardAction);
@@ -226,7 +221,6 @@ public class OverpassDownloadAction extends JosmAction {
 
             GBC gbc = GBC.eol().fill(GBC.HORIZONTAL); gbc.ipady = 200;
             pnl.add(openQueryWizard, GBC.std().insets(5, 5, 5, 5));
-            pnl.add(overpassWizard, GBC.eol().fill(GBC.HORIZONTAL));
             pnl.add(pane, gbc);
         }
 
