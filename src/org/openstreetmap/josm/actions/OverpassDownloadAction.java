@@ -53,7 +53,6 @@ import org.openstreetmap.josm.gui.widgets.HistoryComboBox;
 import org.openstreetmap.josm.gui.widgets.JosmTextArea;
 import org.openstreetmap.josm.io.OverpassDownloadReader;
 import org.openstreetmap.josm.tools.GBC;
-import org.openstreetmap.josm.tools.InputMapUtils;
 import org.openstreetmap.josm.tools.OpenBrowser;
 import org.openstreetmap.josm.tools.OverpassTurboQueryWizard;
 import org.openstreetmap.josm.tools.Shortcut;
@@ -96,7 +95,7 @@ public class OverpassDownloadAction extends JosmAction {
          * Absence of the selected area can be justified only if the overpass query
          * is not restricted to bbox.
          */
-        if (!selectedArea.isPresent() && overpassQuery.contains("bbox")) {
+        if (!selectedArea.isPresent() && overpassQuery.contains("{{bbox}}")) {
             JOptionPane.showMessageDialog(
                     dialog,
                     tr("Please select a download area first."),
@@ -181,7 +180,7 @@ public class OverpassDownloadAction extends JosmAction {
             DisableActionsFocusListener disableActionsFocusListener =
                     new DisableActionsFocusListener(slippyMapChooser.getNavigationComponentActionMap());
 
-            String tooltip = tr("Build an Overpass query using the {0} tool", "Overpass Turbo Query Wizard");
+            String tooltip = tr("Build an Overpass query using the Overpass Turbo Query Wizard tool");
             Action queryWizardAction = new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -193,10 +192,12 @@ public class OverpassDownloadAction extends JosmAction {
             openQueryWizard.setToolTipText(tooltip);
             openQueryWizard.addActionListener(queryWizardAction);
 
+            // CHECKSTYLE.OFF: LineLength
             this.overpassQuery = new JosmTextArea(
-                    "/*\n Place your Overpass query below or\n" +
-                    "generate one using the Overpass Turbo Query Wizard\n */\n",
+                    tr("{0} Place your Overpass query below or {1} generate one using the Overpass Turbo Query Wizard {3}",
+                            "/*\n", "\n", "\n */\n"),
                     8, 80);
+            // CHECKSTYLE.ON: LineLength
             this.overpassQuery.setFont(GuiHelper.getMonospacedFont(overpassQuery));
             this.overpassQuery.addFocusListener(disableActionsFocusListener);
             this.overpassQuery.addFocusListener(new FocusListener() {
@@ -340,7 +341,8 @@ public class OverpassDownloadAction extends JosmAction {
         }
 
         /**
-         * Tries to process a search term using {@link OverpassTurboQueryWizard}
+         * Tries to process a search term using {@link OverpassTurboQueryWizard}. If the term cannot
+         * be parsed, the the corresponding dialog is shown.
          * @param searchTerm The search term to parse.
          * @return {@link Optional#empty()} if an exception was thrown when parsing, meaning
          * that the term cannot be processed, or non-empty {@link Optional} containing the result
@@ -355,8 +357,10 @@ public class OverpassDownloadAction extends JosmAction {
                 Main.error(ex);
                 JOptionPane.showMessageDialog(
                         OverpassDownloadDialog.getInstance(),
-                        tr("<html>The Overpass wizard could not parse the following query:"
-                                + Utils.joinAsHtmlUnorderedList(Collections.singleton(searchTerm))),
+                        "<html>" +
+                         tr("The Overpass wizard could not parse the following query:" +
+                         Utils.joinAsHtmlUnorderedList(Collections.singleton(searchTerm))) +
+                         "</html>",
                         tr("Parse error"),
                         JOptionPane.ERROR_MESSAGE
                 );
@@ -399,12 +403,14 @@ public class OverpassDownloadAction extends JosmAction {
             return new StringBuilder("<html>")
                     .append(DESCRIPTION_STYLE)
                     .append("<body>")
-                    .append("<h3>Query Wizard</h3>")
+                    .append("<h3>")
+                    .append(tr("Query Wizard"))
+                    .append("</h3>")
                     .append("<p>")
                     .append(tr("Allows you to interact with <i>Overpass API</i> by writing declarative, human-readable terms. "))
                     .append(tr("The <i>Query Wizard</i> tool will transform those to a valid overpass query. "))
                     .append(tr("For more detailed description see "))
-                    .append(tr("<a href=\"{0}\">{1} Wiki</a>.", Main.getOSMWebsite() + "/wiki/Overpass_turbo/Wizard", "OSM"))
+                    .append(tr("<a href=\"{0}\">OSM Wiki</a>.", Main.getOSMWebsite() + "/wiki/Overpass_turbo/Wizard"))
                     .append("</p>")
                     .append(tr("<h3>Hints</h3>"))
                     .append("<table>").append("<tr>").append("<td>")
@@ -425,7 +431,9 @@ public class OverpassDownloadAction extends JosmAction {
                                     "is set to 1000m, but it can be changed in the generated query.", "<i>tourism=hotel around Berlin</i> -"),
                             tr("{0} all objects within the current selection that have {1} as attribute.", "<i>tourism=hotel in bbox</i> -",
                                     "'tourism=hotel'"))))
-                    .append(tr("<span>Instead of <i>location</i> any valid place name can be used like address, city, etc.</span>"))
+                    .append("<span>")
+                    .append(tr("Instead of <i>location</i> any valid place name can be used like address, city, etc."))
+                    .append("</span>")
                     .append("</td>").append("</tr>")
                     .append("<tr>").append("<td>")
                     .append(Utils.joinAsHtmlUnorderedList(Arrays.asList("<i>key=value</i>", "<i>key=*</i>", "<i>key~regex</i>",
@@ -439,8 +447,10 @@ public class OverpassDownloadAction extends JosmAction {
                             tr("<i>expression1 {0} expression2</i>", "or"),
                             tr("<i>expression1 {0} expression2</i>", "and"))))
                     .append("</td>").append("<td>")
-                    .append(tr("<span>Basic logical operators can be used to create more sophisticated queries. Instead of 'or' - '|', '||' " +
-                            "can be used, and minstead of 'and' - '&', '&&'.</span>"))
+                    .append("<span>")
+                    .append(tr("Basic logical operators can be used to create more sophisticated queries. Instead of 'or' - '|', '||' " +
+                            "can be used, and instead of 'and' - '&', '&&'."))
+                    .append("</span>")
                     .append("</td>").append("</tr>").append("</table>")
                     .append("</body>")
                     .append("</html>")
