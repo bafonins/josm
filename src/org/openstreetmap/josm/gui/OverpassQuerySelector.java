@@ -1,17 +1,42 @@
 package org.openstreetmap.josm.gui;
 
 import org.openstreetmap.josm.Main;
+import org.openstreetmap.josm.data.Preferences;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
 import org.openstreetmap.josm.gui.widgets.SearchTextResultListPanel;
 import org.openstreetmap.josm.tools.Utils;
 
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.ListCellRenderer;
+import javax.swing.Timer;
+import javax.swing.border.CompoundBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.text.JTextComponent;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,6 +53,8 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
 
     private final JCheckBox onlySnippets;
     private final JCheckBox onlyHistory;
+    private final JCheckBox all;
+    private final JTextComponent target;
 
     private final Set<SelectorItem> items;
 
@@ -38,18 +65,73 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
     private static final String PREFERENCES_HISTORY = "download.overpass.query.history";
     private static final BooleanProperty SHOW_ONLY_SNIPPETS = new BooleanProperty("download.overpass.only-snippets", false);
     private static final BooleanProperty SHOW_ONLY_HISTORY = new BooleanProperty("download.overpass.only-history", false);
+    private static final BooleanProperty SHOW_ALL = new BooleanProperty("download.overpass.all", true);
 
     /**
      * Constructs a new {@code OverpassQuerySelector}.
-     * @param showOnlySnippets if {@code true} the "Show only shippets" checkbox is checked and
-     *                         only the users saved snippets are displayed.
-     * @param showOnlyHistory if {@code true} the "Show only history" checkbox is checked and
-     *                        only the users executed queries are displayed.
+     * @param target TODO
      */
-    public OverpassQuerySelector(boolean showOnlySnippets, boolean showOnlyHistory) {
-        this.onlySnippets = new JCheckBox(tr("Show only snippets"), showOnlySnippets);
-        this.onlyHistory = new JCheckBox(tr("Show only history"), showOnlyHistory);
+    public OverpassQuerySelector(JTextComponent target) {
+        this.onlySnippets = new JCheckBox(tr("Show only snippets"), SHOW_ONLY_SNIPPETS.get());
+        this.onlyHistory = new JCheckBox(tr("Show only history"), SHOW_ONLY_HISTORY.get());
+        this.all = new JCheckBox(tr("Show all"), SHOW_ALL.get());
+        this.target = target;
         this.items = this.restorePreferences();
+
+        ButtonGroup group = new ButtonGroup();
+        group.add(this.onlyHistory);
+        group.add(this.onlySnippets);
+        group.add(this.all);
+
+        JPanel filterOptions = new JPanel();
+        filterOptions.setLayout(new BoxLayout(filterOptions, BoxLayout.Y_AXIS));
+        filterOptions.add(this.all);
+        filterOptions.add(this.onlySnippets);
+        filterOptions.add(this.onlyHistory);
+
+        super.lsResult.setCellRenderer(new OverpassQueryCellRendered());
+        super.add(filterOptions, BorderLayout.NORTH);
+        super.setDblClickListener(e -> {
+            Optional<SelectorItem> selectedItem = this.getSelectedItem();
+
+            if (!selectedItem.isPresent()) {
+                return;
+            }
+
+            SelectorItem item = selectedItem.get();
+            this.target.setText(item.getQuery());
+        });
+
+        filterItems();
+
+        // TODO: add listeners
+
+    }
+
+    public synchronized Optional<SelectorItem> getSelectedItem() {
+        int idx = lsResult.getSelectedIndex();
+        if (lsResultModel.isEmpty() || (idx < 0 && idx > lsResultModel.getSize())) {
+            return Optional.empty();
+        }
+
+        SelectorItem item = lsResultModel.getElementAt(idx);
+
+        if (item instanceof UserHistory) {
+            UserHistory history = (UserHistory) item;
+            history.changeLastDateTimeToNow();
+        } else {
+            UserSnippet snippet = (UserSnippet) item;
+            snippet.incrementUseCount();
+        }
+
+        filterItems();
+
+        return Optional.of(item);
+    }
+
+    @Override
+    public void setDblClickListener(ActionListener dblClickListener) {
+        // this listener is already set within this class
     }
 
     @Override
@@ -58,6 +140,12 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
         boolean onlySnippets = this.onlySnippets.isSelected();
         boolean onlyHistory = this.onlyHistory.isSelected();
 
+        super.lsResultModel.setItems(this.items.stream()
+                .filter(item -> (item instanceof UserSnippet) && onlySnippets ||
+                                (item instanceof UserHistory) && onlyHistory ||
+                                (!onlyHistory && !onlySnippets))
+                .filter(item -> item.itemKey.contains(text))
+                .collect(Collectors.toList()));
     }
 
     /**
@@ -65,20 +153,64 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
      * @return A set of the user saved items.
      */
     private Set<SelectorItem> restorePreferences() {
-        List<UserSnippet> snippets = new ArrayList<>(
-                Main.pref.getListOfStructs(PREFERENCES_SNIPPET, UserSnippet.class)
-        );
-        List<UserHistory> history = new ArrayList<>(
-                Main.pref.getListOfStructs(PREFERENCES_HISTORY, UserHistory.class)
-        );
+//        List<UserSnippet> snippets = new ArrayList<>(Main.pref
+//                .getListOfStructs(PREFERENCES_SNIPPET, UserSnippet.class));
+//        List<UserHistory> history = new ArrayList<>(Main.pref
+//                .getListOfStructs(PREFERENCES_HISTORY, UserHistory.class));
+//
+//        return Stream.of(snippets, history)
+//                .flatMap(Collection::stream)
+//                .collect(Collectors.toSet());
+        return new HashSet<>(Arrays.asList(new UserHistory("history #1", "test query", LocalDateTime.now()),
+                new UserHistory("history #2", "test query2", LocalDateTime.now()),
+                new UserSnippet("snipper #1", "test query 3", 1)));
+    }
 
-        return Stream.of(snippets, history)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
+    private static class OverpassQueryCellRendered extends JLabel implements ListCellRenderer<SelectorItem> {
+
+        public OverpassQueryCellRendered() {
+            setOpaque(true);
+        }
+
+        @Override
+        public Component getListCellRendererComponent(
+                JList<? extends SelectorItem> list,
+                SelectorItem value,
+                int index,
+                boolean isSelected,
+                boolean cellHasFocus) {
+
+            if (isSelected) {
+                setBackground(list.getSelectionBackground());
+                setForeground(list.getSelectionForeground());
+            } else {
+                setBackground(list.getBackground());
+                setForeground(list.getForeground());
+            }
+
+            setFont(list.getFont());
+            setEnabled(list.isEnabled());
+            setText(value.getKey());
+
+
+            if (isSelected && cellHasFocus) {
+                setBorder(new CompoundBorder(
+                        BorderFactory.createLineBorder(Color.BLACK, 2),
+                        BorderFactory.createEmptyBorder(2, 0, 2, 0)));
+            } else {
+                setBorder(new CompoundBorder(
+                        null,
+                        BorderFactory.createEmptyBorder(2, 0, 2, 0)));
+            }
+
+            return this;
+        }
     }
 
     class SelectorItem {
+        @Preferences.pref
         private final String itemKey;
+        @Preferences.pref
         private final String query;
 
         /**
@@ -139,6 +271,7 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
     }
 
     class UserSnippet extends SelectorItem implements Comparable<UserSnippet> {
+        @Preferences.pref
         private int useCount;
 
         public UserSnippet(String key, String query, int useCount) {
@@ -158,10 +291,20 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
         public int compareTo(UserSnippet o) {
             return o.getUseCount() - this.getUseCount();
         }
+
+        @Override
+        public String toString() {
+            return "UserSnippet{" +
+                    "itemKey='" + this.getKey() + "\',\n" +
+                    "query='" + this.getQuery() + "\',\n" +
+                    "useCount=" + useCount +
+                    '}';
+        }
     }
 
     class UserHistory extends SelectorItem implements Comparable<UserHistory> {
 
+        @Preferences.pref
         private LocalDateTime lastUse;
 
         public UserHistory(String key, String query, LocalDateTime lastUseDateTime) {
@@ -194,6 +337,19 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
                     this.getQuery(),
                     1
             );
+        }
+
+        public void changeLastDateTimeToNow() {
+            this.lastUse = LocalDateTime.now();
+        }
+
+        @Override
+        public String toString() {
+            return "UserHistory{" +
+                    "itemKey='" + this.getKey() + "\',\n" +
+                    ", query='" + this.getQuery() + "\',\n" +
+                    ", lastUse=" + lastUse +
+                    '}';
         }
     }
 }
