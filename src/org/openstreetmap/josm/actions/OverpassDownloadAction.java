@@ -194,7 +194,7 @@ public class OverpassDownloadAction extends JosmAction {
 
             // CHECKSTYLE.OFF: LineLength
             this.overpassQuery = new JosmTextArea(
-                    tr("{0} Place your Overpass query below or {1} generate one using the Overpass Turbo Query Wizard {3}",
+                    tr("{0} Place your Overpass query below or {1} generate one using the Overpass Turbo Query Wizard {2}",
                             "/*\n", "\n", "\n */\n"),
                     8, 80);
             // CHECKSTYLE.ON: LineLength
