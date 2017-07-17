@@ -46,6 +46,7 @@ import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.preferences.CollectionProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
 import org.openstreetmap.josm.gui.ExtendedDialog;
+import org.openstreetmap.josm.gui.OverpassQueryList;
 import org.openstreetmap.josm.gui.download.DownloadDialog;
 import org.openstreetmap.josm.gui.preferences.server.OverpassServerPreference;
 import org.openstreetmap.josm.gui.util.GuiHelper;
@@ -219,6 +220,7 @@ public class OverpassDownloadAction extends JosmAction {
             JPanel pane = new JPanel(new BorderLayout());
             pane.add(scrollPane, BorderLayout.CENTER);
             pane.add(arrowButton, BorderLayout.EAST);
+            pane.add(new OverpassQueryList(this, this.overpassQuery), BorderLayout.WEST);
 
             GBC gbc = GBC.eol().fill(GBC.HORIZONTAL); gbc.ipady = 200;
             pnl.add(openQueryWizard, GBC.std().insets(5, 5, 5, 5));

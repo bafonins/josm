@@ -1,60 +1,51 @@
 package org.openstreetmap.josm.gui;
 
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.Preferences;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
 import org.openstreetmap.josm.gui.widgets.SearchTextResultListPanel;
+import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.Utils;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
-import javax.swing.DefaultListCellRenderer;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ListCellRenderer;
-import javax.swing.Timer;
 import javax.swing.border.CompoundBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.text.JTextComponent;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 /**
- * This class defines a panel that is used in
- * {@link org.openstreetmap.josm.actions.OverpassDownloadAction.OverpassDownloadDialog}
- * to save successfully executed overpass queries and allow the users to explicitly save
- * queries.
+ * TODO
  */
-public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQuerySelector.SelectorItem> {
+public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryList.SelectorItem> {
 
     private final JCheckBox onlySnippets;
     private final JCheckBox onlyHistory;
     private final JCheckBox all;
     private final JTextComponent target;
+    private final Component parent;
 
     private final Set<SelectorItem> items;
 
@@ -68,20 +59,24 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
     private static final BooleanProperty SHOW_ALL = new BooleanProperty("download.overpass.all", true);
 
     /**
-     * Constructs a new {@code OverpassQuerySelector}.
+     * Constructs a new {@code OverpassQueryList}.
      * @param target TODO
      */
-    public OverpassQuerySelector(JTextComponent target) {
+    public OverpassQueryList(Component parent, JTextComponent target) {
         this.onlySnippets = new JCheckBox(tr("Show only snippets"), SHOW_ONLY_SNIPPETS.get());
         this.onlyHistory = new JCheckBox(tr("Show only history"), SHOW_ONLY_HISTORY.get());
         this.all = new JCheckBox(tr("Show all"), SHOW_ALL.get());
         this.target = target;
+        this.parent = parent;
         this.items = this.restorePreferences();
 
         ButtonGroup group = new ButtonGroup();
         group.add(this.onlyHistory);
         group.add(this.onlySnippets);
         group.add(this.all);
+
+        ActionListener listener = e -> filterItems();
+        Collections.list(group.getElements()).forEach(cb -> cb.addActionListener(listener));
 
         JPanel filterOptions = new JPanel();
         filterOptions.setLayout(new BoxLayout(filterOptions, BoxLayout.Y_AXIS));
@@ -103,9 +98,6 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
         });
 
         filterItems();
-
-        // TODO: add listeners
-
     }
 
     public synchronized Optional<SelectorItem> getSelectedItem() {
@@ -129,6 +121,62 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
         return Optional.of(item);
     }
 
+    public synchronized void removeSelectedItem() {
+        Optional<SelectorItem> it = this.getSelectedItem();
+
+        if (!it.isPresent()) {
+            JOptionPane.showMessageDialog(
+                    parent,
+                    tr("Please select an item first"));
+            return;
+        }
+
+        this.items.remove(it.get());
+        filterItems();
+    }
+
+    public synchronized void renameSelectedItem() {
+        Optional<SelectorItem> it = this.getSelectedItem();
+
+        if (!it.isPresent()) {
+            return;
+        }
+
+        SelectorItem item = it.get();
+        Object val = JOptionPane.showInputDialog(
+                    parent,
+                    tr("Please enter a new name for the item, note that names must be unique"),
+                    tr("Name of the item"),
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    null,
+                    item.getKey());
+
+        String newName;
+        if (val == null || Utils.isStripEmpty((newName = val.toString()))) {
+            return;
+        }
+
+        if (this.items.contains(new SelectorItem(newName, ""))) {
+            JOptionPane.showMessageDialog(
+                    parent,
+                    tr("Item with name = {0} already exists.", newName));
+            return;
+        }
+
+        this.items.remove(item);
+
+        if (item instanceof UserHistory) {
+            UserHistory ht = (UserHistory) item;
+            this.items.add(ht.toUserSnippet());
+        } else if (item instanceof UserSnippet) {
+            UserSnippet st = (UserSnippet) item;
+            this.items.add(new UserSnippet(newName, st.getQuery(), st.getUseCount()));
+        }
+
+        filterItems();
+    }
+
     @Override
     public void setDblClickListener(ActionListener dblClickListener) {
         // this listener is already set within this class
@@ -149,7 +197,7 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
     }
 
     /**
-     * Loads the user saved items from {@link Main#pref}.
+     * Loads the user saved items from {@link org.openstreetmap.josm.Main#pref}.
      * @return A set of the user saved items.
      */
     private Set<SelectorItem> restorePreferences() {
@@ -180,22 +228,24 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
                 boolean isSelected,
                 boolean cellHasFocus) {
 
+            Font font = list.getFont();
             if (isSelected) {
+                setFont(new Font(font.getFontName(), Font.BOLD, font.getSize() + 2));
                 setBackground(list.getSelectionBackground());
                 setForeground(list.getSelectionForeground());
             } else {
+                setFont(new Font(font.getFontName(), Font.PLAIN, font.getSize() + 2));
                 setBackground(list.getBackground());
                 setForeground(list.getForeground());
             }
 
-            setFont(list.getFont());
             setEnabled(list.isEnabled());
             setText(value.getKey());
 
 
             if (isSelected && cellHasFocus) {
                 setBorder(new CompoundBorder(
-                        BorderFactory.createLineBorder(Color.BLACK, 2),
+                        BorderFactory.createLineBorder(Color.BLACK, 1),
                         BorderFactory.createEmptyBorder(2, 0, 2, 0)));
             } else {
                 setBorder(new CompoundBorder(
@@ -207,7 +257,7 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
         }
     }
 
-    class SelectorItem {
+    public class SelectorItem {
         @Preferences.pref
         private final String itemKey;
         @Preferences.pref
@@ -259,8 +309,7 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
 
             SelectorItem that = (SelectorItem) o;
 
-            if (!itemKey.equals(that.itemKey)) return false;
-            return getQuery().equals(that.getQuery());
+            return itemKey.equals(that.itemKey);
         }
 
         @Override
@@ -270,7 +319,7 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
         }
     }
 
-    class UserSnippet extends SelectorItem implements Comparable<UserSnippet> {
+    public class UserSnippet extends SelectorItem implements Comparable<UserSnippet> {
         @Preferences.pref
         private int useCount;
 
@@ -302,7 +351,7 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
         }
     }
 
-    class UserHistory extends SelectorItem implements Comparable<UserHistory> {
+    public class UserHistory extends SelectorItem implements Comparable<UserHistory> {
 
         @Preferences.pref
         private LocalDateTime lastUse;
@@ -350,6 +399,19 @@ public class OverpassQuerySelector extends SearchTextResultListPanel<OverpassQue
                     ", query='" + this.getQuery() + "\',\n" +
                     ", lastUse=" + lastUse +
                     '}';
+        }
+    }
+
+    class AddAction extends AbstractAction {
+
+        AddAction() {
+            putValue(NAME, tr("Add new snippet"));
+            putValue(SMALL_ICON, ImageProvider.get("dialogs", "bookmark-new"));
+            putValue(SHORT_DESCRIPTION, tr("Add an overpass query snippet"));
+        }
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
         }
     }
 }
