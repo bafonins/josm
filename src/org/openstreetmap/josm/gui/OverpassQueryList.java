@@ -1,8 +1,13 @@
 package org.openstreetmap.josm.gui;
 
+import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.Preferences;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
+import org.openstreetmap.josm.gui.util.GuiHelper;
+import org.openstreetmap.josm.gui.widgets.AbstractTextComponentValidator;
+import org.openstreetmap.josm.gui.widgets.JosmTextArea;
 import org.openstreetmap.josm.gui.widgets.SearchTextResultListPanel;
+import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.Utils;
 
@@ -15,15 +20,26 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
 import javax.swing.border.CompoundBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -86,6 +102,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
         super.lsResult.setCellRenderer(new OverpassQueryCellRendered());
         super.add(filterOptions, BorderLayout.NORTH);
+        super.setComponentPopupMenu(new JPopupMenu());
         super.setDblClickListener(e -> {
             Optional<SelectorItem> selectedItem = this.getSelectedItem();
 
@@ -95,6 +112,15 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
             SelectorItem item = selectedItem.get();
             this.target.setText(item.getQuery());
+
+            new EditItemDialog(this.parent, "TEST", item.getKey(), item.getQuery(), new String[] {"dratuti", "nahuj poshel"}).showDialog();
+        });
+        super.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                Main.info("clicked");
+            }
         });
 
         filterItems();
@@ -121,7 +147,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         return Optional.of(item);
     }
 
-    public synchronized void removeSelectedItem() {
+    private synchronized void removeSelectedItem() {
         Optional<SelectorItem> it = this.getSelectedItem();
 
         if (!it.isPresent()) {
@@ -135,7 +161,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         filterItems();
     }
 
-    public synchronized void renameSelectedItem() {
+    private synchronized void editSelectedItem() {
         Optional<SelectorItem> it = this.getSelectedItem();
 
         if (!it.isPresent()) {
@@ -143,38 +169,40 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         }
 
         SelectorItem item = it.get();
-        Object val = JOptionPane.showInputDialog(
-                    parent,
-                    tr("Please enter a new name for the item, note that names must be unique"),
-                    tr("Name of the item"),
-                    JOptionPane.QUESTION_MESSAGE,
-                    null,
-                    null,
-                    item.getKey());
 
-        String newName;
-        if (val == null || Utils.isStripEmpty((newName = val.toString()))) {
-            return;
-        }
+        EditItemDialog dialog = new EditItemDialog(
+                parent,
+                tr("Edit snippet"),
+                item.getKey(),
+                item.getQuery(),
+                new String[] { tr("Save") });
+        dialog.showDialog();
 
-        if (this.items.contains(new SelectorItem(newName, ""))) {
-            JOptionPane.showMessageDialog(
-                    parent,
-                    tr("Item with name = {0} already exists.", newName));
-            return;
-        }
+        Optional<SelectorItem> editedItem = dialog.getOutputItem();
+        editedItem.ifPresent(i -> {
+            this.items.remove(item);
 
-        this.items.remove(item);
+            if (item instanceof UserHistory) {
+                UserHistory ht = (UserHistory) item;
+                this.items.add(ht.toUserSnippet());
+            } else if (item instanceof UserSnippet) {
+                UserSnippet st = (UserSnippet) item;
+                this.items.add(new UserSnippet(i.getKey(), i.getQuery(), st.getUseCount()));
+            }
 
-        if (item instanceof UserHistory) {
-            UserHistory ht = (UserHistory) item;
-            this.items.add(ht.toUserSnippet());
-        } else if (item instanceof UserSnippet) {
-            UserSnippet st = (UserSnippet) item;
-            this.items.add(new UserSnippet(newName, st.getQuery(), st.getUseCount()));
-        }
+            filterItems();
+        });
+    }
 
-        filterItems();
+    private synchronized void addNewItem() {
+        EditItemDialog dialog = new EditItemDialog(parent, tr("Add snippet"), tr("Add"));
+        dialog.showDialog();
+
+        Optional<SelectorItem> newItem = dialog.getOutputItem();
+        newItem.ifPresent(i -> {
+            items.add(new UserSnippet(i.getKey(), i.getQuery(), 1));
+            filterItems();
+        });
     }
 
     @Override
@@ -187,11 +215,11 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         String text = edSearchText.getText().toLowerCase(Locale.ENGLISH);
         boolean onlySnippets = this.onlySnippets.isSelected();
         boolean onlyHistory = this.onlyHistory.isSelected();
+        boolean all = this.all.isSelected();
 
         super.lsResultModel.setItems(this.items.stream()
                 .filter(item -> (item instanceof UserSnippet) && onlySnippets ||
-                                (item instanceof UserHistory) && onlyHistory ||
-                                (!onlyHistory && !onlySnippets))
+                                (item instanceof UserHistory) && onlyHistory || all)
                 .filter(item -> item.itemKey.contains(text))
                 .collect(Collectors.toList()));
     }
@@ -257,6 +285,81 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         }
     }
 
+    private final class EditItemDialog extends ExtendedDialog {
+
+        private final JTextField name;
+        private final JosmTextArea query;
+        private final int initialNameHash;
+        private final int initialQueryHash;
+
+        private Optional<SelectorItem> outputItem = Optional.empty();
+
+        public EditItemDialog(Component parent, String title, String... buttonTexts) {
+            this(parent, title, "", "", buttonTexts);
+        }
+
+        public EditItemDialog(
+                Component parent,
+                String title,
+                String nameToEdit,
+                String queryToEdit,
+                String... buttonTexts) {
+            super(parent, title, buttonTexts);
+
+            this.initialNameHash = nameToEdit.hashCode();
+            this.initialQueryHash = queryToEdit.hashCode();
+
+            this.name = new JTextField(nameToEdit);
+            this.query = new JosmTextArea(queryToEdit);
+
+            this.name.getDocument().addDocumentListener(new AbstractTextComponentValidator(this.name) {
+                @Override
+                public void validate() {
+                    if (isValid()) {
+                        feedbackValid(tr("This name can be used for the item"));
+                    } else {
+                        feedbackInvalid(tr("Item with this name already exists"));
+                    }
+                }
+
+                @Override
+                public boolean isValid() {
+                    String currentName = name.getText();
+                    int currentHash = currentName.hashCode();
+
+                    return !Utils.isStripEmpty(currentName) &&
+                            !(currentHash != initialNameHash && items.contains(new SelectorItem(currentName, "a")));
+                }
+            });
+
+            JPanel panel = new JPanel(new GridBagLayout());
+            JScrollPane queryScrollPane = GuiHelper.embedInVerticalScrollPane(this.query);
+            queryScrollPane.getVerticalScrollBar().setUnitIncrement(10); // make scrolling smooth
+
+            GBC constraint = GBC.eol().insets(8, 0, 8, 8).anchor(GBC.CENTER).fill(GBC.HORIZONTAL);
+            constraint.ipady = 250;
+            panel.add(this.name, GBC.eol().insets(5).anchor(GBC.SOUTHEAST).fill(GBC.HORIZONTAL));
+            panel.add(queryScrollPane, constraint);
+
+            setDefaultButton(0);
+            setPreferredSize(new Dimension(400, 400));
+            setContent(panel, false);
+        }
+
+        public Optional<SelectorItem> getOutputItem() {
+            return this.outputItem;
+        }
+
+        @Override
+        protected void buttonAction(int buttonIndex, ActionEvent evt) {
+            super.buttonAction(buttonIndex, evt);
+
+            if (buttonIndex == 0) {
+                this.outputItem = Optional.of(new SelectorItem(this.name.getText(), this.query.getText()));
+            }
+        }
+    }
+
     public class SelectorItem {
         @Preferences.pref
         private final String itemKey;
@@ -271,7 +374,6 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
          * @exception IllegalArgumentException if any parameter is empty.
          */
         public SelectorItem(String key, String query) {
-            super();
             Objects.requireNonNull(key);
             Objects.requireNonNull(query);
 
@@ -399,19 +501,6 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
                     ", query='" + this.getQuery() + "\',\n" +
                     ", lastUse=" + lastUse +
                     '}';
-        }
-    }
-
-    class AddAction extends AbstractAction {
-
-        AddAction() {
-            putValue(NAME, tr("Add new snippet"));
-            putValue(SMALL_ICON, ImageProvider.get("dialogs", "bookmark-new"));
-            putValue(SHORT_DESCRIPTION, tr("Add an overpass query snippet"));
-        }
-        @Override
-        public void actionPerformed(ActionEvent e) {
-
         }
     }
 }
