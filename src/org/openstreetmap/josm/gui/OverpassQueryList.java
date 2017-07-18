@@ -431,6 +431,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         protected void buttonAction(int buttonIndex, ActionEvent evt) {
             super.buttonAction(buttonIndex, evt);
 
+            // TODO: add name validation
             if (buttonIndex == 0 && this.queryValidator.isValid()) {
 
                 this.outputItem = Optional.of(new SelectorItem(this.name.getText(), this.query.getText()));
