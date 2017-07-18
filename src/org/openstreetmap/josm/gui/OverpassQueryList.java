@@ -4,6 +4,7 @@ import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.widgets.AbstractTextComponentValidator;
+import org.openstreetmap.josm.gui.widgets.DefaultTextComponentValidator;
 import org.openstreetmap.josm.gui.widgets.JosmTextArea;
 import org.openstreetmap.josm.gui.widgets.SearchTextResultListPanel;
 import org.openstreetmap.josm.tools.GBC;
@@ -55,16 +56,22 @@ import static org.openstreetmap.josm.tools.I18n.tr;
  */
 public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryList.SelectorItem> {
 
+    /*
+     * GUI elements
+     */
     private final JCheckBox onlySnippets;
     private final JCheckBox onlyHistory;
     private final JCheckBox all;
     private final JTextComponent target;
     private final Component parent;
 
+    /*
+     * All loaded elements within the list.
+     */
     private final Set<SelectorItem> items;
 
     /*
-     * Save preferences
+     * Preferences
      */
     private static final String KEY_KEY = "key";
     private static final String QUERY_KEY = "query";
@@ -74,6 +81,11 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     private static final BooleanProperty SHOW_ONLY_SNIPPETS = new BooleanProperty("download.overpass.only-snippets", false);
     private static final BooleanProperty SHOW_ONLY_HISTORY = new BooleanProperty("download.overpass.only-history", false);
     private static final BooleanProperty SHOW_ALL = new BooleanProperty("download.overpass.all", true);
+
+    /*
+     * Synchronize on this object to get access to the items object.
+     */
+    private final Object lock = new Object();
 
     /**
      * Constructs a new {@code OverpassQueryList}.
@@ -137,43 +149,48 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         filterItems();
     }
 
-    public synchronized Optional<SelectorItem> getSelectedItem() {
-        int idx = lsResult.getSelectedIndex();
-        if (lsResultModel.isEmpty() || (idx < 0 || idx >= lsResultModel.getSize())) {
-            return Optional.empty();
+    public Optional<SelectorItem> getSelectedItem() {
+        synchronized (lock) {
+            int idx = lsResult.getSelectedIndex();
+            if (lsResultModel.isEmpty() || (idx < 0 || idx >= lsResultModel.getSize())) {
+                return Optional.empty();
+            }
+
+            SelectorItem item = lsResultModel.getElementAt(idx);
+
+            if (item instanceof UserHistory) {
+                UserHistory history = (UserHistory) item;
+                history.changeLastDateTimeToNow();
+            } else {
+                UserSnippet snippet = (UserSnippet) item;
+                snippet.incrementUseCount();
+            }
+
+            filterItems();
+
+            return Optional.of(item);
         }
-
-        SelectorItem item = lsResultModel.getElementAt(idx);
-
-        if (item instanceof UserHistory) {
-            UserHistory history = (UserHistory) item;
-            history.changeLastDateTimeToNow();
-        } else {
-            UserSnippet snippet = (UserSnippet) item;
-            snippet.incrementUseCount();
-        }
-
-        filterItems();
-
-        return Optional.of(item);
     }
 
-    private synchronized void removeSelectedItem() {
-        Optional<SelectorItem> it = this.getSelectedItem();
+    private void removeSelectedItem() {
+        synchronized (lock) {
+            Optional<SelectorItem> it = this.getSelectedItem();
 
-        if (!it.isPresent()) {
-            JOptionPane.showMessageDialog(
-                    parent,
-                    tr("Please select an item first"));
-            return;
+            if (!it.isPresent()) {
+                JOptionPane.showMessageDialog(
+                        parent,
+                        tr("Please select an item first"));
+                return;
+            }
+
+            this.items.remove(it.get());
+            savePreferences();
+            filterItems();
         }
-
-        this.items.remove(it.get());
-        savePreferences();
-        filterItems();
     }
 
-    private synchronized void editSelectedItem() {
+    private void editSelectedItem() {
+    synchronized (lock) {
         Optional<SelectorItem> it = this.getSelectedItem();
 
         if (!it.isPresent()) {
@@ -209,17 +226,20 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             filterItems();
         });
     }
+    }
 
-    private synchronized void addNewItem() {
-        EditItemDialog dialog = new EditItemDialog(parent, tr("Add snippet"), tr("Add"));
-        dialog.showDialog();
+    private void addNewItem() {
+        synchronized (lock) {
+            EditItemDialog dialog = new EditItemDialog(parent, tr("Add snippet"), tr("Add"));
+            dialog.showDialog();
 
-        Optional<SelectorItem> newItem = dialog.getOutputItem();
-        newItem.ifPresent(i -> {
-            items.add(new UserSnippet(i.getKey(), i.getQuery(), 1));
-            savePreferences();
-            filterItems();
-        });
+            Optional<SelectorItem> newItem = dialog.getOutputItem();
+            newItem.ifPresent(i -> {
+                items.add(new UserSnippet(i.getKey(), i.getQuery(), 1));
+                savePreferences();
+                filterItems();
+            });
+        }
     }
 
     @Override
@@ -241,6 +261,9 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
                 .collect(Collectors.toList()));
     }
 
+    /**
+     * Saves all elements from the list to {@link Main#pref}.
+     */
     private void savePreferences() {
         Collection<Map<String, String>> toSave = new ArrayList<>(this.items.size());
         for (SelectorItem item : this.items) {
@@ -261,7 +284,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     }
 
     /**
-     * Loads the user saved items from {@link org.openstreetmap.josm.Main#pref}.
+     * Loads the user saved items from {@link Main#pref}.
      * @return A set of the user saved items.
      */
     private Set<SelectorItem> restorePreferences() {
@@ -281,6 +304,9 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         return result;
     }
 
+    /**
+     * This class defines the way each element is rendered in the list.
+     */
     private static class OverpassQueryCellRendered extends JLabel implements ListCellRenderer<SelectorItem> {
 
         public OverpassQueryCellRendered() {
@@ -324,13 +350,21 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         }
     }
 
+    /**
+     * Dialog that provides functionality to add/edit an item from the list.
+     */
     private final class EditItemDialog extends ExtendedDialog {
 
         private final JTextField name;
         private final JosmTextArea query;
         private final int initialNameHash;
-        private final int initialQueryHash;
 
+        private final AbstractTextComponentValidator queryValidator;
+
+        /**
+         * Added/Edited object to be returned. If {@link Optional#empty()} then probably
+         * the user closed the dialog, otherwise {@link SelectorItem} is present.
+         */
         private Optional<SelectorItem> outputItem = Optional.empty();
 
         public EditItemDialog(Component parent, String title, String... buttonTexts) {
@@ -346,11 +380,12 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             super(parent, title, buttonTexts);
 
             this.initialNameHash = nameToEdit.hashCode();
-            this.initialQueryHash = queryToEdit.hashCode();
 
             this.name = new JTextField(nameToEdit);
             this.query = new JosmTextArea(queryToEdit);
+            this.queryValidator = new DefaultTextComponentValidator(this.query, "", tr("Query cannot be empty"));
 
+            // ensure that the name is not already in-use and that is not empty.
             this.name.getDocument().addDocumentListener(new AbstractTextComponentValidator(this.name) {
                 @Override
                 public void validate() {
@@ -371,21 +406,8 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
                 }
             });
 
-            this.query.getDocument().addDocumentListener(new AbstractTextComponentValidator(this.query) {
-                @Override
-                public void validate() {
-                    if (isValid()) {
-                        feedbackValid("");
-                    } else {
-                        feedbackInvalid(tr("Query cannot be empty"));
-                    }
-                }
-
-                @Override
-                public boolean isValid() {
-                    return !Utils.isStripEmpty(query.getText());
-                }
-            });
+            // do not allow empty queries to be saved.
+            this.query.getDocument().addDocumentListener(this.queryValidator);
 
             JPanel panel = new JPanel(new GridBagLayout());
             JScrollPane queryScrollPane = GuiHelper.embedInVerticalScrollPane(this.query);
@@ -409,7 +431,8 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         protected void buttonAction(int buttonIndex, ActionEvent evt) {
             super.buttonAction(buttonIndex, evt);
 
-            if (buttonIndex == 0) {
+            if (buttonIndex == 0 && this.queryValidator.isValid()) {
+
                 this.outputItem = Optional.of(new SelectorItem(this.name.getText(), this.query.getText()));
             }
         }
