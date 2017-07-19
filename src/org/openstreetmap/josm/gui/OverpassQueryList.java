@@ -120,6 +120,9 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         group.add(this.onlySnippets);
         group.add(this.all);
 
+        this.all.addActionListener(l -> SHOW_ALL.put(this.all.isSelected()));
+        this.onlyHistory.addActionListener(l -> SHOW_ONLY_HISTORY.put(this.onlyHistory.isSelected()));
+        this.onlySnippets.addActionListener(l -> SHOW_ONLY_SNIPPETS.put(this.onlySnippets.isSelected()));
         ActionListener listener = e -> filterItems();
         Collections.list(group.getElements()).forEach(cb -> cb.addActionListener(listener));
 
@@ -128,11 +131,6 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         filterOptions.add(this.all);
         filterOptions.add(this.onlySnippets);
         filterOptions.add(this.onlyHistory);
-
-        JButton btn = new JButton("add");
-        btn.addActionListener(l -> this.addNewItem());
-
-        filterOptions.add(btn);
 
         super.lsResult.setCellRenderer(new OverpassQueryCellRendered());
         super.add(filterOptions, BorderLayout.SOUTH);
@@ -148,6 +146,10 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             this.target.setText(item.getQuery());
         });
         super.lsResult.addMouseListener(new MouseAdapter() {
+            /*
+             * Do not select the closest element if the user clicked on
+             * an empty area within the list.
+             */
             private int locationToIndex(Point p) {
                 int idx = lsResult.locationToIndex(p);
 
