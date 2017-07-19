@@ -140,11 +140,6 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
                 Main.info("clicked");
             }
         });
-        JPopupMenu menu = new JPopupMenu();
-        menu.add(new JMenuItem("penis"));
-        menu.add(new JMenuItem("elda"));
-
-        super.setComponentPopupMenu(menu);
 
         filterItems();
     }
@@ -335,7 +330,6 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             setEnabled(list.isEnabled());
             setText(value.getKey());
 
-
             if (isSelected && cellHasFocus) {
                 setBorder(new CompoundBorder(
                         BorderFactory.createLineBorder(Color.BLACK, 1),
@@ -360,6 +354,10 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         private final int initialNameHash;
 
         private final AbstractTextComponentValidator queryValidator;
+        private final AbstractTextComponentValidator nameValidator;
+
+        private static final int SUCCESS_BTN = 0;
+        private static final int CANCEL_BTN = 1;
 
         /**
          * Added/Edited object to be returned. If {@link Optional#empty()} then probably
@@ -383,10 +381,9 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
             this.name = new JTextField(nameToEdit);
             this.query = new JosmTextArea(queryToEdit);
-            this.queryValidator = new DefaultTextComponentValidator(this.query, "", tr("Query cannot be empty"));
 
-            // ensure that the name is not already in-use and that is not empty.
-            this.name.getDocument().addDocumentListener(new AbstractTextComponentValidator(this.name) {
+            this.queryValidator = new DefaultTextComponentValidator(this.query, "", tr("Query cannot be empty"));
+            this.nameValidator = new AbstractTextComponentValidator(this.name) {
                 @Override
                 public void validate() {
                     if (isValid()) {
@@ -404,9 +401,9 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
                     return !Utils.isStripEmpty(currentName) &&
                             !(currentHash != initialNameHash && items.contains(new SelectorItem(currentName, "a")));
                 }
-            });
+            };
 
-            // do not allow empty queries to be saved.
+            this.name.getDocument().addDocumentListener(this.nameValidator);
             this.query.getDocument().addDocumentListener(this.queryValidator);
 
             JPanel panel = new JPanel(new GridBagLayout());
@@ -418,7 +415,8 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             panel.add(this.name, GBC.eol().insets(5).anchor(GBC.SOUTHEAST).fill(GBC.HORIZONTAL));
             panel.add(queryScrollPane, constraint);
 
-            setDefaultButton(0);
+            setDefaultButton(SUCCESS_BTN);
+            setCancelButton(CANCEL_BTN);
             setPreferredSize(new Dimension(400, 400));
             setContent(panel, false);
         }
@@ -429,12 +427,27 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
         @Override
         protected void buttonAction(int buttonIndex, ActionEvent evt) {
-            super.buttonAction(buttonIndex, evt);
-
-            // TODO: add name validation
-            if (buttonIndex == 0 && this.queryValidator.isValid()) {
-
-                this.outputItem = Optional.of(new SelectorItem(this.name.getText(), this.query.getText()));
+            switch (buttonIndex) {
+                case SUCCESS_BTN:
+                    if (!this.nameValidator.isValid()) {
+                        JOptionPane.showMessageDialog(
+                                parent,
+                                tr("The item cannot be created with provided name"),
+                                tr("Warning"),
+                                JOptionPane.WARNING_MESSAGE);
+                    } else if (!this.queryValidator.isValid()) {
+                        JOptionPane.showMessageDialog(
+                                parent,
+                                tr("The item cannot be created with an empty query"),
+                                tr("Warning"),
+                                JOptionPane.WARNING_MESSAGE);
+                    } else {
+                        this.outputItem = Optional.of(new SelectorItem(this.name.getText(), this.query.getText()));
+                        super.buttonAction(buttonIndex, evt);
+                    }
+                    break;
+                case CANCEL_BTN:
+                    super.buttonAction(buttonIndex, evt);
             }
         }
     }
