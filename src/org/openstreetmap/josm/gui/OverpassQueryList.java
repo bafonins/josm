@@ -71,7 +71,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     /*
      * All loaded elements within the list.
      */
-    private final Set<SelectorItem> items;
+    private final transient Set<SelectorItem> items;
 
     /*
      * Preferences
@@ -265,13 +265,13 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     @Override
     protected void filterItems() {
         String text = edSearchText.getText().toLowerCase(Locale.ENGLISH);
-        boolean onlySnippets = this.onlySnippets.isSelected();
-        boolean onlyHistory = this.onlyHistory.isSelected();
-        boolean all = this.all.isSelected();
+        boolean snippets = this.onlySnippets.isSelected();
+        boolean history = this.onlyHistory.isSelected();
+        boolean allElements = this.all.isSelected();
 
         super.lsResultModel.setItems(this.items.stream()
-                .filter(item -> (item instanceof UserSnippet) && onlySnippets ||
-                                (item instanceof UserHistory) && onlyHistory || all)
+                .filter(item -> (item instanceof UserSnippet) && snippets ||
+                                (item instanceof UserHistory) && history || allElements)
                 .filter(item -> item.itemKey.contains(text))
                 .collect(Collectors.toList()));
     }
@@ -314,7 +314,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             if (item instanceof UserHistory) {
                 it.put(LAST_USE_KEY, ((UserHistory) item).getLastUseDateTime().toString());
             } else {
-                it.put(USE_COUNT_KEY, ((UserSnippet) item).getUseCount() + "");
+                it.put(USE_COUNT_KEY, Integer.toString(((UserSnippet) item).getUseCount()));
             }
 
             toSave.add(it);
@@ -398,8 +398,8 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         private final JosmTextArea query;
         private final int initialNameHash;
 
-        private final AbstractTextComponentValidator queryValidator;
-        private final AbstractTextComponentValidator nameValidator;
+        private final transient AbstractTextComponentValidator queryValidator;
+        private final transient AbstractTextComponentValidator nameValidator;
 
         private static final int SUCCESS_BTN = 0;
         private static final int CANCEL_BTN = 1;
@@ -408,7 +408,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
          * Added/Edited object to be returned. If {@link Optional#empty()} then probably
          * the user closed the dialog, otherwise {@link SelectorItem} is present.
          */
-        private Optional<SelectorItem> outputItem = Optional.empty();
+        private transient Optional<SelectorItem> outputItem = Optional.empty();
 
         public EditItemDialog(Component parent, String title, String... buttonTexts) {
             this(parent, title, "", "", buttonTexts);
@@ -550,8 +550,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
         @Override
         public int hashCode() {
-            int result = itemKey.hashCode();
-            return result;
+            return itemKey.hashCode();
         }
     }
 
@@ -578,9 +577,10 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
         @Override
         public String toString() {
+            String end = "\',\n";
             return "UserSnippet{" +
-                    "itemKey='" + this.getKey() + "\',\n" +
-                    "query='" + this.getQuery() + "\',\n" +
+                    "itemKey='" + this.getKey() + end +
+                    "query='" + this.getQuery() + end +
                     "useCount=" + useCount +
                     '}';
         }
