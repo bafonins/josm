@@ -24,6 +24,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.ListCellRenderer;
+import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.text.JTextComponent;
 import java.awt.BorderLayout;
@@ -32,6 +33,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagLayout;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -64,6 +66,8 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     private final JCheckBox all;
     private final JTextComponent target;
     private final Component parent;
+    private final JPopupMenu emptySelectionPopup;
+    private final JPopupMenu elementPopup;
 
     /*
      * All loaded elements within the list.
@@ -99,6 +103,18 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         this.parent = parent;
         this.items = this.restorePreferences();
 
+        this.emptySelectionPopup = new JPopupMenu();
+        this.elementPopup = new JPopupMenu();
+        JMenuItem add = new JMenuItem(tr("Add"));
+        JMenuItem edit = new JMenuItem(tr("Edit"));
+        JMenuItem remove = new JMenuItem(tr("Remove"));
+        add.addActionListener(l -> this.addNewItem());
+        edit.addActionListener(l -> this.editSelectedItem());
+        remove.addActionListener(l -> this.removeSelectedItem());
+        this.emptySelectionPopup.add(add);
+        this.elementPopup.add(edit);
+        this.elementPopup.add(remove);
+
         ButtonGroup group = new ButtonGroup();
         group.add(this.onlyHistory);
         group.add(this.onlySnippets);
@@ -119,7 +135,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         filterOptions.add(btn);
 
         super.lsResult.setCellRenderer(new OverpassQueryCellRendered());
-        super.add(filterOptions, BorderLayout.NORTH);
+        super.add(filterOptions, BorderLayout.SOUTH);
         super.setComponentPopupMenu(new JPopupMenu());
         super.setDblClickListener(e -> {
             Optional<SelectorItem> selectedItem = this.getSelectedItem();
@@ -130,14 +146,32 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
             SelectorItem item = selectedItem.get();
             this.target.setText(item.getQuery());
-
-            new EditItemDialog(this.parent, "TEST", item.getKey(), item.getQuery(), new String[] {"dratuti", "nahuj poshel"}).showDialog();
         });
-        super.addMouseListener(new MouseAdapter() {
+        super.lsResult.addMouseListener(new MouseAdapter() {
+            private int locationToIndex(Point p) {
+                int idx = lsResult.locationToIndex(p);
+
+                if (idx != -1 && !lsResult.getCellBounds(idx, idx).contains(p)) {
+                    return -1;
+                } else {
+                    return idx;
+                }
+            }
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
-                Main.info("clicked");
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    int index = locationToIndex(e.getPoint());
+
+                    if (lsResultModel.getSize() == 0 || index == -1) {
+                        lsResult.clearSelection();
+                        emptySelectionPopup.show(lsResult, e.getX(), e.getY());
+                    } else {
+                        lsResult.setSelectedIndex(index);
+                        lsResult.ensureIndexIsVisible(index);
+                        elementPopup.show(lsResult, e.getX(), e.getY());
+                    }
+                }
             }
         });
 
@@ -147,7 +181,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     public Optional<SelectorItem> getSelectedItem() {
         synchronized (lock) {
             int idx = lsResult.getSelectedIndex();
-            if (lsResultModel.isEmpty() || (idx < 0 || idx >= lsResultModel.getSize())) {
+            if (lsResultModel.getSize() == 0 || idx == -1) {
                 return Optional.empty();
             }
 
