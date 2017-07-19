@@ -60,13 +60,13 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     /*
      * GUI elements
      */
-    private final JCheckBox onlySnippets;
-    private final JCheckBox onlyHistory;
-    private final JCheckBox all;
     private final JTextComponent target;
-    private final Component parent;
-    private final JPopupMenu emptySelectionPopup;
-    private final JPopupMenu elementPopup;
+    private final Component componentParent;
+    private final JCheckBox onlySnippets = new JCheckBox(tr("Show only snippets"), SHOW_ONLY_SNIPPETS.get());
+    private final JCheckBox onlyHistory = new JCheckBox(tr("Show only history"), SHOW_ONLY_HISTORY.get());
+    private final JCheckBox all = new JCheckBox(tr("Show all"), SHOW_ALL.get());
+    private final JPopupMenu emptySelectionPopup = new JPopupMenu();
+    private final JPopupMenu elementPopup = new JPopupMenu();
 
     /*
      * All loaded elements within the list.
@@ -81,59 +81,34 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     private static final String USE_COUNT_KEY = "useCount";
     private static final String LAST_USE_KEY = "lastUse";
     private static final String PREFERENCE_ITEMS = "download.overpass.query";
-    private static final BooleanProperty SHOW_ONLY_SNIPPETS = new BooleanProperty("download.overpass.only-snippets", false);
-    private static final BooleanProperty SHOW_ONLY_HISTORY = new BooleanProperty("download.overpass.only-history", false);
-    private static final BooleanProperty SHOW_ALL = new BooleanProperty("download.overpass.all", true);
-
-    /*
-     * Synchronize on this object to get access to the items object.
-     */
-    private final Object lock = new Object();
+    private static final BooleanProperty SHOW_ONLY_SNIPPETS =
+            new BooleanProperty("download.overpass.only-snippets", false);
+    private static final BooleanProperty SHOW_ONLY_HISTORY =
+            new BooleanProperty("download.overpass.only-history", false);
+    private static final BooleanProperty SHOW_ALL =
+            new BooleanProperty("download.overpass.all", true);
 
     /**
      * Constructs a new {@code OverpassQueryList}.
+     * @param parent TODO
      * @param target TODO
      */
     public OverpassQueryList(Component parent, JTextComponent target) {
-        this.onlySnippets = new JCheckBox(tr("Show only snippets"), SHOW_ONLY_SNIPPETS.get());
-        this.onlyHistory = new JCheckBox(tr("Show only history"), SHOW_ONLY_HISTORY.get());
-        this.all = new JCheckBox(tr("Show all"), SHOW_ALL.get());
         this.target = target;
-        this.parent = parent;
+        this.componentParent = parent;
         this.items = this.restorePreferences();
 
-        this.emptySelectionPopup = new JPopupMenu();
-        this.elementPopup = new JPopupMenu();
-        JMenuItem add = new JMenuItem(tr("Add"));
-        JMenuItem edit = new JMenuItem(tr("Edit"));
-        JMenuItem remove = new JMenuItem(tr("Remove"));
-        add.addActionListener(l -> this.addNewItem());
-        edit.addActionListener(l -> this.editSelectedItem());
-        remove.addActionListener(l -> this.removeSelectedItem());
-        this.emptySelectionPopup.add(add);
-        this.elementPopup.add(edit);
-        this.elementPopup.add(remove);
-
-        ButtonGroup group = new ButtonGroup();
-        group.add(this.onlyHistory);
-        group.add(this.onlySnippets);
-        group.add(this.all);
-
-        this.all.addActionListener(l -> SHOW_ALL.put(this.all.isSelected()));
-        this.onlyHistory.addActionListener(l -> SHOW_ONLY_HISTORY.put(this.onlyHistory.isSelected()));
-        this.onlySnippets.addActionListener(l -> SHOW_ONLY_SNIPPETS.put(this.onlySnippets.isSelected()));
-        ActionListener listener = e -> filterItems();
-        Collections.list(group.getElements()).forEach(cb -> cb.addActionListener(listener));
+        initPopupMenus();
+        initFilterCheckBoxes();
 
         JPanel filterOptions = new JPanel();
         filterOptions.setLayout(new BoxLayout(filterOptions, BoxLayout.Y_AXIS));
         filterOptions.add(this.all);
         filterOptions.add(this.onlySnippets);
         filterOptions.add(this.onlyHistory);
+        super.add(filterOptions, BorderLayout.SOUTH);
 
         super.lsResult.setCellRenderer(new OverpassQueryCellRendered());
-        super.add(filterOptions, BorderLayout.SOUTH);
-        super.setComponentPopupMenu(new JPopupMenu());
         super.setDblClickListener(e -> {
             Optional<SelectorItem> selectedItem = this.getSelectedItem();
 
@@ -179,53 +154,62 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         filterItems();
     }
 
-    public Optional<SelectorItem> getSelectedItem() {
-        synchronized (lock) {
-            int idx = lsResult.getSelectedIndex();
-            if (lsResultModel.getSize() == 0 || idx == -1) {
-                return Optional.empty();
-            }
-
-            SelectorItem item = lsResultModel.getElementAt(idx);
-
-            if (item instanceof UserHistory) {
-                UserHistory history = (UserHistory) item;
-                history.changeLastDateTimeToNow();
-            } else {
-                UserSnippet snippet = (UserSnippet) item;
-                snippet.incrementUseCount();
-            }
-
-            filterItems();
-
-            return Optional.of(item);
+    /**
+     * Returns currently selected element from the list.
+     * @return An {@link Optional#empty()} if nothing is selected, otherwise
+     * the idem is returned.
+     */
+    public synchronized Optional<SelectorItem> getSelectedItem() {
+        int idx = lsResult.getSelectedIndex();
+        if (lsResultModel.getSize() == 0 || idx == -1) {
+            return Optional.empty();
         }
+
+        SelectorItem item = lsResultModel.getElementAt(idx);
+
+        if (item instanceof UserHistory) {
+            UserHistory history = (UserHistory) item;
+            history.changeLastDateTimeToNow();
+        } else {
+            UserSnippet snippet = (UserSnippet) item;
+            snippet.incrementUseCount();
+        }
+
+        // update the list according to the usage count/date
+        filterItems();
+
+        return Optional.of(item);
     }
 
-    private void removeSelectedItem() {
-        synchronized (lock) {
-            Optional<SelectorItem> it = this.getSelectedItem();
-
-            if (!it.isPresent()) {
-                JOptionPane.showMessageDialog(
-                        parent,
-                        tr("Please select an item first"));
-                return;
-            }
-
-            this.items.remove(it.get());
-            savePreferences();
-            filterItems();
-        }
-    }
-
-    private void editSelectedItem() {
-    synchronized (lock) {
+    /**
+     * Removes currently selected item, saves the current state to preferences and
+     * updates the view.
+     */
+    private synchronized void removeSelectedItem() {
         Optional<SelectorItem> it = this.getSelectedItem();
 
         if (!it.isPresent()) {
             JOptionPane.showMessageDialog(
-                    parent,
+                    componentParent,
+                    tr("Please select an item first"));
+            return;
+        }
+
+        this.items.remove(it.get());
+        savePreferences();
+        filterItems();
+    }
+
+    /**
+     * Opens {@link EditItemDialog} for the selected item, saves the current state
+     * to preferences and updates the view.
+     */
+    private synchronized void editSelectedItem() {
+        Optional<SelectorItem> it = this.getSelectedItem();
+
+        if (!it.isPresent()) {
+            JOptionPane.showMessageDialog(
+                    componentParent,
                     tr("Please select an item first"));
             return;
         }
@@ -233,7 +217,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         SelectorItem item = it.get();
 
         EditItemDialog dialog = new EditItemDialog(
-                parent,
+                componentParent,
                 tr("Edit item"),
                 item.getKey(),
                 item.getQuery(),
@@ -256,20 +240,21 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             filterItems();
         });
     }
-    }
 
-    private void addNewItem() {
-        synchronized (lock) {
-            EditItemDialog dialog = new EditItemDialog(parent, tr("Add snippet"), tr("Add"));
-            dialog.showDialog();
+    /**
+     * Opens {@link EditItemDialog}, saves the state to preferences if a new item is added
+     * and updates the view.
+     */
+    private synchronized void addNewItem() {
+        EditItemDialog dialog = new EditItemDialog(componentParent, tr("Add snippet"), tr("Add"));
+        dialog.showDialog();
 
-            Optional<SelectorItem> newItem = dialog.getOutputItem();
-            newItem.ifPresent(i -> {
-                items.add(new UserSnippet(i.getKey(), i.getQuery(), 1));
-                savePreferences();
-                filterItems();
-            });
-        }
+        Optional<SelectorItem> newItem = dialog.getOutputItem();
+        newItem.ifPresent(i -> {
+            items.add(new UserSnippet(i.getKey(), i.getQuery(), 1));
+            savePreferences();
+            filterItems();
+        });
     }
 
     @Override
@@ -289,6 +274,31 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
                                 (item instanceof UserHistory) && onlyHistory || all)
                 .filter(item -> item.itemKey.contains(text))
                 .collect(Collectors.toList()));
+    }
+
+    private void initPopupMenus() {
+        JMenuItem add = new JMenuItem(tr("Add"));
+        JMenuItem edit = new JMenuItem(tr("Edit"));
+        JMenuItem remove = new JMenuItem(tr("Remove"));
+        add.addActionListener(l -> this.addNewItem());
+        edit.addActionListener(l -> this.editSelectedItem());
+        remove.addActionListener(l -> this.removeSelectedItem());
+        this.emptySelectionPopup.add(add);
+        this.elementPopup.add(edit);
+        this.elementPopup.add(remove);
+    }
+
+    private void initFilterCheckBoxes() {
+        ButtonGroup group = new ButtonGroup();
+        group.add(this.onlyHistory);
+        group.add(this.onlySnippets);
+        group.add(this.all);
+
+        this.all.addActionListener(l -> SHOW_ALL.put(this.all.isSelected()));
+        this.onlyHistory.addActionListener(l -> SHOW_ONLY_HISTORY.put(this.onlyHistory.isSelected()));
+        this.onlySnippets.addActionListener(l -> SHOW_ONLY_SNIPPETS.put(this.onlySnippets.isSelected()));
+        ActionListener listener = e -> filterItems();
+        Collections.list(group.getElements()).forEach(cb -> cb.addActionListener(listener));
     }
 
     /**
@@ -434,7 +444,8 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
                     int currentHash = currentName.hashCode();
 
                     return !Utils.isStripEmpty(currentName) &&
-                            !(currentHash != initialNameHash && items.contains(new SelectorItem(currentName, "a")));
+                            !(currentHash != initialNameHash &&
+                                    items.contains(new SelectorItem(currentName, "a")));
                 }
             };
 
@@ -462,27 +473,25 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
         @Override
         protected void buttonAction(int buttonIndex, ActionEvent evt) {
-            switch (buttonIndex) {
-                case SUCCESS_BTN:
-                    if (!this.nameValidator.isValid()) {
-                        JOptionPane.showMessageDialog(
-                                parent,
-                                tr("The item cannot be created with provided name"),
-                                tr("Warning"),
-                                JOptionPane.WARNING_MESSAGE);
-                    } else if (!this.queryValidator.isValid()) {
-                        JOptionPane.showMessageDialog(
-                                parent,
-                                tr("The item cannot be created with an empty query"),
-                                tr("Warning"),
-                                JOptionPane.WARNING_MESSAGE);
-                    } else {
-                        this.outputItem = Optional.of(new SelectorItem(this.name.getText(), this.query.getText()));
-                        super.buttonAction(buttonIndex, evt);
-                    }
-                    break;
-                case CANCEL_BTN:
+            if (buttonIndex == SUCCESS_BTN) {
+                if (!this.nameValidator.isValid()) {
+                    JOptionPane.showMessageDialog(
+                            componentParent,
+                            tr("The item cannot be created with provided name"),
+                            tr("Warning"),
+                            JOptionPane.WARNING_MESSAGE);
+                } else if (!this.queryValidator.isValid()) {
+                    JOptionPane.showMessageDialog(
+                            componentParent,
+                            tr("The item cannot be created with an empty query"),
+                            tr("Warning"),
+                            JOptionPane.WARNING_MESSAGE);
+                } else {
+                    this.outputItem = Optional.of(new SelectorItem(this.name.getText(), this.query.getText()));
                     super.buttonAction(buttonIndex, evt);
+                }
+            } else {
+                super.buttonAction(buttonIndex, evt);
             }
         }
     }
