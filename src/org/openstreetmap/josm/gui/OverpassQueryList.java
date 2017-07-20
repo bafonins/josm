@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 /**
- * TODO
+ * A component to select user saved Overpass queries.
  */
 public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryList.SelectorItem> {
 
@@ -63,8 +63,6 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     private final JCheckBox onlySnippets = new JCheckBox(tr("Show only snippets"), SHOW_ONLY_SNIPPETS.get());
     private final JCheckBox onlyHistory = new JCheckBox(tr("Show only history"), SHOW_ONLY_HISTORY.get());
     private final JCheckBox all = new JCheckBox(tr("Show all"), SHOW_ALL.get());
-    private final JPopupMenu emptySelectionPopup = new JPopupMenu();
-    private final JPopupMenu elementPopup = new JPopupMenu();
 
     /*
      * All loaded elements within the list.
@@ -88,15 +86,14 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
     /**
      * Constructs a new {@code OverpassQueryList}.
-     * @param parent TODO
-     * @param target TODO
+     * @param parent The parent of this component.
+     * @param target The text component to which the queries must be added.
      */
     public OverpassQueryList(Component parent, JTextComponent target) {
         this.target = target;
         this.componentParent = parent;
         this.items = this.restorePreferences();
 
-        initPopupMenus();
         initFilterCheckBoxes();
 
         JPanel filterOptions = new JPanel();
@@ -117,37 +114,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             SelectorItem item = selectedItem.get();
             this.target.setText(item.getQuery());
         });
-        super.lsResult.addMouseListener(new MouseAdapter() {
-            /*
-             * Do not select the closest element if the user clicked on
-             * an empty area within the list.
-             */
-            private int locationToIndex(Point p) {
-                int idx = lsResult.locationToIndex(p);
-
-                if (idx != -1 && !lsResult.getCellBounds(idx, idx).contains(p)) {
-                    return -1;
-                } else {
-                    return idx;
-                }
-            }
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                if (SwingUtilities.isRightMouseButton(e)) {
-                    int index = locationToIndex(e.getPoint());
-
-                    if (lsResultModel.getSize() == 0 || index == -1) {
-                        lsResult.clearSelection();
-                        emptySelectionPopup.show(lsResult, e.getX(), e.getY());
-                    } else {
-                        lsResult.setSelectedIndex(index);
-                        lsResult.ensureIndexIsVisible(index);
-                        elementPopup.show(lsResult, e.getX(), e.getY());
-                    }
-                }
-            }
-        });
+        super.lsResult.addMouseListener(new OverpassQueryListMouseAdapter(lsResult, lsResultModel));
 
         filterItems();
     }
@@ -276,22 +243,6 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
                 .collect(Collectors.toList()));
     }
 
-    private void initPopupMenus() {
-        String addLabel = tr("Add");
-        JMenuItem add = new JMenuItem(addLabel);
-        JMenuItem add2 = new JMenuItem(addLabel);
-        JMenuItem edit = new JMenuItem(tr("Edit"));
-        JMenuItem remove = new JMenuItem(tr("Remove"));
-        add.addActionListener(l -> this.addNewItem());
-        add2.addActionListener(l -> this.addNewItem());
-        edit.addActionListener(l -> this.editSelectedItem());
-        remove.addActionListener(l -> this.removeSelectedItem());
-        this.emptySelectionPopup.add(add);
-        this.elementPopup.add(add2);
-        this.elementPopup.add(edit);
-        this.elementPopup.add(remove);
-    }
-
     private void initFilterCheckBoxes() {
         ButtonGroup group = new ButtonGroup();
         group.add(this.onlyHistory);
@@ -348,6 +299,68 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         }
 
         return result;
+    }
+
+    private class OverpassQueryListMouseAdapter extends MouseAdapter {
+
+        private final JList list;
+        private final ResultListModel model;
+        private final JPopupMenu emptySelectionPopup = new JPopupMenu();
+        private final JPopupMenu elementPopup = new JPopupMenu();
+
+        public OverpassQueryListMouseAdapter(JList list, ResultListModel listModel) {
+            this.list = list;
+            this.model = listModel;
+
+            this.initPopupMenus();
+        }
+
+        /*
+         * Do not select the closest element if the user clicked on
+         * an empty area within the list.
+         */
+        private int locationToIndex(Point p) {
+            int idx = list.locationToIndex(p);
+
+            if (idx != -1 && !list.getCellBounds(idx, idx).contains(p)) {
+                return -1;
+            } else {
+                return idx;
+            }
+        }
+
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            super.mouseClicked(e);
+            if (SwingUtilities.isRightMouseButton(e)) {
+                int index = locationToIndex(e.getPoint());
+
+                if (model.getSize() == 0 || index == -1) {
+                    list.clearSelection();
+                    emptySelectionPopup.show(list, e.getX(), e.getY());
+                } else {
+                    list.setSelectedIndex(index);
+                    list.ensureIndexIsVisible(index);
+                    elementPopup.show(list, e.getX(), e.getY());
+                }
+            }
+        }
+
+        private void initPopupMenus() {
+            String addLabel = tr("Add");
+            JMenuItem add = new JMenuItem(addLabel);
+            JMenuItem add2 = new JMenuItem(addLabel);
+            JMenuItem edit = new JMenuItem(tr("Edit"));
+            JMenuItem remove = new JMenuItem(tr("Remove"));
+            add.addActionListener(l -> addNewItem());
+            add2.addActionListener(l -> addNewItem());
+            edit.addActionListener(l -> editSelectedItem());
+            remove.addActionListener(l -> removeSelectedItem());
+            this.emptySelectionPopup.add(add);
+            this.elementPopup.add(add2);
+            this.elementPopup.add(edit);
+            this.elementPopup.add(remove);
+        }
     }
 
     /**
