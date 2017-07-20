@@ -277,13 +277,17 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     }
 
     private void initPopupMenus() {
-        JMenuItem add = new JMenuItem(tr("Add"));
+        String addLabel = tr("Add");
+        JMenuItem add = new JMenuItem(addLabel);
+        JMenuItem add2 = new JMenuItem(addLabel);
         JMenuItem edit = new JMenuItem(tr("Edit"));
         JMenuItem remove = new JMenuItem(tr("Remove"));
         add.addActionListener(l -> this.addNewItem());
+        add2.addActionListener(l -> this.addNewItem());
         edit.addActionListener(l -> this.editSelectedItem());
         remove.addActionListener(l -> this.removeSelectedItem());
         this.emptySelectionPopup.add(add);
+        this.elementPopup.add(add2);
         this.elementPopup.add(edit);
         this.elementPopup.add(remove);
     }
