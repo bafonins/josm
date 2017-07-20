@@ -6,6 +6,7 @@ import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
@@ -43,6 +44,7 @@ import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.downloadtasks.DownloadOsmTask;
 import org.openstreetmap.josm.actions.downloadtasks.PostDownloadHandler;
 import org.openstreetmap.josm.data.Bounds;
+import org.openstreetmap.josm.data.preferences.BooleanProperty;
 import org.openstreetmap.josm.data.preferences.CollectionProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
 import org.openstreetmap.josm.gui.ExtendedDialog;
@@ -154,8 +156,8 @@ public class OverpassDownloadAction extends JosmAction {
 
         private JosmTextArea overpassQuery;
         private static OverpassDownloadDialog instance;
-        private static final CollectionProperty OVERPASS_WIZARD_HISTORY =
-                new CollectionProperty("download.overpass.wizard", new ArrayList<String>());
+        private static final BooleanProperty OVERPASS_QUERY_LIST_OPENED =
+                new BooleanProperty("download.overpass.query-list.opened", false);
 
         private OverpassDownloadDialog(Component parent) {
             super(parent, ht("/Action/OverpassDownload"));
@@ -213,14 +215,31 @@ public class OverpassDownloadAction extends JosmAction {
                 }
             });
 
+            OverpassQueryList overpassQueryList = new OverpassQueryList(this, this.overpassQuery);
+            overpassQueryList.setToolTipText(tr("Show/hide overpass snippet list"));
+            overpassQueryList.setVisible(OVERPASS_QUERY_LIST_OPENED.get());
+            overpassQueryList.setPreferredSize(new Dimension(350, 300));
             JScrollPane scrollPane = new JScrollPane(overpassQuery);
-            BasicArrowButton arrowButton = new BasicArrowButton(BasicArrowButton.SOUTH);
-            arrowButton.addActionListener(e -> OverpassQueryHistoryPopup.show(arrowButton, OverpassDownloadDialog.this));
+            BasicArrowButton arrowButton = new BasicArrowButton(BasicArrowButton.EAST);
+            arrowButton.addActionListener(e ->  {
+                if (overpassQueryList.isVisible()) {
+                    overpassQueryList.setVisible(false);
+                    arrowButton.setDirection(BasicArrowButton.WEST);
+                    OVERPASS_QUERY_LIST_OPENED.put(false);
+                } else {
+                    overpassQueryList.setVisible(true);
+                    arrowButton.setDirection(BasicArrowButton.EAST);
+                    OVERPASS_QUERY_LIST_OPENED.put(false);
+                }
+            });
+
+            JPanel innerPanel = new JPanel(new BorderLayout());
+            innerPanel.add(scrollPane, BorderLayout.CENTER);
+            innerPanel.add(arrowButton, BorderLayout.EAST);
 
             JPanel pane = new JPanel(new BorderLayout());
-            pane.add(scrollPane, BorderLayout.CENTER);
-            pane.add(arrowButton, BorderLayout.EAST);
-            pane.add(new OverpassQueryList(this, this.overpassQuery), BorderLayout.WEST);
+            pane.add(innerPanel, BorderLayout.CENTER);
+            pane.add(overpassQueryList, BorderLayout.EAST);
 
             GBC gbc = GBC.eol().fill(GBC.HORIZONTAL); gbc.ipady = 200;
             pnl.add(openQueryWizard, GBC.std().insets(5, 5, 5, 5));
