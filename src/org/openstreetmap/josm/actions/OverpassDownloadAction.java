@@ -220,7 +220,9 @@ public class OverpassDownloadAction extends JosmAction {
             overpassQueryList.setVisible(OVERPASS_QUERY_LIST_OPENED.get());
             overpassQueryList.setPreferredSize(new Dimension(350, 300));
             JScrollPane scrollPane = new JScrollPane(overpassQuery);
-            BasicArrowButton arrowButton = new BasicArrowButton(BasicArrowButton.EAST);
+            BasicArrowButton arrowButton = new BasicArrowButton(overpassQueryList.isVisible()
+                ? BasicArrowButton.EAST
+                : BasicArrowButton.WEST);
             arrowButton.addActionListener(e ->  {
                 if (overpassQueryList.isVisible()) {
                     overpassQueryList.setVisible(false);
