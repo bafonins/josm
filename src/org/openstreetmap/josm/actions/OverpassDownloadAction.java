@@ -155,6 +155,7 @@ public class OverpassDownloadAction extends JosmAction {
     private static final class OverpassDownloadDialog extends DownloadDialog {
 
         private JosmTextArea overpassQuery;
+        private OverpassQueryList overpassQueryList;
         private static OverpassDownloadDialog instance;
         private static final BooleanProperty OVERPASS_QUERY_LIST_OPENED =
                 new BooleanProperty("download.overpass.query-list.opened", false);
@@ -215,7 +216,7 @@ public class OverpassDownloadAction extends JosmAction {
                 }
             });
 
-            OverpassQueryList overpassQueryList = new OverpassQueryList(this, this.overpassQuery);
+            this.overpassQueryList = new OverpassQueryList(this, this.overpassQuery);
             overpassQueryList.setToolTipText(tr("Show/hide overpass snippet list"));
             overpassQueryList.setVisible(OVERPASS_QUERY_LIST_OPENED.get());
             overpassQueryList.setPreferredSize(new Dimension(350, 300));
