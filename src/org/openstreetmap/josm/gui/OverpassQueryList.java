@@ -42,12 +42,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.openstreetmap.josm.tools.I18n.tr;
@@ -71,7 +69,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
     /*
      * All loaded elements within the list.
      */
-    private final transient Set<SelectorItem> items;
+    private final transient Map<String, SelectorItem> items;
 
     /*
      * Preferences
@@ -195,9 +193,11 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             return;
         }
 
-        this.items.remove(it.get());
-        savePreferences();
-        filterItems();
+        SelectorItem item = it.get();
+        if (this.items.remove(item.getKey(), item)) {
+            savePreferences();
+            filterItems();
+        }
     }
 
     /**
@@ -226,14 +226,14 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
         Optional<SelectorItem> editedItem = dialog.getOutputItem();
         editedItem.ifPresent(i -> {
-            this.items.remove(item);
+            this.items.remove(i.getKey(), i);
 
             if (item instanceof UserHistory) {
                 UserHistory ht = (UserHistory) item;
-                this.items.add(ht.toUserSnippet());
+                this.items.put(ht.getKey(), ht.toUserSnippet());
             } else if (item instanceof UserSnippet) {
                 UserSnippet st = (UserSnippet) item;
-                this.items.add(new UserSnippet(i.getKey(), i.getQuery(), st.getUseCount()));
+                this.items.put(st.getKey(), new UserSnippet(i.getKey(), i.getQuery(), st.getUseCount()));
             }
 
             savePreferences();
@@ -251,7 +251,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
         Optional<SelectorItem> newItem = dialog.getOutputItem();
         newItem.ifPresent(i -> {
-            items.add(new UserSnippet(i.getKey(), i.getQuery(), 1));
+            items.put(i.getKey(), new UserSnippet(i.getKey(), i.getQuery(), 1));
             savePreferences();
             filterItems();
         });
@@ -269,7 +269,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         boolean history = this.onlyHistory.isSelected();
         boolean allElements = this.all.isSelected();
 
-        super.lsResultModel.setItems(this.items.stream()
+        super.lsResultModel.setItems(this.items.values().stream()
                 .filter(item -> (item instanceof UserSnippet) && snippets ||
                                 (item instanceof UserHistory) && history || allElements)
                 .filter(item -> item.itemKey.contains(text))
@@ -306,7 +306,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
      */
     private void savePreferences() {
         Collection<Map<String, String>> toSave = new ArrayList<>(this.items.size());
-        for (SelectorItem item : this.items) {
+        for (SelectorItem item : this.items.values()) {
             Map<String, String> it = new HashMap<>();
             it.put(KEY_KEY, item.getKey());
             it.put(QUERY_KEY, item.getQuery());
@@ -327,17 +327,19 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
      * Loads the user saved items from {@link Main#pref}.
      * @return A set of the user saved items.
      */
-    private Set<SelectorItem> restorePreferences() {
-        Collection<Map<String, String>> toRetrieve = Main.pref.getListOfStructs(PREFERENCE_ITEMS, Collections.emptyList());
-        Set<SelectorItem> result = new HashSet<>();
+    private Map<String, SelectorItem> restorePreferences() {
+        Collection<Map<String, String>> toRetrieve =
+                Main.pref.getListOfStructs(PREFERENCE_ITEMS, Collections.emptyList());
+        Map<String, SelectorItem> result = new HashMap<>();
+
         for (Map<String, String> entry : toRetrieve) {
             String key = entry.get(KEY_KEY);
             String query = entry.get(QUERY_KEY);
 
             if (entry.containsKey(USE_COUNT_KEY)) {
-                result.add(new UserSnippet(key, query, Integer.parseInt(entry.get(USE_COUNT_KEY))));
+                result.put(key, new UserSnippet(key, query, Integer.parseInt(entry.get(USE_COUNT_KEY))));
             } if (entry.containsKey(LAST_USE_KEY)) {
-                result.add(new UserHistory(key, query, LocalDateTime.parse(entry.get(LAST_USE_KEY))));
+                result.put(key, new UserHistory(key, query, LocalDateTime.parse(entry.get(LAST_USE_KEY))));
             }
         }
 
@@ -445,7 +447,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
 
                     return !Utils.isStripEmpty(currentName) &&
                             !(currentHash != initialNameHash &&
-                                    items.contains(new SelectorItem(currentName, "a")));
+                                    items.containsKey(currentName));
                 }
             };
 
