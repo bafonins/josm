@@ -45,6 +45,8 @@ public class PostDownloadHandler implements Runnable {
      * constructor
      * @param task the asynchronous download task
      * @param future the future on which the completion of the download task can be synchronized
+     * @param errorReporter a callback to inform about the number errors happened during the download
+     *                      task
      */
     public PostDownloadHandler(DownloadTask task, Future<?> future, Consumer<Collection> errorReporter) {
         this(task, future);
