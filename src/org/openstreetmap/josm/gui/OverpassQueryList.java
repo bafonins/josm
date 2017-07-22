@@ -53,7 +53,7 @@ import static org.openstreetmap.josm.tools.I18n.tr;
 /**
  * A component to select user saved Overpass queries.
  */
-public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryList.SelectorItem> {
+public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryList.SelectorItem> {
 
     /*
      * GUI elements
@@ -104,16 +104,7 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         super.add(filterOptions, BorderLayout.SOUTH);
 
         super.lsResult.setCellRenderer(new OverpassQueryCellRendered());
-        super.setDblClickListener(e -> {
-            Optional<SelectorItem> selectedItem = this.getSelectedItem();
-
-            if (!selectedItem.isPresent()) {
-                return;
-            }
-
-            SelectorItem item = selectedItem.get();
-            this.target.setText(item.getQuery());
-        });
+        super.setDblClickListener(this::getDblClickListener);
         super.lsResult.addMouseListener(new OverpassQueryListMouseAdapter(lsResult, lsResultModel));
 
         filterItems();
@@ -140,7 +131,6 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
             snippet.incrementUseCount();
         }
 
-        // update the list according to the usage count/date
         filterItems();
 
         return Optional.of(item);
@@ -254,6 +244,17 @@ public class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryLi
         this.onlySnippets.addActionListener(l -> SHOW_ONLY_SNIPPETS.put(this.onlySnippets.isSelected()));
         ActionListener listener = e -> filterItems();
         Collections.list(group.getElements()).forEach(cb -> cb.addActionListener(listener));
+    }
+
+    private void getDblClickListener(ActionEvent e) {
+        Optional<SelectorItem> selectedItem = this.getSelectedItem();
+
+        if (!selectedItem.isPresent()) {
+            return;
+        }
+
+        SelectorItem item = selectedItem.get();
+        this.target.setText(item.getQuery());
     }
 
     /**
