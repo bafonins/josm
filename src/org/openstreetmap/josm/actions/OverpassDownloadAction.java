@@ -12,6 +12,8 @@ import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
@@ -180,6 +182,20 @@ public class OverpassDownloadAction extends JosmAction {
         protected void buildMainPanelAboveDownloadSelections(JPanel pnl) {
             // needed for the invisible checkboxes cbDownloadGpxData, cbDownloadNotes
             pnl.add(new JLabel(), GBC.eol());
+
+            // save history when the dialog closes by pressing the 'Download' button
+            // do not save invalid requests
+            addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentHidden(ComponentEvent e) {
+                    super.componentHidden(e);
+                    if (OverpassDownloadDialog.getInstance().isCanceled()) {
+                        return;
+                    }
+
+                    overpassQueryList.saveHistoricItem(overpassQuery.getText());
+                }
+            });
 
             DisableActionsFocusListener disableActionsFocusListener =
                     new DisableActionsFocusListener(slippyMapChooser.getNavigationComponentActionMap());

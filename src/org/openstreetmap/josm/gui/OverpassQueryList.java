@@ -32,6 +32,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,6 +50,8 @@ import static org.openstreetmap.josm.tools.I18n.tr;
  * A component to select user saved Overpass queries.
  */
 public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryList.SelectorItem> {
+
+    private final DateTimeFormatter format = DateTimeFormatter.ofPattern("ss:mm:HH, dd-MM-yyyy");
 
     /*
      * GUI elements
@@ -106,6 +110,31 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         filterItems();
 
         return Optional.of(item);
+    }
+
+    /**
+     * Adds a new historic item to the list. The key has form 'history {current date}'.
+     * Note, the item is not saved if there is already a historic item with the same query.
+     * @param query The query of the item.
+     * @exception IllegalArgumentException if the query is empty.
+     * @exception NullPointerException if the query is {@code null}.
+     */
+    public synchronized void saveHistoricItem(String query) {
+        boolean historicExist = this.items.values().stream()
+                .filter(it -> it.getKey().contains("history"))
+                .map(SelectorItem::getQuery)
+                .anyMatch(q -> q.equals(query));
+
+        if (!historicExist) {
+            SelectorItem item = new SelectorItem(
+                    "history " + LocalDateTime.now().format(this.format),
+                    query);
+
+            this.items.put(item.getKey(), item);
+
+            savePreferences();
+            filterItems();
+        }
     }
 
     /**
@@ -455,6 +484,10 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         }
     }
 
+    /**
+     * This class represents an Overpass query used by the user that can be
+     * shown within {@link OverpassQueryList}.
+     */
     public class SelectorItem {
         private final String itemKey;
         private final String query;
