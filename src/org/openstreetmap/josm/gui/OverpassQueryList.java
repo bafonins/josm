@@ -1,7 +1,6 @@
 package org.openstreetmap.josm.gui;
 
 import org.openstreetmap.josm.Main;
-import org.openstreetmap.josm.data.preferences.BooleanProperty;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.widgets.AbstractTextComponentValidator;
 import org.openstreetmap.josm.gui.widgets.DefaultTextComponentValidator;
@@ -11,9 +10,6 @@ import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.Utils;
 
 import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
-import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenuItem;
@@ -26,7 +22,6 @@ import javax.swing.ListCellRenderer;
 import javax.swing.SwingUtilities;
 import javax.swing.border.CompoundBorder;
 import javax.swing.text.JTextComponent;
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -37,7 +32,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,9 +54,6 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      */
     private final JTextComponent target;
     private final Component componentParent;
-    private final JCheckBox onlySnippets = new JCheckBox(tr("Show only snippets"), SHOW_ONLY_SNIPPETS.get());
-    private final JCheckBox onlyHistory = new JCheckBox(tr("Show only history"), SHOW_ONLY_HISTORY.get());
-    private final JCheckBox all = new JCheckBox(tr("Show all"), SHOW_ALL.get());
 
     /*
      * All loaded elements within the list.
@@ -75,14 +66,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
     private static final String KEY_KEY = "key";
     private static final String QUERY_KEY = "query";
     private static final String USE_COUNT_KEY = "useCount";
-    private static final String LAST_USE_KEY = "lastUse";
     private static final String PREFERENCE_ITEMS = "download.overpass.query";
-    private static final BooleanProperty SHOW_ONLY_SNIPPETS =
-            new BooleanProperty("download.overpass.only-snippets", false);
-    private static final BooleanProperty SHOW_ONLY_HISTORY =
-            new BooleanProperty("download.overpass.only-history", false);
-    private static final BooleanProperty SHOW_ALL =
-            new BooleanProperty("download.overpass.all", true);
 
     /**
      * Constructs a new {@code OverpassQueryList}.
@@ -93,15 +77,6 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         this.target = target;
         this.componentParent = parent;
         this.items = this.restorePreferences();
-
-        initFilterCheckBoxes();
-
-        JPanel filterOptions = new JPanel();
-        filterOptions.setLayout(new BoxLayout(filterOptions, BoxLayout.Y_AXIS));
-        filterOptions.add(this.all);
-        filterOptions.add(this.onlySnippets);
-        filterOptions.add(this.onlyHistory);
-        super.add(filterOptions, BorderLayout.SOUTH);
 
         super.lsResult.setCellRenderer(new OverpassQueryCellRendered());
         super.setDblClickListener(this::getDblClickListener);
@@ -122,14 +97,11 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         }
 
         SelectorItem item = lsResultModel.getElementAt(idx);
+        item.increaseUsageCount();
 
-        if (item instanceof UserHistory) {
-            UserHistory history = (UserHistory) item;
-            history.changeLastDateTimeToNow();
-        } else {
-            UserSnippet snippet = (UserSnippet) item;
-            snippet.incrementUseCount();
-        }
+        this.items.values().stream()
+                .filter(it -> !it.getKey().equals(item.getKey()))
+                .forEach(SelectorItem::decreaseUsageCount);
 
         filterItems();
 
@@ -183,15 +155,8 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         Optional<SelectorItem> editedItem = dialog.getOutputItem();
         editedItem.ifPresent(i -> {
-            this.items.remove(i.getKey(), i);
-
-            if (item instanceof UserHistory) {
-                UserHistory ht = (UserHistory) item;
-                this.items.put(ht.getKey(), ht.toUserSnippet());
-            } else if (item instanceof UserSnippet) {
-                UserSnippet st = (UserSnippet) item;
-                this.items.put(st.getKey(), new UserSnippet(i.getKey(), i.getQuery(), st.getUseCount()));
-            }
+            this.items.remove(item.getKey(), item);
+            this.items.put(i.getKey(), i);
 
             savePreferences();
             filterItems();
@@ -208,7 +173,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         Optional<SelectorItem> newItem = dialog.getOutputItem();
         newItem.ifPresent(i -> {
-            items.put(i.getKey(), new UserSnippet(i.getKey(), i.getQuery(), 1));
+            items.put(i.getKey(), new SelectorItem(i.getKey(), i.getQuery()));
             savePreferences();
             filterItems();
         });
@@ -222,28 +187,10 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
     @Override
     protected void filterItems() {
         String text = edSearchText.getText().toLowerCase(Locale.ENGLISH);
-        boolean snippets = this.onlySnippets.isSelected();
-        boolean history = this.onlyHistory.isSelected();
-        boolean allElements = this.all.isSelected();
 
         super.lsResultModel.setItems(this.items.values().stream()
-                .filter(item -> (item instanceof UserSnippet) && snippets ||
-                                (item instanceof UserHistory) && history || allElements)
-                .filter(item -> item.itemKey.contains(text))
+                .filter(item -> item.getKey().contains(text))
                 .collect(Collectors.toList()));
-    }
-
-    private void initFilterCheckBoxes() {
-        ButtonGroup group = new ButtonGroup();
-        group.add(this.onlyHistory);
-        group.add(this.onlySnippets);
-        group.add(this.all);
-
-        this.all.addActionListener(l -> SHOW_ALL.put(this.all.isSelected()));
-        this.onlyHistory.addActionListener(l -> SHOW_ONLY_HISTORY.put(this.onlyHistory.isSelected()));
-        this.onlySnippets.addActionListener(l -> SHOW_ONLY_SNIPPETS.put(this.onlySnippets.isSelected()));
-        ActionListener listener = e -> filterItems();
-        Collections.list(group.getElements()).forEach(cb -> cb.addActionListener(listener));
     }
 
     private void getDblClickListener(ActionEvent e) {
@@ -266,12 +213,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
             Map<String, String> it = new HashMap<>();
             it.put(KEY_KEY, item.getKey());
             it.put(QUERY_KEY, item.getQuery());
-
-            if (item instanceof UserHistory) {
-                it.put(LAST_USE_KEY, ((UserHistory) item).getLastUseDateTime().toString());
-            } else {
-                it.put(USE_COUNT_KEY, Integer.toString(((UserSnippet) item).getUseCount()));
-            }
+            it.put(USE_COUNT_KEY, Integer.toString(item.getUsageCount()));
 
             toSave.add(it);
         }
@@ -291,12 +233,9 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         for (Map<String, String> entry : toRetrieve) {
             String key = entry.get(KEY_KEY);
             String query = entry.get(QUERY_KEY);
+            int usageCount = Integer.parseInt(entry.get(USE_COUNT_KEY));
 
-            if (entry.containsKey(USE_COUNT_KEY)) {
-                result.put(key, new UserSnippet(key, query, Integer.parseInt(entry.get(USE_COUNT_KEY))));
-            } if (entry.containsKey(LAST_USE_KEY)) {
-                result.put(key, new UserHistory(key, query, LocalDateTime.parse(entry.get(LAST_USE_KEY))));
-            }
+            result.put(key, new SelectorItem(key, query, usageCount));
         }
 
         return result;
@@ -519,6 +458,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
     public class SelectorItem {
         private final String itemKey;
         private final String query;
+        private int usageCount;
 
         /**
          * Constructs a new {@code SelectorItem}.
@@ -528,6 +468,18 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
          * @exception IllegalArgumentException if any parameter is empty.
          */
         public SelectorItem(String key, String query) {
+            this(key, query, 1);
+        }
+
+        /**
+         * Constructs a new {@code SelectorItem}.
+         * @param key The key of this item.
+         * @param query The query of the item.
+         * @param usageCount The number of times this query was used.
+         * @exception NullPointerException if any parameter is {@code null}.
+         * @exception IllegalArgumentException if any parameter is empty.
+         */
+        public SelectorItem(String key, String query, int usageCount) {
             Objects.requireNonNull(key);
             Objects.requireNonNull(query);
 
@@ -540,6 +492,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
             this.itemKey = key;
             this.query = query;
+            this.usageCount = usageCount;
         }
 
         /**
@@ -558,6 +511,34 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
             return this.query;
         }
 
+        /**
+         * Gets the number of times the query was used by the user.
+         * @return The usage count of this item.
+         */
+        public int getUsageCount() {
+            return this.usageCount;
+        }
+
+        /**
+         * Increments the {@link SelectorItem#usageCount} by one till
+         * it reaches {@link Integer#MAX_VALUE}.
+         */
+        public void increaseUsageCount() {
+            if (this.usageCount < Integer.MAX_VALUE) {
+                this.usageCount++;
+            }
+        }
+
+        /**
+         * Decrements the {@link SelectorItem#usageCount} ny one till
+         * it reaches 0.
+         */
+        public void decreaseUsageCount() {
+            if (this.usageCount > 0) {
+                this.usageCount--;
+            }
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -565,94 +546,13 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
             SelectorItem that = (SelectorItem) o;
 
-            return itemKey.equals(that.itemKey);
+            return itemKey.equals(that.itemKey) &&
+                    query.equals(that.getKey());
         }
 
         @Override
         public int hashCode() {
             return itemKey.hashCode();
-        }
-    }
-
-    public class UserSnippet extends SelectorItem implements Comparable<UserSnippet> {
-        private int useCount;
-
-        public UserSnippet(String key, String query, int useCount) {
-            super(key, query);
-            this.useCount = useCount;
-        }
-
-        public int getUseCount() {
-            return this.useCount;
-        }
-
-        public int incrementUseCount() {
-            return ++this.useCount;
-        }
-
-        @Override
-        public int compareTo(UserSnippet o) {
-            return o.getUseCount() - this.getUseCount();
-        }
-
-        @Override
-        public String toString() {
-            String end = "\',\n";
-            return "UserSnippet{" +
-                    "itemKey='" + this.getKey() + end +
-                    "query='" + this.getQuery() + end +
-                    "useCount=" + useCount +
-                    '}';
-        }
-    }
-
-    public class UserHistory extends SelectorItem implements Comparable<UserHistory> {
-
-        private LocalDateTime lastUse;
-
-        public UserHistory(String key, String query, LocalDateTime lastUseDateTime) {
-            super(key, query);
-            this.lastUse = lastUseDateTime;
-        }
-
-        @Override
-        public int compareTo(UserHistory o) {
-            return this.getLastUseDateTime().compareTo(o.getLastUseDateTime());
-        }
-
-        /**
-         * Gets the date when the history item was used for the last time.
-         * @return The date when the item was used for the last time.
-         */
-        public LocalDateTime getLastUseDateTime() {
-            return this.lastUse;
-        }
-
-        /**
-         * Transforms a {@link UserHistory} item into a {@link UserSnippet} object.
-         * Can be used if the user decides to make a snippet out of already used query which
-         * already is represented in the selector, but as the history item.
-         * @return A new {@link UserSnippet} object with initial usage count equal to 1.
-         */
-        public UserSnippet toUserSnippet() {
-            return new UserSnippet(
-                    this.getKey(),
-                    this.getQuery(),
-                    1
-            );
-        }
-
-        public void changeLastDateTimeToNow() {
-            this.lastUse = LocalDateTime.now();
-        }
-
-        @Override
-        public String toString() {
-            return "UserHistory{" +
-                    "itemKey='" + this.getKey() + "\',\n" +
-                    ", query='" + this.getQuery() + "\',\n" +
-                    ", lastUse=" + lastUse +
-                    '}';
         }
     }
 }
