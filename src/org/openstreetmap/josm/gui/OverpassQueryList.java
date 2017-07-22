@@ -277,7 +277,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         private final JPopupMenu emptySelectionPopup = new JPopupMenu();
         private final JPopupMenu elementPopup = new JPopupMenu();
 
-        public OverpassQueryListMouseAdapter(JList list, ResultListModel listModel) {
+        OverpassQueryListMouseAdapter(JList list, ResultListModel listModel) {
             this.list = list;
             this.model = listModel;
 
@@ -337,7 +337,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      */
     private static class OverpassQueryCellRendered extends JLabel implements ListCellRenderer<SelectorItem> {
 
-        public OverpassQueryCellRendered() {
+        OverpassQueryCellRendered() {
             setOpaque(true);
         }
 
@@ -398,11 +398,11 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
          */
         private transient Optional<SelectorItem> outputItem = Optional.empty();
 
-        public EditItemDialog(Component parent, String title, String... buttonTexts) {
+        EditItemDialog(Component parent, String title, String... buttonTexts) {
             this(parent, title, "", "", buttonTexts);
         }
 
-        public EditItemDialog(
+        EditItemDialog(
                 Component parent,
                 String title,
                 String nameToEdit,
