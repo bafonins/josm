@@ -202,7 +202,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      * Opens {@link EditItemDialog}, saves the state to preferences if a new item is added
      * and updates the view.
      */
-    private synchronized void addNewItem() {
+    private synchronized void createNewItem() {
         EditItemDialog dialog = new EditItemDialog(componentParent, tr("Add snippet"), tr("Add"));
         dialog.showDialog();
 
@@ -353,8 +353,8 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
             JMenuItem add2 = new JMenuItem(addLabel);
             JMenuItem edit = new JMenuItem(tr("Edit"));
             JMenuItem remove = new JMenuItem(tr("Remove"));
-            add.addActionListener(l -> addNewItem());
-            add2.addActionListener(l -> addNewItem());
+            add.addActionListener(l -> createNewItem());
+            add2.addActionListener(l -> createNewItem());
             edit.addActionListener(l -> editSelectedItem());
             remove.addActionListener(l -> removeSelectedItem());
             this.emptySelectionPopup.add(add);
