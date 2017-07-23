@@ -116,10 +116,9 @@ public class OverpassDownloadAction extends JosmAction {
          */
         Consumer<Collection> errorReporter = (errors) -> {
 
-            boolean success = errors.isEmpty() || errors.stream()
-                    .limit(1)
+            boolean success = errors.isEmpty() || (errors.size() == 1 && errors.stream()
                     .map(Object::toString)
-                    .anyMatch(err -> err.equals("No data found in this area."));
+                    .anyMatch(err -> err.equals("No data found in this area.")));
 
             if (success) {
                 dialog.saveHistoricItemOnSuccess();
