@@ -83,9 +83,11 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         this.componentParent = parent;
         this.items = this.restorePreferences();
 
+        OverpassQueryListMouseAdapter mouseHandler = new OverpassQueryListMouseAdapter(lsResult, lsResultModel);
         super.lsResult.setCellRenderer(new OverpassQueryCellRendered());
         super.setDblClickListener(this::getDblClickListener);
-        super.lsResult.addMouseListener(new OverpassQueryListMouseAdapter(lsResult, lsResultModel));
+        super.lsResult.addMouseListener(mouseHandler);
+        super.lsResult.addMouseMotionListener(mouseHandler);
 
         filterItems();
     }
@@ -277,6 +279,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         private final ResultListModel model;
         private final JPopupMenu emptySelectionPopup = new JPopupMenu();
         private final JPopupMenu elementPopup = new JPopupMenu();
+        private final JPopupMenu queryLookup = new JPopupMenu();
 
         OverpassQueryListMouseAdapter(JList list, ResultListModel listModel) {
             this.list = list;
@@ -314,6 +317,19 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                     elementPopup.show(list, e.getX(), e.getY());
                 }
             }
+        }
+
+        @Override
+        public void mouseMoved(MouseEvent e) {
+            super.mouseMoved(e);
+            int idx = locationToIndex(e.getPoint());
+            if (idx == -1) {
+                return;
+            }
+
+            SelectorItem item = (SelectorItem) model.getElementAt(idx);
+            list.setToolTipText("<html><pre style='width:300px;'>" +
+                    Utils.escapeReservedCharactersHTML(Utils.restrictStringLines(item.getQuery(), 9)));
         }
 
         private void initPopupMenus() {
