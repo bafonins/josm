@@ -215,8 +215,9 @@ public class OverpassDownloadAction extends JosmAction {
 
             // CHECKSTYLE.OFF: LineLength
             this.overpassQuery = new JosmTextArea(
-                    tr("{0} Place your Overpass query below or {1} generate one using the Overpass Turbo Query Wizard {2}",
-                            "/*\n", "\n", "\n */\n"),
+                    "/*\n" +
+                    tr("Place your Overpass query below or \n generate one using the Overpass Turbo Query Wizard")
+                    + " \n*/",
                     8, 80);
             // CHECKSTYLE.ON: LineLength
             this.overpassQuery.setFont(GuiHelper.getMonospacedFont(overpassQuery));
@@ -234,7 +235,7 @@ public class OverpassDownloadAction extends JosmAction {
             });
 
             this.overpassQueryList = new OverpassQueryList(this, this.overpassQuery);
-            overpassQueryList.setToolTipText(tr("Show/hide overpass snippet list"));
+            overpassQueryList.setToolTipText(tr("Show/hide Overpass snippet list"));
             overpassQueryList.setVisible(OVERPASS_QUERY_LIST_OPENED.get());
             overpassQueryList.setPreferredSize(new Dimension(350, 300));
             JScrollPane scrollPane = new JScrollPane(overpassQuery);
@@ -327,7 +328,7 @@ public class OverpassDownloadAction extends JosmAction {
                 + "</style>\n";
 
         private QueryWizardDialog() {
-            super(OverpassDownloadDialog.getInstance(), "Overpass Turbo Query Wizard",
+            super(OverpassDownloadDialog.getInstance(), tr("Overpass Turbo Query Wizard"),
                     tr("Build query"), tr("Build query and execute"), tr("Cancel"));
 
             this.queryWizard = new HistoryComboBox();
@@ -400,8 +401,8 @@ public class OverpassDownloadAction extends JosmAction {
                 JOptionPane.showMessageDialog(
                         OverpassDownloadDialog.getInstance(),
                         "<html>" +
-                         tr("The Overpass wizard could not parse the following query:" +
-                         Utils.joinAsHtmlUnorderedList(Collections.singleton(searchTerm))) +
+                         tr("The Overpass wizard could not parse the following query:") +
+                         Utils.joinAsHtmlUnorderedList(Collections.singleton(searchTerm)) +
                          "</html>",
                         tr("Parse error"),
                         JOptionPane.ERROR_MESSAGE
@@ -449,16 +450,16 @@ public class OverpassDownloadAction extends JosmAction {
                     .append(tr("Query Wizard"))
                     .append("</h3>")
                     .append("<p>")
-                    .append(tr("Allows you to interact with <i>Overpass API</i> by writing declarative, human-readable terms. "))
-                    .append(tr("The <i>Query Wizard</i> tool will transform those to a valid overpass query. "))
+                    .append(tr("Allows you to interact with <i>Overpass API</i> by writing declarative, human-readable terms."))
+                    .append(tr("The <i>Query Wizard</i> tool will transform those to a valid overpass query."))
                     .append(tr("For more detailed description see "))
                     .append(tr("<a href=\"{0}\">OSM Wiki</a>.", Main.getOSMWebsite() + "/wiki/Overpass_turbo/Wizard"))
                     .append("</p>")
-                    .append(tr("<h3>Hints</h3>"))
+                    .append("<h3>").append(tr("Hints")).append("</h3>")
                     .append("<table>").append("<tr>").append("<td>")
                     .append(Utils.joinAsHtmlUnorderedList(Arrays.asList("<i>type:node</i>", "<i>type:relation</i>", "<i>type:way</i>")))
                     .append("</td>").append("<td>")
-                    .append(tr("<span>Download objects of a certain type.</span>"))
+                    .append("<span>").append(tr("Download objects of a certain type.")).append("</span>")
                     .append("</td>").append("</tr>")
                     .append("<tr>").append("<td>")
                     .append(Utils.joinAsHtmlUnorderedList(
