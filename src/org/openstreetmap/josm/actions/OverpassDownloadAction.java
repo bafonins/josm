@@ -112,11 +112,12 @@ public class OverpassDownloadAction extends JosmAction {
         /*
          * A callback that is passed to PostDownloadReporter that is called once the download task
          * has finished. According to the number of errors happened, their type we decide whether we
-         * want to save the last query.
+         * want to save the last query in OverpassQueryList.
          */
         Consumer<Collection> errorReporter = (errors) -> {
 
             boolean success = errors.isEmpty() || errors.stream()
+                    .limit(1)
                     .map(Object::toString)
                     .anyMatch(err -> err.equals("No data found in this area."));
 
