@@ -480,6 +480,10 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
             setContent(panel, false);
         }
 
+        /**
+         * Gets a new {@link SelectorItem} if one was created/modified.
+         * @return A {@link SelectorItem} object created out of the fields of the dialog.
+         */
         public Optional<SelectorItem> getOutputItem() {
             return this.outputItem;
         }
