@@ -208,7 +208,7 @@ public class OverpassDownloadAction extends JosmAction {
             this.overpassQuery = new JosmTextArea(
                     "/*\n" +
                     tr("Place your Overpass query below or \n generate one using the Overpass Turbo Query Wizard")
-                    + " \n*/",
+                    + "\n*/",
                     8, 80);
             // CHECKSTYLE.ON: LineLength
             this.overpassQuery.setFont(GuiHelper.getMonospacedFont(overpassQuery));
