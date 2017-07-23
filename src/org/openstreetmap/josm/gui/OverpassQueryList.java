@@ -9,6 +9,7 @@ import org.openstreetmap.josm.gui.widgets.SearchTextResultListPanel;
 import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.Utils;
 
+import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -51,7 +52,7 @@ import static org.openstreetmap.josm.tools.I18n.tr;
  */
 public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQueryList.SelectorItem> {
 
-    private final DateTimeFormatter format = DateTimeFormatter.ofPattern("ss:mm:HH, dd-MM-yyyy");
+    private final DateTimeFormatter format = DateTimeFormatter.ofPattern("HH:mm:ss, dd-MM-yyyy");
 
     /*
      * GUI elements
@@ -316,17 +317,26 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         }
 
         private void initPopupMenus() {
-            String addLabel = tr("Add");
-            JMenuItem add = new JMenuItem(addLabel);
-            JMenuItem add2 = new JMenuItem(addLabel);
-            JMenuItem edit = new JMenuItem(tr("Edit"));
-            JMenuItem remove = new JMenuItem(tr("Remove"));
-            add.addActionListener(l -> createNewItem());
-            add2.addActionListener(l -> createNewItem());
-            edit.addActionListener(l -> editSelectedItem());
-            remove.addActionListener(l -> removeSelectedItem());
+            AbstractAction add = new AbstractAction(tr("Add")) {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    createNewItem();
+                }
+            };
+            AbstractAction edit = new AbstractAction(tr("Edit")) {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    editSelectedItem();
+                }
+            };
+            AbstractAction remove = new AbstractAction(tr("Remove")) {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    removeSelectedItem();
+                }
+            };
             this.emptySelectionPopup.add(add);
-            this.elementPopup.add(add2);
+            this.elementPopup.add(add);
             this.elementPopup.add(edit);
             this.elementPopup.add(remove);
         }
