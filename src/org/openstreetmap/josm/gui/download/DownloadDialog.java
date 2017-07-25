@@ -458,8 +458,8 @@ public class DownloadDialog extends JDialog {
     }
 
     /**
-     * Returns an {@link Optional<Bounds>} of the currently selected download area.
-     * @return An {@link Optional<Bounds>} of the currently selected download area.
+     * Returns an {@link Optional} of the currently selected download area.
+     * @return An {@link Optional} of the currently selected download area.
      */
     public Optional<Bounds> getSelectedDownloadArea() {
         return Optional.ofNullable(currentBounds);

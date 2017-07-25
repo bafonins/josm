@@ -1,3 +1,4 @@
+// License: GPL. For details, see LICENSE file.
 package org.openstreetmap.josm.gui;
 
 import org.openstreetmap.josm.Main;
@@ -181,7 +182,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                 tr("Edit item"),
                 item.getKey(),
                 item.getQuery(),
-                new String[] { tr("Save") });
+                new String[] {tr("Save")});
         dialog.showDialog();
 
         Optional<SelectorItem> editedItem = dialog.getOutputItem();
