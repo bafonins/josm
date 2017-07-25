@@ -272,7 +272,6 @@ public class ProjectionPreference implements SubPreferenceSetting {
     }
 
     private static String projectionChoice;
-    private static final Map<String, Collection<String>> projectionChoicesSub = new HashMap<>();
     
     private static final StringProperty PROP_PROJECTION_DEFAULT = new StringProperty("projection.default", mercator.getId());
     private static final StringProperty PROP_COORDINATES = new StringProperty("coordinates", null);
@@ -462,13 +461,12 @@ public class ProjectionPreference implements SubPreferenceSetting {
             pc = mercator;
         }
         id = pc.getId();
+        Main.pref.putCollection("projection.sub."+id, pref);
         if (makeDefault) {
             PROP_PROJECTION_DEFAULT.put(id);
             PROP_SUB_PROJECTION_DEFAULT.put(pref);
-            Main.pref.putCollection("projection.default.sub."+id, pref);
         } else {
             projectionChoice = id;
-            projectionChoicesSub.put(id, pref);
         }
         pc.setPreferences(pref);
         Projection proj = pc.getProjection();
@@ -502,11 +500,11 @@ public class ProjectionPreference implements SubPreferenceSetting {
      * @return the choice class for user selection
      */
     private ProjectionChoice setupProjectionCombo() {
-        String pcId = projectionChoice != null ? projectionChoice : PROP_PROJECTION_DEFAULT.get();
+        String pcId = getCurrentProjectionChoiceId();
         ProjectionChoice pc = null;
         for (int i = 0; i < projectionCombo.getItemCount(); ++i) {
             ProjectionChoice pc1 = projectionCombo.getItemAt(i);
-            pc1.setPreferences(getSubprojectionPreference(pc1));
+            pc1.setPreferences(getSubprojectionPreference(pc1.getId()));
             if (pc1.getId().equals(pcId)) {
                 projectionCombo.setSelectedIndex(i);
                 selectedProjectionChanged(pc1);
@@ -525,11 +523,23 @@ public class ProjectionPreference implements SubPreferenceSetting {
         return pc;
     }
 
-    private static Collection<String> getSubprojectionPreference(ProjectionChoice pc) {
-        Collection<String> sessionValue = projectionChoicesSub.get(pc.getId());
-        if (sessionValue != null)
-            return sessionValue;
-        return Main.pref.getCollection("projection.default.sub."+pc.getId(), null);
+    /**
+     * Get the id of the projection choice that is currently set.
+     * @return id of the projection choice that is currently set
+     */
+    public static String getCurrentProjectionChoiceId() {
+        return projectionChoice != null ? projectionChoice : PROP_PROJECTION_DEFAULT.get();
+    }
+
+    /**
+     * Get the preferences that have been selected the last time for the given
+     * projection choice.
+     * @param pcId id of the projection choice
+     * @return projection choice parameters that have been selected by the user
+     * the last time; null if user has never selected the given projection choice
+     */
+    public static Collection<String> getSubprojectionPreference(String pcId) {
+        return Main.pref.getCollection("projection.sub."+pcId, null);
     }
 
     @Override
