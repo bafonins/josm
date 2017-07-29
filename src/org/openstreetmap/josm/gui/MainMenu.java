@@ -7,7 +7,11 @@ import static org.openstreetmap.josm.tools.I18n.trc;
 
 import java.awt.Component;
 import java.awt.GraphicsEnvironment;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.awt.event.KeyEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -824,6 +828,10 @@ public class MainMenu extends JMenuBar {
         windowMenu.addMenuListener(menuSeparatorHandler);
 
         new PresetsMenuEnabler(presetsMenu);
+
+        for (int i = 0; i < getMenuCount(); i++) {
+            this.addEnabledMenuItemPropertyListener(getMenu(i));
+        }
     }
 
     /**
@@ -885,6 +893,51 @@ public class MainMenu extends JMenuBar {
             audioMenu = null;
             validate();
         }
+    }
+
+    /**
+     * Adds listeners on the 'enabled' property for each item within the menu. The listener
+     * hides the menu if none of its items are enabled and shows the menu iff at least one is enabled.
+     * @param menu The menu to add the listener to.
+     */
+    private void addEnabledMenuItemPropertyListener(JMenu menu) {
+        PropertyChangeListener enabledListener = (ev) -> {
+            boolean newValue = (boolean) ev.getNewValue();
+
+            // if the item became enabled and the menu is visible, nothing will change,
+            // so do not loop over all other items
+            if (newValue && menu.isVisible()) {
+                return;
+            }
+
+            for (int i = 0; i < menu.getItemCount(); i++) {
+                JMenuItem item = menu.getItem(i);
+                if (item == null) {
+                    continue;
+                }
+
+                if (item.isEnabled()) {
+                    editMenu.setVisible(true);
+                    return;
+                }
+            }
+
+            menu.setVisible(false);
+        };
+
+        boolean showMenu = false;
+        for (int i = 0; i < menu.getItemCount(); i++) {
+            JMenuItem item = menu.getItem(i);
+            if (item == null) {
+                continue;
+            }
+
+            Main.info(item.isEnabled() + "");
+            showMenu |= item.isEnabled();
+            item.addPropertyChangeListener("enabled", enabledListener);
+        }
+
+        menu.setVisible(showMenu);
     }
 
     static class PresetsMenuEnabler implements ActiveLayerChangeListener {
