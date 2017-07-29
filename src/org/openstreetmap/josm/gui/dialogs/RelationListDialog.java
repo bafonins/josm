@@ -177,7 +177,7 @@ public class RelationListDialog extends ToggleDialog
 
         // Edit relation on Ctrl-Enter
         displaylist.getActionMap().put("edit", editAction);
-        displaylist.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, KeyEvent.CTRL_MASK), "edit");
+        displaylist.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, KeyEvent.CTRL_DOWN_MASK), "edit");
 
         // Do not hide copy action because of default JList override (fix #9815)
         displaylist.getActionMap().put("copy", Main.main.menu.copy);
@@ -420,7 +420,7 @@ public class RelationListDialog extends ToggleDialog
         }
 
         private boolean isValid(Relation r) {
-            return !r.isDeleted() && r.isVisible() && !r.isIncomplete();
+            return !r.isDeleted() && !r.isIncomplete();
         }
 
         public void setRelations(Collection<Relation> relations) {
