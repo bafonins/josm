@@ -906,7 +906,7 @@ public class MainMenu extends JMenuBar {
 
             // if the item became enabled and the menu is visible, nothing will change,
             // so do not loop over all other items
-            if (newValue && menu.isVisible()) {
+            if (newValue && menu.isEnabled()) {
                 return;
             }
 
@@ -925,7 +925,7 @@ public class MainMenu extends JMenuBar {
                 }
             }
 
-            menu.setVisible(false);
+            menu.setEnabled(false);
         };
 
         boolean showMenu = false;
