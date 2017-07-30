@@ -938,6 +938,7 @@ public class MainMenu extends JMenuBar {
             menu.setEnabled(false);
         };
 
+        // determine if the menu must be disabled in the beginning
         boolean enableMenu = false;
         for (int i = 0; i < menu.getItemCount(); i++) {
             JMenuItem item = menu.getItem(i);
