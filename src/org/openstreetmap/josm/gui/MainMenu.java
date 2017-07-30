@@ -7,17 +7,7 @@ import static org.openstreetmap.josm.tools.I18n.trc;
 
 import java.awt.Component;
 import java.awt.GraphicsEnvironment;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,7 +15,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.swing.AbstractButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -35,8 +24,6 @@ import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
 
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.AboutAction;
