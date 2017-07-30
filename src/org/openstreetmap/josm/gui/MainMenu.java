@@ -917,7 +917,10 @@ public class MainMenu extends JMenuBar {
                 }
 
                 if (item.isEnabled()) {
-                    editMenu.setVisible(true);
+                    if (!menu.isEnabled()) {
+                        menu.setEnabled(true);
+                    }
+                    
                     return;
                 }
             }
