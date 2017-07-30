@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import javax.swing.AbstractButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -839,8 +840,7 @@ public class MainMenu extends JMenuBar {
         new PresetsMenuEnabler(presetsMenu);
 
         for (int i = 0; i < getMenuCount(); i++) {
-            JMenu menu = getMenu(i);
-            addEnabledMenuItemPropertyListener(menu);
+            addEnabledMenuItemPropertyListener(getMenu(i));
         }
     }
 
@@ -914,9 +914,8 @@ public class MainMenu extends JMenuBar {
         PropertyChangeListener enabledListener = (ev) -> {
             boolean newValue = (boolean) ev.getNewValue();
 
-            // if the item became enabled and the menu is visible, nothing will change,
-            // so do not loop over all other items
-            if (newValue && menu.isEnabled()) {
+            if (newValue && menu.isEnabled() ||
+                !newValue && !menu.isEnabled()) {
                 return;
             }
 
@@ -927,10 +926,7 @@ public class MainMenu extends JMenuBar {
                 }
 
                 if (item.isEnabled()) {
-                    if (!menu.isEnabled()) {
-                        menu.setEnabled(true);
-                    }
-                    
+                    menu.setEnabled(true);
                     return;
                 }
             }
@@ -951,6 +947,9 @@ public class MainMenu extends JMenuBar {
         }
 
         menu.setEnabled(enableMenu);
+        menu.addPropertyChangeListener("enabled", ev -> {
+            Main.info("enabled property changed, now its = " + menu.isEnabled());
+        });
     }
 
     static class PresetsMenuEnabler implements ActiveLayerChangeListener {
