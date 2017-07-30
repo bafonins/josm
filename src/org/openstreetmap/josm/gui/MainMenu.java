@@ -901,8 +901,7 @@ public class MainMenu extends JMenuBar {
         PropertyChangeListener enabledListener = (ev) -> {
             boolean newValue = (boolean) ev.getNewValue();
 
-            if (newValue && menu.isEnabled() ||
-                !newValue && !menu.isEnabled()) {
+            if ((newValue && menu.isEnabled()) || (!newValue && !menu.isEnabled())) {
                 return;
             }
 
