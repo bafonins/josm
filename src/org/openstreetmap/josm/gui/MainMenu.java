@@ -609,7 +609,7 @@ public class MainMenu extends JMenuBar {
      * @return the newly created menu
      */
     public JMenu addMenu(String name, String translatedName, int mnemonicKey, int position, String relativeHelpTopic) {
-        final JMenu menu = new JMenu(translatedName);
+        final JosmMenu menu = new JosmMenu(translatedName);
         if (!GraphicsEnvironment.isHeadless()) {
             MenuScroller.setScrollerFor(menu);
         }
@@ -826,9 +826,9 @@ public class MainMenu extends JMenuBar {
 
         new PresetsMenuEnabler(presetsMenu);
 
-        for (int i = 0; i < getMenuCount(); i++) {
-            addEnabledMenuItemPropertyListener(getMenu(i));
-        }
+//        for (int i = 0; i < getMenuCount(); i++) {
+//            addEnabledMenuItemPropertyListener(getMenu(i));
+//        }
     }
 
     /**
@@ -892,48 +892,45 @@ public class MainMenu extends JMenuBar {
         }
     }
 
-    /**
-     * Adds listeners on the 'enabled' property for each item within the menu. The listener
-     * hides the menu if none of its items are enabled and shows the menu iff at least one is enabled.
-     * @param menu The menu to add the listener to.
-     */
-    private static void addEnabledMenuItemPropertyListener(JMenu menu) {
-        PropertyChangeListener enabledListener = (ev) -> {
-            boolean newValue = (boolean) ev.getNewValue();
-
-            if ((newValue && menu.isEnabled()) || (!newValue && !menu.isEnabled())) {
-                return;
-            }
-
-            for (int i = 0; i < menu.getItemCount(); i++) {
-                JMenuItem item = menu.getItem(i);
-
-                if (item != null && item.isEnabled()) {
-                    menu.setEnabled(true);
-                    return;
-                }
-            }
-
-            menu.setEnabled(false);
-        };
-
-        // determine if the menu must be disabled in the beginning
-        boolean enableMenu = false;
-        for (int i = 0; i < menu.getItemCount(); i++) {
-            JMenuItem item = menu.getItem(i);
-            if (item == null) {
-                continue;
-            }
-
-            enableMenu |= item.isEnabled();
-            item.addPropertyChangeListener("enabled", enabledListener);
-        }
-
-        menu.setEnabled(enableMenu);
-        menu.addPropertyChangeListener("enabled", ev -> {
-            Main.info("enabled property changed, now its = " + menu.isEnabled());
-        });
-    }
+//    /**
+//     * Adds listeners on the 'enabled' property for each item within the menu. The listener
+//     * hides the menu if none of its items are enabled and shows the menu iff at least one is enabled.
+//     * @param menu The menu to add the listener to.
+//     */
+//    private static void addEnabledMenuItemPropertyListener(JMenu menu) {
+//        PropertyChangeListener enabledListener = (ev) -> {
+//            boolean newValue = (boolean) ev.getNewValue();
+//
+//            if ((newValue && menu.isEnabled()) || (!newValue && !menu.isEnabled())) {
+//                return;
+//            }
+//
+//            for (int i = 0; i < menu.getItemCount(); i++) {
+//                JMenuItem item = menu.getItem(i);
+//
+//                if (item != null && item.isEnabled()) {
+//                    menu.setEnabled(true);
+//                    return;
+//                }
+//            }
+//
+//            menu.setEnabled(false);
+//        };
+//
+//        // determine if the menu must be disabled in the beginning
+//        boolean enableMenu = false;
+//        for (int i = 0; i < menu.getItemCount(); i++) {
+//            JMenuItem item = menu.getItem(i);
+//            if (item == null) {
+//                continue;
+//            }
+//
+//            enableMenu |= item.isEnabled();
+//            item.addPropertyChangeListener("enabled", enabledListener);
+//        }
+//
+//        menu.setEnabled(enableMenu);
+//    }
 
     static class PresetsMenuEnabler implements ActiveLayerChangeListener {
         private final JMenu presetsMenu;
