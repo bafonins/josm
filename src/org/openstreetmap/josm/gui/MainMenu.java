@@ -907,11 +907,8 @@ public class MainMenu extends JMenuBar {
 
             for (int i = 0; i < menu.getItemCount(); i++) {
                 JMenuItem item = menu.getItem(i);
-                if (item == null) {
-                    continue;
-                }
 
-                if (item.isEnabled()) {
+                if (item != null && item.isEnabled()) {
                     menu.setEnabled(true);
                     return;
                 }
