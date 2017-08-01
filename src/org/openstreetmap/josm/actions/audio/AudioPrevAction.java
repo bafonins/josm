@@ -16,7 +16,7 @@ import org.openstreetmap.josm.tools.Shortcut;
  * Play from the first such Marker if none has been played or already at the first marker.
  * @since 547
  */
-public class AudioPrevAction extends JosmAction {
+public class AudioPrevAction extends BaseAudioAction {
 
     /**
      * Constructs a new {@code AudioPrevAction}.

@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URL;
 
+import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.JosmAction;
 import org.openstreetmap.josm.gui.layer.markerlayer.AudioMarker;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
@@ -23,7 +24,7 @@ import org.openstreetmap.josm.tools.Utils;
  * If fast forwarding or slow forwarding, resume normal speed.
  * @since 547
  */
-public class AudioPlayPauseAction extends JosmAction {
+public class AudioPlayPauseAction extends BaseAudioAction {
 
     /**
      * Constructs a new {@code AudioPlayPauseAction}.
@@ -40,7 +41,7 @@ public class AudioPlayPauseAction extends JosmAction {
             if (url != null && AudioPlayer.paused()) {
                 AudioPlayer.play(url);
             } else if (AudioPlayer.playing()) {
-                if (!Utils.equalsEpsilon(AudioPlayer.speed(), 1.0))
+                if (!Utils.equalsEpsilon(AudioPlayer.speed(), 1.0)) // TODO: shouldnt the url be checked for null here?
                     AudioPlayer.play(url, AudioPlayer.position());
                 else
                     AudioPlayer.pause();

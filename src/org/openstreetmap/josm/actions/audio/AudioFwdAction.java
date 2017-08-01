@@ -19,7 +19,7 @@ import org.openstreetmap.josm.tools.Shortcut;
  * Jump the audio forward 10 seconds.
  * @since 547
  */
-public class AudioFwdAction extends JosmAction {
+public class AudioFwdAction extends BaseAudioAction {
 
     /**
      * Constructs a new {@code AudioFwdAction}.

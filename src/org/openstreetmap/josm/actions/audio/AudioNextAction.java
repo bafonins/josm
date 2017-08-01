@@ -16,7 +16,7 @@ import org.openstreetmap.josm.tools.Shortcut;
  * Play from the first such Marker if none has been played, or repeat the last marker if at the end.
  * @since 547
  */
-public class AudioNextAction extends JosmAction {
+public class AudioNextAction extends BaseAudioAction {
 
     /**
      * Constructs a new {@code AudioNextAction}.
