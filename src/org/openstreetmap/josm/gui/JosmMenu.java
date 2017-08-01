@@ -2,8 +2,6 @@
 
 package org.openstreetmap.josm.gui;
 
-import org.openstreetmap.josm.Main;
-
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import java.awt.Component;
@@ -38,27 +36,9 @@ public class JosmMenu extends JMenu {
         super(label);
 
         if (disable) {
-            getPopupMenu().addContainerListener(new ContainerAdapter() {
-                @Override
-                public void componentAdded(ContainerEvent e) {
-                    super.componentAdded(e);
-
-                    Component child = e.getChild();
-                    if (child != null && child instanceof JMenuItem) {
-                        child.addPropertyChangeListener("enabled", ev -> enabledPropertyChangeListener(ev));
-                    }
-
-                }
-            });
+            setEnabled(false);
+            addPopupContainerListener();
         }
-    }
-
-    /**
-     * Applies {@code c} to every {@link JMenuItem} within this menu.
-     * @param c A functional interface to be used within this method.
-     */
-    public void walkMenuItems(Consumer<JMenuItem> c) {
-        this.streamMenuItems().forEach(c);
     }
 
     /**
@@ -69,6 +49,28 @@ public class JosmMenu extends JMenu {
         return IntStream.range(0, this.getItemCount())
                 .mapToObj(this::getItem)
                 .filter(JMenuItem.class::isInstance);
+    }
+
+    /**
+     * Adds a listener to the underlying {@link javax.swing.JPopupMenu} to react
+     * on {@link JMenuItem} addition. Mainly, adds {@link PropertyChangeListener} to every
+     * item that disables the menu if none of containing items are enabled.
+     */
+    private void addPopupContainerListener() {
+        getPopupMenu().addContainerListener(new ContainerAdapter() {
+            @Override
+            public void componentAdded(ContainerEvent e) {
+                super.componentAdded(e);
+
+                Component child = e.getChild();
+                if (child != null && child instanceof JMenuItem) {
+                    child.addPropertyChangeListener("enabled", ev -> enabledPropertyChangeListener(ev));
+
+                    boolean menuEnabled = isEnabled();
+                    setEnabled(menuEnabled || child.isEnabled());
+                }
+            }
+        });
     }
 
     private void enabledPropertyChangeListener(PropertyChangeEvent ev) {
