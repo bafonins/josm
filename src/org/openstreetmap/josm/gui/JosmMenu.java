@@ -2,8 +2,15 @@
 
 package org.openstreetmap.josm.gui;
 
+import org.openstreetmap.josm.Main;
+
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import java.awt.Component;
+import java.awt.event.ContainerAdapter;
+import java.awt.event.ContainerEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -30,12 +37,19 @@ public class JosmMenu extends JMenu {
     public JosmMenu(String label, boolean disable) {
         super(label);
 
-        // TODO: decompose
         if (disable) {
-            this.walkMenuItems(it -> it.addPropertyChangeListener("enabled", ev -> {
-                boolean enable = this.streamMenuItems().anyMatch(JMenuItem::isEnabled);
-                this.setEnabled(enable);
-            }));
+            getPopupMenu().addContainerListener(new ContainerAdapter() {
+                @Override
+                public void componentAdded(ContainerEvent e) {
+                    super.componentAdded(e);
+
+                    Component child = e.getChild();
+                    if (child != null && child instanceof JMenuItem) {
+                        child.addPropertyChangeListener("enabled", ev -> enabledPropertyChangeListener(ev));
+                    }
+
+                }
+            });
         }
     }
 
@@ -55,5 +69,10 @@ public class JosmMenu extends JMenu {
         return IntStream.range(0, this.getItemCount())
                 .mapToObj(this::getItem)
                 .filter(JMenuItem.class::isInstance);
+    }
+
+    private void enabledPropertyChangeListener(PropertyChangeEvent ev) {
+        boolean enable = this.streamMenuItems().anyMatch(Component::isEnabled);
+        this.setEnabled(enable);
     }
 }
