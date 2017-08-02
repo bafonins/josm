@@ -22,22 +22,7 @@ public class JosmMenu extends JMenu {
      * @param label The label to be displayed on the menu.
      */
     public JosmMenu(String label) {
-        this(label, false);
-    }
-
-    /**
-     * Constructs a new instance of {@link JosmMenu}.
-     * @param label The label to be displayed on the menu.
-     * @param disable The flag defining if a listener must be added to each menu item, such that
-     *                the menu becomes disabled when none of the items are enabled.
-     */
-    public JosmMenu(String label, boolean disable) {
         super(label);
-
-        if (disable) {
-            setEnabled(false);
-            addPopupContainerListener();
-        }
     }
 
     /**
@@ -55,7 +40,7 @@ public class JosmMenu extends JMenu {
      * on {@link JMenuItem} addition. Mainly, adds {@link PropertyChangeListener} to every
      * item that disables the menu if none of containing items are enabled.
      */
-    private void addPopupContainerListener() {
+    public void addPopupContainerListener() {
         getPopupMenu().addContainerListener(new ContainerAdapter() {
             @Override
             public void componentAdded(ContainerEvent e) {
