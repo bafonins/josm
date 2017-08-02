@@ -39,7 +39,7 @@ public class AudioPlayPauseAction extends BaseAudioAction {
             if (url != null && AudioPlayer.paused()) {
                 AudioPlayer.play(url);
             } else if (AudioPlayer.playing()) {
-                if (!Utils.equalsEpsilon(AudioPlayer.speed(), 1.0)) // TODO: shouldnt the url be checked for null here?
+                if (!Utils.equalsEpsilon(AudioPlayer.speed(), 1.0))
                     AudioPlayer.play(url, AudioPlayer.position());
                 else
                     AudioPlayer.pause();
