@@ -10,7 +10,6 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 
 import org.openstreetmap.josm.Main;
-import org.openstreetmap.josm.actions.JosmAction;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
 import org.openstreetmap.josm.io.audio.AudioPlayer;
 import org.openstreetmap.josm.io.audio.AudioUtil;
