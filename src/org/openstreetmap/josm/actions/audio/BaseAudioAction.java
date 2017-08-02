@@ -7,7 +7,6 @@ import org.openstreetmap.josm.gui.layer.markerlayer.AudioMarker;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
 import org.openstreetmap.josm.tools.Shortcut;
 
-import java.util.stream.Stream;
 
 public abstract class BaseAudioAction extends JosmAction{
 
@@ -22,10 +21,10 @@ public abstract class BaseAudioAction extends JosmAction{
     }
 
     protected boolean isAudioMarkerPreset() {
-        return Main.getLayerManager().getLayers().stream()
+        return  Main.getLayerManager().getLayers().stream()
                 .filter(l -> l instanceof MarkerLayer)
                 .map(ml -> (MarkerLayer) ml)
-                .flatMap(ml -> Stream.of(ml.data))
+                .flatMap(ml -> ml.data.stream())
                 .anyMatch(m -> m instanceof AudioMarker);
     }
 
