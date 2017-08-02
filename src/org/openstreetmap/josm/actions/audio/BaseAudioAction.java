@@ -14,13 +14,13 @@ public abstract class BaseAudioAction extends JosmAction {
         super(name, iconName, tooltip, shortcut, registerInToolbar);
 
         // initial check
-        setEnabled(isAudioMarkerPreset());
+        setEnabled(isAudioMarkerPresent());
 
         // reevaluate presence of audio markers each time layouts change
         Main.getLayerManager().addLayerChangeListener(getLayerChangeListener());
     }
 
-    protected boolean isAudioMarkerPreset() {
+    protected boolean isAudioMarkerPresent() {
         return Main.getLayerManager().getLayers().stream()
                 .filter(l -> l instanceof MarkerLayer)
                 .map(ml -> (MarkerLayer) ml)
@@ -32,12 +32,12 @@ public abstract class BaseAudioAction extends JosmAction {
         return new LayerManager.LayerChangeListener() {
             @Override
             public void layerAdded(LayerManager.LayerAddEvent e) {
-                setEnabled(isAudioMarkerPreset());
+                setEnabled(isAudioMarkerPresent());
             }
 
             @Override
             public void layerRemoving(LayerManager.LayerRemoveEvent e) {
-                setEnabled(isAudioMarkerPreset());
+                setEnabled(isAudioMarkerPresent());
             }
 
             @Override
