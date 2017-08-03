@@ -600,11 +600,11 @@ public class MainMenu extends JMenuBar {
     /**
      * Creates a menu and adds it on the given position to the main menu.
      *
-     * @param name               the untranslated name (used as identifier for shortcut registration)
-     * @param translatedName     the translated menu name (use {@code I18n.trc("menu", name)} to allow better internationalization
-     * @param mnemonicKey        the mnemonic key to register
-     * @param position           the position in the main menu
-     * @param relativeHelpTopic  the relative help topic
+     * @param name              the untranslated name (used as identifier for shortcut registration)
+     * @param translatedName    the translated menu name (use {@code I18n.trc("menu", name)} to allow better internationalization
+     * @param mnemonicKey       the mnemonic key to register
+     * @param position          the position in the main menu
+     * @param relativeHelpTopic the relative help topic
      * @return the newly created menu
      */
     public JMenu addMenu(String name, String translatedName, int mnemonicKey, int position, String relativeHelpTopic) {
