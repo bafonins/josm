@@ -8,6 +8,9 @@ import org.openstreetmap.josm.gui.layer.markerlayer.AudioMarker;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
 import org.openstreetmap.josm.tools.Shortcut;
 
+/**
+ * Base class for every action related to audio content.
+ */
 public abstract class BaseAudioAction extends JosmAction {
 
     public BaseAudioAction(String name, String iconName, String tooltip, Shortcut shortcut, boolean registerInToolbar) {
@@ -20,6 +23,11 @@ public abstract class BaseAudioAction extends JosmAction {
         Main.getLayerManager().addLayerChangeListener(getLayerChangeListener());
     }
 
+    /**
+     * Checks if there is at least one {@link AudioMarker} is present in the current layout.
+     * @return {@code true} if at least one {@link AudioMarker} is present in the current
+     * layout, {@code false} otherwise.
+     */
     protected boolean isAudioMarkerPresent() {
         return Main.getLayerManager().getLayers().stream()
                 .filter(l -> l instanceof MarkerLayer)
@@ -28,6 +36,12 @@ public abstract class BaseAudioAction extends JosmAction {
                 .anyMatch(m -> m instanceof AudioMarker);
     }
 
+    /**
+     * Creates {@link LayerManager.LayerChangeListener} that disabled/enables the audio
+     * actions depending if there is at least one {@link AudioMarker} present in the
+     * current layout.
+     * @return An instance of {@link LayerManager.LayerChangeListener}.
+     */
     private LayerManager.LayerChangeListener getLayerChangeListener() {
         return new LayerManager.LayerChangeListener() {
             @Override
