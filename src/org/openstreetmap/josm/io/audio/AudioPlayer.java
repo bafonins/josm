@@ -155,11 +155,11 @@ public final class AudioPlayer extends Thread implements AudioListener {
 
     /**
      * To get the Url of the playing or recently played audio.
-     * @return url The Url of the playing or recently played audio.
+     * @return url The Url of the playing or recently played audio. Can be {@code null}.
      */
-    public static Optional<URL> url() {
+    public static URL url() {
         AudioPlayer instance = AudioPlayer.getInstance();
-        return Optional.ofNullable(instance == null ? null : instance.playingUrl);
+        return instance == null ? null : instance.playingUrl;
     }
 
     /**

@@ -34,7 +34,7 @@ public class AudioBackAction extends BaseAudioAction {
     public void actionPerformed(ActionEvent e) {
         try {
             if (AudioPlayer.playing() || AudioPlayer.paused())
-                AudioPlayer.play(AudioPlayer.url().orElse(null), AudioPlayer.position()
+                AudioPlayer.play(AudioPlayer.url(), AudioPlayer.position()
                 - Main.pref.getDouble("audio.forwardbackamount", 10.0));
             else
                 MarkerLayer.playAudio();

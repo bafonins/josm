@@ -40,7 +40,7 @@ public abstract class AudioFastSlowAction extends BaseAudioAction {
             return;
         try {
             if (AudioPlayer.playing() || AudioPlayer.paused())
-                AudioPlayer.play(AudioPlayer.url().orElse(null), AudioPlayer.position(), speed * multiplier);
+                AudioPlayer.play(AudioPlayer.url(), AudioPlayer.position(), speed * multiplier);
         } catch (IOException | InterruptedException ex) {
             AudioUtil.audioMalfunction(ex);
         }

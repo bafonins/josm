@@ -34,7 +34,7 @@ public class AudioPlayPauseAction extends BaseAudioAction {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        URL url = AudioPlayer.url().orElse(null);
+        URL url = AudioPlayer.url();
         try {
             if (url != null && AudioPlayer.paused()) {
                 AudioPlayer.play(url);

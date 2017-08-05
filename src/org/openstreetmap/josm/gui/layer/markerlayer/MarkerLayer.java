@@ -303,7 +303,7 @@ public class MarkerLayer extends Layer implements JumpToMarkerLayer {
 
         // make our new marker
         AudioMarker newAudioMarker = new AudioMarker(coor,
-                null, AudioPlayer.url().orElse(null), this, time, offset);
+                null, AudioPlayer.url(), this, time, offset);
 
         // insert it at the right place in a copy the collection
         Collection<Marker> newData = new ArrayList<>();
