@@ -3,6 +3,7 @@ package org.openstreetmap.josm.io.audio;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Optional;
 
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.tools.JosmRuntimeException;
@@ -154,7 +155,7 @@ public final class AudioPlayer extends Thread implements AudioListener {
 
     /**
      * To get the Url of the playing or recently played audio.
-     * @return url - could be null
+     * @return url The Url of the playing or recently played audio. Can be {@code null}.
      */
     public static URL url() {
         AudioPlayer instance = AudioPlayer.getInstance();
@@ -167,7 +168,7 @@ public final class AudioPlayer extends Thread implements AudioListener {
      */
     public static boolean paused() {
         AudioPlayer instance = AudioPlayer.getInstance();
-        return instance == null ? false : (instance.state == State.PAUSED);
+        return instance != null && (instance.state == State.PAUSED);
     }
 
     /**
@@ -176,7 +177,7 @@ public final class AudioPlayer extends Thread implements AudioListener {
      */
     public static boolean playing() {
         AudioPlayer instance = AudioPlayer.getInstance();
-        return instance == null ? false : (instance.state == State.PLAYING);
+        return instance != null && (instance.state == State.PLAYING);
     }
 
     /**
