@@ -3,7 +3,6 @@ package org.openstreetmap.josm.actions.audio;
 
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.JosmAction;
-import org.openstreetmap.josm.gui.layer.LayerManager;
 import org.openstreetmap.josm.gui.layer.markerlayer.AudioMarker;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
 import org.openstreetmap.josm.tools.Shortcut;
@@ -18,9 +17,6 @@ public abstract class BaseAudioAction extends JosmAction {
 
         // initial check
         setEnabled(isAudioMarkerPresent());
-
-        // reevaluate presence of audio markers each time layouts change
-        Main.getLayerManager().addLayerChangeListener(getLayerChangeListener());
     }
 
     /**
@@ -36,28 +32,11 @@ public abstract class BaseAudioAction extends JosmAction {
                 .anyMatch(m -> m instanceof AudioMarker);
     }
 
-    /**
-     * Creates {@link LayerManager.LayerChangeListener} that disabled/enables the audio
-     * actions depending if there is at least one {@link AudioMarker} present in the
-     * current layout.
-     * @return An instance of {@link LayerManager.LayerChangeListener}.
-     */
-    private LayerManager.LayerChangeListener getLayerChangeListener() {
-        return new LayerManager.LayerChangeListener() {
-            @Override
-            public void layerAdded(LayerManager.LayerAddEvent e) {
-                setEnabled(isAudioMarkerPresent());
-            }
+    @Override
+    protected void updateEnabledState() {
+        super.updateEnabledState();
 
-            @Override
-            public void layerRemoving(LayerManager.LayerRemoveEvent e) {
-                setEnabled(isAudioMarkerPresent());
-            }
-
-            @Override
-            public void layerOrderChanged(LayerManager.LayerOrderChangeEvent e) {
-                // nothing
-            }
-        };
+        boolean enabled = this.isAudioMarkerPresent();
+        setEnabled(enabled);
     }
 }
