@@ -5,7 +5,6 @@ package org.openstreetmap.josm.gui;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import java.awt.Component;
-import java.awt.event.ContainerAdapter;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.beans.PropertyChangeEvent;
