@@ -60,8 +60,11 @@ public class JosmMenu extends JMenu {
             public void componentAdded(ContainerEvent e) {
                 Component child = e.getChild();
                 if (child != null && child instanceof JMenuItem) {
-                    listeners.add(ev -> enabledPropertyChangeListener(ev));
-                    child.addPropertyChangeListener("enabled", ev -> enabledPropertyChangeListener(ev));
+                    PropertyChangeListener l = ev -> enabledPropertyChangeListener(ev);
+                    listeners.add(l);
+                    child.addPropertyChangeListener("enabled", l);
+
+                    enabledPropertyChangeListener(null);
                 }
             }
 
@@ -74,8 +77,7 @@ public class JosmMenu extends JMenu {
                     if (idx >= 0 && idx < listeners.size()) {
                         child.removePropertyChangeListener("enabled", listeners.get(idx));
                         listeners.remove(idx);
-
-                        // reevaluate the state after removing the item
+                        
                         enabledPropertyChangeListener(null);
                     }
                 }
