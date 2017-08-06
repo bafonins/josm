@@ -10,6 +10,7 @@ import java.awt.event.ContainerListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -71,14 +72,16 @@ public class JosmMenu extends JMenu {
             public void componentRemoved(ContainerEvent e) {
                 Component child = e.getChild();
                 if (child != null && child instanceof JMenuItem) {
-                    int idx = getPopupMenu().getComponentIndex(child);
+                    PropertyChangeListener[] ls = child.getPropertyChangeListeners("enabled");
+                    Arrays.stream(ls)
+                            .filter(this.listeners::contains)
+                            .findFirst()
+                            .ifPresent(l -> {
+                                this.listeners.remove(l);
+                                child.removePropertyChangeListener("enabled", l);
 
-                    if (idx >= 0 && idx < listeners.size()) {
-                        child.removePropertyChangeListener("enabled", listeners.get(idx));
-                        listeners.remove(idx);
-
-                        enabledPropertyChangeListener(null);
-                    }
+                                enabledPropertyChangeListener(null);
+                            });
                 }
             }
         });
