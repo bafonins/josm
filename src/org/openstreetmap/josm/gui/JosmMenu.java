@@ -17,7 +17,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * Represents a menu with containing a popup menu.
+ * Represents a menu containing a popup menu.
  */
 public class JosmMenu extends JMenu {
 
@@ -77,7 +77,7 @@ public class JosmMenu extends JMenu {
                     if (idx >= 0 && idx < listeners.size()) {
                         child.removePropertyChangeListener("enabled", listeners.get(idx));
                         listeners.remove(idx);
-                        
+
                         enabledPropertyChangeListener(null);
                     }
                 }
