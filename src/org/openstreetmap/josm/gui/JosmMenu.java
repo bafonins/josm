@@ -7,8 +7,12 @@ import javax.swing.JMenuItem;
 import java.awt.Component;
 import java.awt.event.ContainerAdapter;
 import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -32,26 +36,48 @@ public class JosmMenu extends JMenu {
     public Stream<JMenuItem> streamMenuItems() {
         return IntStream.range(0, this.getItemCount())
                 .mapToObj(this::getItem)
+                .filter(Objects::nonNull)
                 .filter(JMenuItem.class::isInstance);
     }
 
     /**
      * Adds a listener to the underlying {@link javax.swing.JPopupMenu} to react
-     * on {@link JMenuItem} addition. Mainly, adds {@link PropertyChangeListener} to every
+     * on {@link JMenuItem} addition/removal. Mainly, adds {@link PropertyChangeListener} to every
      * item that disables the menu if none of containing items are enabled.
      */
     public void addPopupContainerListener() {
-        getPopupMenu().addContainerListener(new ContainerAdapter() {
+        enabledPropertyChangeListener(null); // initial check
+
+        super.getPopupMenu().addContainerListener(new ContainerListener() {
+
+            /**
+             * Keeps references to all listeners that were added, in order to be able to
+             * delete them later if needed.
+             */
+            private final List<PropertyChangeListener> listeners = new ArrayList<>();
+
             @Override
             public void componentAdded(ContainerEvent e) {
-                super.componentAdded(e);
-
                 Component child = e.getChild();
                 if (child != null && child instanceof JMenuItem) {
+                    listeners.add(ev -> enabledPropertyChangeListener(ev));
                     child.addPropertyChangeListener("enabled", ev -> enabledPropertyChangeListener(ev));
+                }
+            }
 
-                    boolean menuEnabled = isEnabled();
-                    setEnabled(menuEnabled || child.isEnabled());
+            @Override
+            public void componentRemoved(ContainerEvent e) {
+                Component child = e.getChild();
+                if (child != null && child instanceof JMenuItem) {
+                    int idx = getPopupMenu().getComponentIndex(child);
+
+                    if (idx >= 0 && idx < listeners.size()) {
+                        child.removePropertyChangeListener("enabled", listeners.get(idx));
+                        listeners.remove(idx);
+
+                        // reevaluate the state after removing the item
+                        enabledPropertyChangeListener(null);
+                    }
                 }
             }
         });
