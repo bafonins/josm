@@ -204,8 +204,20 @@ public class LatLon extends Coordinate implements ILatLon {
      * Replies the coordinate in degrees/minutes/seconds format
      * @param pCoordinate The coordinate to convert
      * @return The coordinate in degrees/minutes/seconds format
+     * @deprecated use {@link #degreesMinutesSeconds} instead
      */
+    @Deprecated
     public static String dms(double pCoordinate) {
+        return degreesMinutesSeconds(pCoordinate);
+    }
+
+    /**
+     * Replies the coordinate in degrees/minutes/seconds format
+     * @param pCoordinate The coordinate to convert
+     * @return The coordinate in degrees/minutes/seconds format
+     * @since 12561
+     */
+    public static String degreesMinutesSeconds(double pCoordinate) {
 
         double tAbsCoord = Math.abs(pCoordinate);
         int tDegree = (int) tAbsCoord;
@@ -233,8 +245,9 @@ public class LatLon extends Coordinate implements ILatLon {
      * Replies the coordinate in degrees/minutes format
      * @param pCoordinate The coordinate to convert
      * @return The coordinate in degrees/minutes format
+     * @since 12537
      */
-    public static String dm(double pCoordinate) {
+    public static String degreesMinutes(double pCoordinate) {
 
         double tAbsCoord = Math.abs(pCoordinate);
         int tDegree = (int) tAbsCoord;
@@ -249,6 +262,17 @@ public class LatLon extends Coordinate implements ILatLon {
         }
 
         return sDegrees + '\u00B0' + sMinutes + '\'';
+    }
+
+    /**
+     * Replies the coordinate in degrees/minutes format
+     * @param pCoordinate The coordinate to convert
+     * @return The coordinate in degrees/minutes format
+     * @deprecated use {@link #degreesMinutes(double)} instead
+     */
+    @Deprecated
+    public static String dm(double pCoordinate) {
+        return degreesMinutes(pCoordinate);
     }
 
     /**
@@ -289,8 +313,8 @@ public class LatLon extends Coordinate implements ILatLon {
     public String latToString(CoordinateFormat d) {
         switch(d) {
         case DECIMAL_DEGREES: return cDdFormatter.format(y);
-        case DEGREES_MINUTES_SECONDS: return dms(y) + ((y < 0) ? SOUTH : NORTH);
-        case NAUTICAL: return dm(y) + ((y < 0) ? SOUTH : NORTH);
+        case DEGREES_MINUTES_SECONDS: return degreesMinutesSeconds(y) + ((y < 0) ? SOUTH : NORTH);
+        case NAUTICAL: return degreesMinutes(y) + ((y < 0) ? SOUTH : NORTH);
         case EAST_NORTH: return cDdFormatter.format(this.getEastNorth().north());
         default: return "ERR";
         }
@@ -309,8 +333,8 @@ public class LatLon extends Coordinate implements ILatLon {
     public String lonToString(CoordinateFormat d) {
         switch(d) {
         case DECIMAL_DEGREES: return cDdFormatter.format(x);
-        case DEGREES_MINUTES_SECONDS: return dms(x) + ((x < 0) ? WEST : EAST);
-        case NAUTICAL: return dm(x) + ((x < 0) ? WEST : EAST);
+        case DEGREES_MINUTES_SECONDS: return degreesMinutesSeconds(x) + ((x < 0) ? WEST : EAST);
+        case NAUTICAL: return degreesMinutes(x) + ((x < 0) ? WEST : EAST);
         case EAST_NORTH: return cDdFormatter.format(this.getEastNorth().east());
         default: return "ERR";
         }

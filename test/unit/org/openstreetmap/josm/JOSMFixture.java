@@ -150,11 +150,15 @@ public class JOSMFixture {
         assertNull(Main.getLayerManager().getActiveLayer());
 
         initContentPane();
-        initMainPanel();
+        initMainPanel(false);
         initToolbar();
         if (Main.main == null) {
             new MainApplication().initialize();
         } else {
+            if (Main.main.panel == null) {
+                initMainPanel(false);
+                Main.main.panel = Main.mainPanel;
+            }
             Main.main.panel.reAddListeners();
         }
         // Add a test layer to the layer manager to get the MapFrame
@@ -174,8 +178,22 @@ public class JOSMFixture {
      * Make sure {@code Main.mainPanel} is initialized.
      */
     public static void initMainPanel() {
+        initMainPanel(false);
+    }
+
+    /**
+     * Make sure {@code Main.mainPanel} is initialized.
+     * @param reAddListeners {@code true} to re-add listeners
+     */
+    public static void initMainPanel(boolean reAddListeners) {
         if (Main.mainPanel == null) {
             Main.mainPanel = new MainPanel(Main.getLayerManager());
+        }
+        if (reAddListeners) {
+            Main.mainPanel.reAddListeners();
+        }
+        if (Main.main != null) {
+            Main.main.panel = Main.mainPanel;
         }
     }
 

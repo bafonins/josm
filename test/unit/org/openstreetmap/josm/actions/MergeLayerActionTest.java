@@ -25,7 +25,7 @@ public class MergeLayerActionTest {
      */
     @Rule
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().platform().commands();
+    public JOSMTestRules test = new JOSMTestRules().platform().mainMenu();
 
     private MergeLayerAction action;
 
