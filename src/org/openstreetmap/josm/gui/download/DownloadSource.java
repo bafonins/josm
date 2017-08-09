@@ -11,23 +11,10 @@ public interface DownloadSource<T> {
     AbstractDownloadSourcePanel<T> createPanel();
 
     /**
-     * Performs the logic needed in case if the user triggered the download
-     * action in {@link DownloadDialog}.
-     * @param bbox The bounding box.
-     * @param data The data.
-     * @return Returns {@code true} if the required procedure of handling the
-     * download action succeeded and {@link DownloadDialog} can be closed, e.g. validation,
-     * otherwise {@code false}.
+     * Downloads the data.
+     * @param bbox The bounding box within which the data is considered.
+     * @param data The required data for the download source.
+     * @param settings The settings of the download task.
      */
-    boolean handleDownload(Bounds bbox, T data);
-
-    /**
-     * Performs the logic needed in case if the user triggered the cancel
-     * action in {@link DownloadDialog}.
-     */
-    default void handleCancel() {
-        // nothing, let download dialog to close
-    }
-
-
+    void doDownload(Bounds bbox, T data, DownloadSettings settings);
 }
