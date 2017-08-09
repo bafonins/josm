@@ -16,7 +16,9 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
      * Gets the data.
      * @return Returns the data.
      */
-    public abstract T getData();
+    public T getData() {
+        return data;
+    }
 
     /**
      * Gets the download source of this panel.

@@ -25,7 +25,9 @@ public interface DownloadSource<T> {
      * Performs the logic needed in case if the user triggered the cancel
      * action in {@link DownloadDialog}.
      */
-    void handleCancel();
+    default void handleCancel() {
+        // nothing, let download dialog to close
+    }
 
 
 }
