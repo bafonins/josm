@@ -147,7 +147,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      * Removes currently selected item, saves the current state to preferences and
      * updates the view.
      */
-    private synchronized void removeSelectedItem() {
+    public synchronized void removeSelectedItem() {
         Optional<SelectorItem> it = this.getSelectedItem();
 
         if (!it.isPresent()) {
@@ -168,7 +168,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      * Opens {@link EditItemDialog} for the selected item, saves the current state
      * to preferences and updates the view.
      */
-    private synchronized void editSelectedItem() {
+    public synchronized void editSelectedItem() {
         Optional<SelectorItem> it = this.getSelectedItem();
 
         if (!it.isPresent()) {
