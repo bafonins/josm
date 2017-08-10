@@ -161,6 +161,7 @@ public class OverpassDownloadAction extends JosmAction {
         private static OverpassDownloadDialog instance;
         private static final BooleanProperty OVERPASS_QUERY_LIST_OPENED =
                 new BooleanProperty("download.overpass.query-list.opened", false);
+        private static final String ACTION_IMG_SUBDIR = "dialogs";
 
         private OverpassDownloadDialog(Component parent) {
             super(parent, ht("/Action/OverpassDownload"));
@@ -308,7 +309,7 @@ public class OverpassDownloadAction extends JosmAction {
              */
             AddSnippetAction() {
                 super();
-                putValue(SMALL_ICON, ImageProvider.get("dialogs", "add"));
+                putValue(SMALL_ICON, ImageProvider.get(ACTION_IMG_SUBDIR, "add"));
                 putValue(SHORT_DESCRIPTION, tr("Add new snippet"));
             }
 
@@ -328,7 +329,7 @@ public class OverpassDownloadAction extends JosmAction {
              */
             RemoveSnippetAction() {
                 super();
-                putValue(SMALL_ICON, ImageProvider.get("dialogs", "delete"));
+                putValue(SMALL_ICON, ImageProvider.get(ACTION_IMG_SUBDIR, "delete"));
                 putValue(SHORT_DESCRIPTION, tr("Delete selected snippet"));
                 checkEnabled();
             }
@@ -361,7 +362,7 @@ public class OverpassDownloadAction extends JosmAction {
              */
             EditSnippetAction() {
                 super();
-                putValue(SMALL_ICON, ImageProvider.get("dialogs", "edit"));
+                putValue(SMALL_ICON, ImageProvider.get(ACTION_IMG_SUBDIR, "edit"));
                 putValue(SHORT_DESCRIPTION, tr("Edit selected snippet"));
                 checkEnabled();
             }
