@@ -266,7 +266,7 @@ public class OverpassDownloadAction extends JosmAction {
             pnl.add(pane, gbc);
         }
 
-        String getOverpassQuery() {
+        public String getOverpassQuery() {
             return overpassQuery.getText();
         }
 
