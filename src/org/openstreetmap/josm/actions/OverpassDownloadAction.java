@@ -298,6 +298,9 @@ public class OverpassDownloadAction extends JosmAction {
             super.btnDownload.doClick();
         }
 
+        /**
+         * Action that delegates snippet creation to {@link OverpassQueryList#createNewItem()}.
+         */
         class AddSnippetAction extends AbstractAction {
 
             /**
@@ -315,6 +318,9 @@ public class OverpassDownloadAction extends JosmAction {
             }
         }
 
+        /**
+         * Action that delegates snippet removal to {@link OverpassQueryList#removeSelectedItem()}.
+         */
         class RemoveSnippetAction extends AbstractAction implements ListSelectionListener {
 
             /**
@@ -332,7 +338,10 @@ public class OverpassDownloadAction extends JosmAction {
                 overpassQueryList.removeSelectedItem();
             }
 
-            public void checkEnabled() {
+            /**
+             * Disables the action if no items are selected.
+             */
+            void checkEnabled() {
                 setEnabled(overpassQueryList.getSelectedItem().isPresent());
             }
 
@@ -342,6 +351,9 @@ public class OverpassDownloadAction extends JosmAction {
             }
         }
 
+        /**
+         * Action that delegates snippet edit to {@link OverpassQueryList#editSelectedItem()}.
+         */
         class EditSnippetAction extends AbstractAction implements ListSelectionListener {
 
             /**
@@ -359,7 +371,10 @@ public class OverpassDownloadAction extends JosmAction {
                 overpassQueryList.editSelectedItem();
             }
 
-            public void checkEnabled() {
+            /**
+             * Disables the action if no items are selected.
+             */
+            void checkEnabled() {
                 setEnabled(overpassQueryList.getSelectedItem().isPresent());
             }
 
