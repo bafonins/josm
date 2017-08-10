@@ -231,7 +231,7 @@ public class OverpassDownloadAction extends JosmAction {
             this.overpassQueryList.addSelectionListener(remove);
 
             JPanel listPanel = new JPanel(new GridBagLayout());
-            listPanel.add(new JLabel(tr("Your saved snippets:")), GBC.eol().insets(2).anchor(GBC.CENTER));
+            listPanel.add(new JLabel(tr("Your saved queries:")), GBC.eol().insets(2).anchor(GBC.CENTER));
             listPanel.add(this.overpassQueryList, GBC.eol().fill(GBC.BOTH));
             listPanel.add(new JButton(new AddSnippetAction()), GBC.std().fill(GBC.HORIZONTAL));
             listPanel.add(new JButton(edit), GBC.std().fill(GBC.HORIZONTAL));
