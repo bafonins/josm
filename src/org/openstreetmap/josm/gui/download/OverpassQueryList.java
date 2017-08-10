@@ -226,7 +226,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         super.lsResultModel.setItems(this.items.values().stream()
                 .filter(item -> item.getKey().contains(text))
-                .sorted(Comparator.comparingInt(SelectorItem::getUsageCount))
+                .sorted((i1, i2) -> i2.getUsageCount() - i1.getUsageCount())
                 .collect(Collectors.toList()));
     }
 
