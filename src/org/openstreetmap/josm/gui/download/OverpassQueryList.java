@@ -225,7 +225,6 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         String text = edSearchText.getText().toLowerCase(Locale.ENGLISH);
         List<SelectorItem> matchingItems = this.items.values().stream()
                 .filter(item -> item.getKey().contains(text))
-                .sorted((i1, i2) -> i2.getUsageCount() - i1.getUsageCount())
                 .collect(Collectors.toList());
 
         super.lsResultModel.setItems(matchingItems);
