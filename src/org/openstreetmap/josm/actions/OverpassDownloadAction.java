@@ -7,6 +7,7 @@ import static org.openstreetmap.josm.tools.I18n.tr;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
@@ -24,6 +25,8 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.basic.BasicArrowButton;
 
 import org.openstreetmap.josm.Main;
@@ -39,6 +42,7 @@ import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.widgets.JosmTextArea;
 import org.openstreetmap.josm.io.OverpassDownloadReader;
 import org.openstreetmap.josm.tools.GBC;
+import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.Shortcut;
 
 /**
@@ -215,23 +219,36 @@ public class OverpassDownloadAction extends JosmAction {
                 }
             });
 
+
             this.overpassQueryList = new OverpassQueryList(this, this.overpassQuery);
-            overpassQueryList.setToolTipText(tr("Show/hide Overpass snippet list"));
-            overpassQueryList.setVisible(OVERPASS_QUERY_LIST_OPENED.get());
-            overpassQueryList.setPreferredSize(new Dimension(350, 300));
+            this.overpassQueryList.setPreferredSize(new Dimension(350, 300));
+
+            EditSnippetAction edit = new EditSnippetAction();
+            RemoveSnippetAction remove = new RemoveSnippetAction();
+            this.overpassQueryList.addSelectionListener(edit);
+            this.overpassQueryList.addSelectionListener(remove);
+
+            JPanel listPanel = new JPanel(new GridBagLayout());
+            listPanel.add(this.overpassQueryList, GBC.eol().fill(GBC.BOTH));
+            listPanel.add(new JButton(new AddSnippetAction()), GBC.std().fill(GBC.HORIZONTAL));
+            listPanel.add(new JButton(edit), GBC.std().fill(GBC.HORIZONTAL));
+            listPanel.add(new JButton(remove), GBC.std().fill(GBC.HORIZONTAL));
+            listPanel.setVisible(OVERPASS_QUERY_LIST_OPENED.get());
+
             JScrollPane scrollPane = new JScrollPane(overpassQuery);
-            BasicArrowButton arrowButton = new BasicArrowButton(overpassQueryList.isVisible()
+            BasicArrowButton arrowButton = new BasicArrowButton(listPanel.isVisible()
                 ? BasicArrowButton.EAST
                 : BasicArrowButton.WEST);
+            arrowButton.setToolTipText(tr("Show/hide Overpass snippet list"));
             arrowButton.addActionListener(e -> {
-                if (overpassQueryList.isVisible()) {
-                    overpassQueryList.setVisible(false);
+                if (listPanel.isVisible()) {
+                    listPanel.setVisible(false);
                     arrowButton.setDirection(BasicArrowButton.WEST);
                     OVERPASS_QUERY_LIST_OPENED.put(Boolean.FALSE);
                 } else {
-                    overpassQueryList.setVisible(true);
+                    listPanel.setVisible(true);
                     arrowButton.setDirection(BasicArrowButton.EAST);
-                    OVERPASS_QUERY_LIST_OPENED.put(Boolean.FALSE);
+                    OVERPASS_QUERY_LIST_OPENED.put(Boolean.TRUE);
                 }
             });
 
@@ -241,7 +258,7 @@ public class OverpassDownloadAction extends JosmAction {
 
             JPanel pane = new JPanel(new BorderLayout());
             pane.add(innerPanel, BorderLayout.CENTER);
-            pane.add(overpassQueryList, BorderLayout.EAST);
+            pane.add(listPanel, BorderLayout.EAST);
 
             GBC gbc = GBC.eol().fill(GBC.HORIZONTAL); gbc.ipady = 200;
             pnl.add(openQueryWizard, GBC.std().insets(5, 5, 5, 5));
@@ -279,6 +296,77 @@ public class OverpassDownloadAction extends JosmAction {
          */
         public void triggerDownload() {
             super.btnDownload.doClick();
+        }
+
+        class AddSnippetAction extends AbstractAction {
+
+            /**
+             * Constructs a new {@code AddSnippetAction}.
+             */
+            AddSnippetAction() {
+                super();
+                putValue(SMALL_ICON, ImageProvider.get("dialogs", "add"));
+                putValue(SHORT_DESCRIPTION, tr("Add new snippet"));
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                overpassQueryList.createNewItem();
+            }
+        }
+
+        class RemoveSnippetAction extends AbstractAction implements ListSelectionListener {
+
+            /**
+             * Constructs a new {@code RemoveSnippetAction}.
+             */
+            RemoveSnippetAction() {
+                super();
+                putValue(SMALL_ICON, ImageProvider.get("dialogs", "delete"));
+                putValue(SHORT_DESCRIPTION, tr("Delete selected snippet"));
+                checkEnabled();
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                overpassQueryList.removeSelectedItem();
+            }
+
+            public void checkEnabled() {
+                setEnabled(overpassQueryList.getSelectedItem().isPresent());
+            }
+
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                checkEnabled();
+            }
+        }
+
+        class EditSnippetAction extends AbstractAction implements ListSelectionListener {
+
+            /**
+             * Constructs a new {@code EditSnippetAction}.
+             */
+            EditSnippetAction() {
+                super();
+                putValue(SMALL_ICON, ImageProvider.get("dialogs", "edit"));
+                putValue(SHORT_DESCRIPTION, tr("Edit selected snippet"));
+                checkEnabled();
+            }
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                overpassQueryList.editSelectedItem();
+            }
+
+            public void checkEnabled() {
+                setEnabled(overpassQueryList.getSelectedItem().isPresent());
+            }
+
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                checkEnabled();
+            }
         }
     }
 }
