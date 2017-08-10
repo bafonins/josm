@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -222,11 +223,12 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
     @Override
     protected void filterItems() {
         String text = edSearchText.getText().toLowerCase(Locale.ENGLISH);
-
-        super.lsResultModel.setItems(this.items.values().stream()
+        List<SelectorItem> matchingItems = this.items.values().stream()
                 .filter(item -> item.getKey().contains(text))
                 .sorted((i1, i2) -> i2.getUsageCount() - i1.getUsageCount())
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+
+        super.lsResultModel.setItems(matchingItems);
     }
 
     private void doubleClickEvent() {

@@ -181,9 +181,6 @@ public class OverpassDownloadAction extends JosmAction {
 
         @Override
         protected void buildMainPanelAboveDownloadSelections(JPanel pnl) {
-            // needed for the invisible checkboxes cbDownloadGpxData, cbDownloadNotes
-            pnl.add(new JLabel(), GBC.eol());
-
             DisableActionsFocusListener disableActionsFocusListener =
                     new DisableActionsFocusListener(slippyMapChooser.getNavigationComponentActionMap());
 
@@ -195,9 +192,13 @@ public class OverpassDownloadAction extends JosmAction {
                 }
             };
 
-            JButton openQueryWizard = new JButton("Query Wizard");
+            JButton openQueryWizard = new JButton(tr("Query Wizard"));
             openQueryWizard.setToolTipText(tooltip);
             openQueryWizard.addActionListener(queryWizardAction);
+
+            // use eol() that is needed for the invisible checkboxes cbDownloadGpxData, cbDownloadNotes
+            pnl.add(openQueryWizard, GBC.eol());
+            pnl.add(new JLabel(tr("Overpass query:")), GBC.std().insets(5, 5, 0, 0).anchor(GBC.NORTHWEST));
 
             // CHECKSTYLE.OFF: LineLength
             this.overpassQuery = new JosmTextArea(
@@ -230,6 +231,7 @@ public class OverpassDownloadAction extends JosmAction {
             this.overpassQueryList.addSelectionListener(remove);
 
             JPanel listPanel = new JPanel(new GridBagLayout());
+            listPanel.add(new JLabel(tr("Your saved snippets:")), GBC.eol().insets(2).anchor(GBC.CENTER));
             listPanel.add(this.overpassQueryList, GBC.eol().fill(GBC.BOTH));
             listPanel.add(new JButton(new AddSnippetAction()), GBC.std().fill(GBC.HORIZONTAL));
             listPanel.add(new JButton(edit), GBC.std().fill(GBC.HORIZONTAL));
@@ -262,7 +264,6 @@ public class OverpassDownloadAction extends JosmAction {
             pane.add(listPanel, BorderLayout.EAST);
 
             GBC gbc = GBC.eol().fill(GBC.HORIZONTAL); gbc.ipady = 200;
-            pnl.add(openQueryWizard, GBC.std().insets(5, 5, 5, 5));
             pnl.add(pane, gbc);
         }
 
