@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -102,7 +103,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      */
     public synchronized Optional<SelectorItem> getSelectedItem() {
         int idx = lsResult.getSelectedIndex();
-        if (lsResultModel.getSize() == 0 || idx == -1) {
+        if (lsResultModel.getSize() <= idx || idx == -1) {
             return Optional.empty();
         }
 
@@ -159,6 +160,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         SelectorItem item = it.get();
         if (this.items.remove(item.getKey(), item)) {
+            clearSelection();
             savePreferences();
             filterItems();
         }
@@ -224,6 +226,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         super.lsResultModel.setItems(this.items.values().stream()
                 .filter(item -> item.getKey().contains(text))
+                .sorted(Comparator.comparingInt(SelectorItem::getUsageCount))
                 .collect(Collectors.toList()));
     }
 
