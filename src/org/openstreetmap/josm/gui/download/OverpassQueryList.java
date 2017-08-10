@@ -201,7 +201,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      * Opens {@link EditItemDialog}, saves the state to preferences if a new item is added
      * and updates the view.
      */
-    private synchronized void createNewItem() {
+    public synchronized void createNewItem() {
         EditItemDialog dialog = new EditItemDialog(componentParent, tr("Add snippet"), tr("Add"));
         dialog.showDialog();
 
