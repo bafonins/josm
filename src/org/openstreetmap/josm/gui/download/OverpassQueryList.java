@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -102,7 +103,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      */
     public synchronized Optional<SelectorItem> getSelectedItem() {
         int idx = lsResult.getSelectedIndex();
-        if (lsResultModel.getSize() == 0 || idx == -1) {
+        if (lsResultModel.getSize() <= idx || idx == -1) {
             return Optional.empty();
         }
 
@@ -147,7 +148,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      * Removes currently selected item, saves the current state to preferences and
      * updates the view.
      */
-    private synchronized void removeSelectedItem() {
+    public synchronized void removeSelectedItem() {
         Optional<SelectorItem> it = this.getSelectedItem();
 
         if (!it.isPresent()) {
@@ -159,6 +160,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         SelectorItem item = it.get();
         if (this.items.remove(item.getKey(), item)) {
+            clearSelection();
             savePreferences();
             filterItems();
         }
@@ -168,7 +170,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      * Opens {@link EditItemDialog} for the selected item, saves the current state
      * to preferences and updates the view.
      */
-    private synchronized void editSelectedItem() {
+    public synchronized void editSelectedItem() {
         Optional<SelectorItem> it = this.getSelectedItem();
 
         if (!it.isPresent()) {
@@ -201,7 +203,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      * Opens {@link EditItemDialog}, saves the state to preferences if a new item is added
      * and updates the view.
      */
-    private synchronized void createNewItem() {
+    public synchronized void createNewItem() {
         EditItemDialog dialog = new EditItemDialog(componentParent, tr("Add snippet"), tr("Add"));
         dialog.showDialog();
 
@@ -221,10 +223,11 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
     @Override
     protected void filterItems() {
         String text = edSearchText.getText().toLowerCase(Locale.ENGLISH);
-
-        super.lsResultModel.setItems(this.items.values().stream()
+        List<SelectorItem> matchingItems = this.items.values().stream()
                 .filter(item -> item.getKey().contains(text))
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
+
+        super.lsResultModel.setItems(matchingItems);
     }
 
     private void doubleClickEvent() {
