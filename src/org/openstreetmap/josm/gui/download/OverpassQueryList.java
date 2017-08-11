@@ -186,7 +186,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                 componentParent,
                 tr("Edit item"),
                 item,
-                tr("Save"));
+                tr("Save"), tr("Cancel"));
         dialog.showDialog();
 
         Optional<SelectorItem> editedItem = dialog.getOutputItem();
@@ -480,8 +480,8 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
             panel.add(this.name, GBC.eol().insets(5).anchor(GBC.SOUTHEAST).fill(GBC.HORIZONTAL));
             panel.add(queryScrollPane, constraint);
 
-            setDefaultButton(SUCCESS_BTN);
-            setCancelButton(CANCEL_BTN);
+            setDefaultButton(SUCCESS_BTN + 1);
+            setCancelButton(CANCEL_BTN + 1);
             setPreferredSize(new Dimension(400, 400));
             setContent(panel, false);
         }
