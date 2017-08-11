@@ -48,7 +48,6 @@ import org.openstreetmap.josm.gui.widgets.DefaultTextComponentValidator;
 import org.openstreetmap.josm.gui.widgets.JosmTextArea;
 import org.openstreetmap.josm.gui.widgets.SearchTextResultListPanel;
 import org.openstreetmap.josm.tools.GBC;
-import org.openstreetmap.josm.tools.InputMapUtils;
 import org.openstreetmap.josm.tools.Utils;
 
 /**
