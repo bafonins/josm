@@ -165,10 +165,10 @@ public class OverpassDownloadAction extends JosmAction {
 
         private OverpassDownloadDialog(Component parent) {
             super(parent, ht("/Action/OverpassDownload"));
-            cbDownloadOsmData.setEnabled(false);
-            cbDownloadOsmData.setSelected(false);
-            cbDownloadGpxData.setVisible(false);
-            cbDownloadNotes.setVisible(false);
+//            cbDownloadOsmData.setEnabled(false);
+//            cbDownloadOsmData.setSelected(false);
+//            cbDownloadGpxData.setVisible(false);
+//            cbDownloadNotes.setVisible(false);
             cbStartup.setVisible(false);
         }
 
@@ -287,10 +287,10 @@ public class OverpassDownloadAction extends JosmAction {
             overpassQueryList.saveHistoricItem(overpassQuery.getText());
         }
 
-        @Override
-        protected void updateSizeCheck() {
-            displaySizeCheckResult(false);
-        }
+//        @Override
+//        protected void updateSizeCheck() {
+//            displaySizeCheckResult(false);
+//        }
 
         /**
          * Triggers the download action to fire.

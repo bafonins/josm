@@ -28,6 +28,11 @@ public class OSMDownloadSource implements DownloadSource<Object> {
         // TODO: implement download
     }
 
+    @Override
+    public String getLabel() {
+        return "Download from OSM";
+    }
+
     class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<Object> {
 
         private Bounds currentBounds;
@@ -61,11 +66,15 @@ public class OSMDownloadSource implements DownloadSource<Object> {
             cbDownloadNotes.getModel().addChangeListener(checkboxChangeListener);
 
             add(cbDownloadOsmData, GBC.std().insets(1, 5, 1, 5));
-            add(cbDownloadGpxData, GBC.std().insets(5, 5, 1, 5));
-            add(cbDownloadNotes, GBC.eol().insets(50, 5, 1, 5));
+            add(cbDownloadGpxData, GBC.std().insets(1, 5, 1, 5));
+            add(cbDownloadNotes, GBC.eol().insets(1, 5, 1, 5));
+
+            // place for selectors
 
             Font labelFont = sizeCheck.getFont();
             sizeCheck.setFont(labelFont.deriveFont(Font.PLAIN, labelFont.getSize()));
+
+            add(sizeCheck, GBC.eol().anchor(GBC.EAST).insets(5, 5, 5, 2));
         }
 
         @Override
@@ -89,7 +98,7 @@ public class OSMDownloadSource implements DownloadSource<Object> {
 
         @Override
         public Optional<Bounds> getSelectedDownloadArea() {
-            return null;
+            return Optional.ofNullable(this.currentBounds);
         }
 
         @Override

@@ -75,35 +75,35 @@ public class DownloadAction extends JosmAction {
         final boolean zoom = dialog.isZoomToDownloadedDataRequired();
         final List<Pair<AbstractDownloadTask<?>, Future<?>>> tasks = new ArrayList<>();
 
-        if (dialog.isDownloadOsmData()) {
-            DownloadOsmTask task = new DownloadOsmTask();
-            task.setZoomAfterDownload(zoom && !dialog.isDownloadGpxData() && !dialog.isDownloadNotes());
-            Future<?> future = task.download(dialog.isNewLayerRequired(), area, null);
-            Main.worker.submit(new PostDownloadHandler(task, future));
-            if (zoom) {
-                tasks.add(new Pair<>(task, future));
-            }
-        }
-
-        if (dialog.isDownloadGpxData()) {
-            DownloadGpsTask task = new DownloadGpsTask();
-            task.setZoomAfterDownload(zoom && !dialog.isDownloadOsmData() && !dialog.isDownloadNotes());
-            Future<?> future = task.download(dialog.isNewLayerRequired(), area, null);
-            Main.worker.submit(new PostDownloadHandler(task, future));
-            if (zoom) {
-                tasks.add(new Pair<>(task, future));
-            }
-        }
-
-        if (dialog.isDownloadNotes()) {
-            DownloadNotesTask task = new DownloadNotesTask();
-            task.setZoomAfterDownload(zoom && !dialog.isDownloadOsmData() && !dialog.isDownloadGpxData());
-            Future<?> future = task.download(false, area, null);
-            Main.worker.submit(new PostDownloadHandler(task, future));
-            if (zoom) {
-                tasks.add(new Pair<>(task, future));
-            }
-        }
+//        if (dialog.isDownloadOsmData()) {
+//            DownloadOsmTask task = new DownloadOsmTask();
+//            task.setZoomAfterDownload(zoom && !dialog.isDownloadGpxData() && !dialog.isDownloadNotes());
+//            Future<?> future = task.download(dialog.isNewLayerRequired(), area, null);
+//            Main.worker.submit(new PostDownloadHandler(task, future));
+//            if (zoom) {
+//                tasks.add(new Pair<>(task, future));
+//            }
+//        }
+//
+//        if (dialog.isDownloadGpxData()) {
+//            DownloadGpsTask task = new DownloadGpsTask();
+//            task.setZoomAfterDownload(zoom && !dialog.isDownloadOsmData() && !dialog.isDownloadNotes());
+//            Future<?> future = task.download(dialog.isNewLayerRequired(), area, null);
+//            Main.worker.submit(new PostDownloadHandler(task, future));
+//            if (zoom) {
+//                tasks.add(new Pair<>(task, future));
+//            }
+//        }
+//
+//        if (dialog.isDownloadNotes()) {
+//            DownloadNotesTask task = new DownloadNotesTask();
+//            task.setZoomAfterDownload(zoom && !dialog.isDownloadOsmData() && !dialog.isDownloadGpxData());
+//            Future<?> future = task.download(false, area, null);
+//            Main.worker.submit(new PostDownloadHandler(task, future));
+//            if (zoom) {
+//                tasks.add(new Pair<>(task, future));
+//            }
+//        }
 
         if (zoom && tasks.size() > 1) {
             Main.worker.submit(() -> {
