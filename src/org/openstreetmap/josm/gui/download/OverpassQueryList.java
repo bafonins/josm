@@ -131,13 +131,13 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      */
     public synchronized void saveHistoricItem(String query) {
         boolean historicExist = this.items.values().stream()
-                .filter(it -> it.getKey().contains("history"))
+                .filter(SelectorItem::isHistoric)
                 .map(SelectorItem::getQuery)
                 .anyMatch(q -> q.equals(query));
 
         if (!historicExist) {
             SelectorItem item = new SelectorItem(
-                    TRANSLATED_HISTORY + LocalDateTime.now().format(FORMAT), query, true);
+                    TRANSLATED_HISTORY + " " + LocalDateTime.now().format(FORMAT), query, true);
 
             this.items.put(item.getKey(), item);
 
@@ -229,6 +229,11 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                 .filter(item -> item.getKey().contains(text))
                 .collect(Collectors.toList());
 
+        Main.info("==========================================");
+        matchingItems.forEach(it -> {
+            Main.info("key = " + it.getKey() + ", isHistoric = " + it.isHistoric());
+        });
+
         super.lsResultModel.setItems(matchingItems);
     }
 
@@ -252,6 +257,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
             Map<String, String> it = new HashMap<>();
             it.put(KEY_KEY, item.getKey());
             it.put(QUERY_KEY, item.getQuery());
+            it.put(HISTORY_KEY, Boolean.toString(item.isHistoric()));
             it.put(USE_COUNT_KEY, Integer.toString(item.getUsageCount()));
 
             toSave.add(it);
@@ -573,6 +579,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
             this.itemKey = key;
             this.query = query;
+            this.isHistoric = historic;
             this.usageCount = usageCount;
         }
 
