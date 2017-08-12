@@ -228,12 +228,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         List<SelectorItem> matchingItems = this.items.values().stream()
                 .filter(item -> item.getKey().contains(text))
                 .collect(Collectors.toList());
-
-        Main.info("==========================================");
-        matchingItems.forEach(it -> {
-            Main.info("key = " + it.getKey() + ", isHistoric = " + it.isHistoric());
-        });
-
+        
         super.lsResultModel.setItems(matchingItems);
     }
 
@@ -435,6 +430,9 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         private static final int SUCCESS_BTN = 0;
         private static final int CANCEL_BTN = 1;
 
+        private boolean creatingNew;
+        private SelectorItem itemToEdit;
+
         /**
          * Added/Edited object to be returned. If {@link Optional#empty()} then probably
          * the user closed the dialog, otherwise {@link SelectorItem} is present.
@@ -452,8 +450,10 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                 String... buttonTexts) {
             super(parent, title, buttonTexts);
 
-            String nameToEdit = itemToEdit != null ? itemToEdit.getKey() : "";
-            String queryToEdit = itemToEdit != null ? itemToEdit.getQuery() : "";
+            this.itemToEdit = itemToEdit;
+
+            String nameToEdit = itemToEdit == null ? "" : itemToEdit.getKey();
+            String queryToEdit = itemToEdit == null ? "" : itemToEdit.getQuery();
             this.initialNameHash = nameToEdit.hashCode();
 
             this.name = new JTextField(nameToEdit);
@@ -526,7 +526,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                     this.outputItem = Optional.of(new SelectorItem(
                             this.name.getText(),
                             this.query.getText(),
-                            this.name.getText().contains(TRANSLATED_HISTORY)));
+                            false));
                     super.buttonAction(buttonIndex, evt);
                 }
             } else {
