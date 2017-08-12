@@ -76,6 +76,9 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
     private static final String QUERY_KEY = "query";
     private static final String USE_COUNT_KEY = "useCount";
     private static final String PREFERENCE_ITEMS = "download.overpass.query";
+    private static final String HISTORY_KEY = "isHistoric";
+
+    private static final String TRANSLATED_HISTORY = tr("history");
 
     /**
      * Constructs a new {@code OverpassQueryList}.
@@ -134,8 +137,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         if (!historicExist) {
             SelectorItem item = new SelectorItem(
-                    "history " + LocalDateTime.now().format(FORMAT),
-                    query);
+                    TRANSLATED_HISTORY + LocalDateTime.now().format(FORMAT), query, true);
 
             this.items.put(item.getKey(), item);
 
@@ -209,7 +211,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         Optional<SelectorItem> newItem = dialog.getOutputItem();
         newItem.ifPresent(i -> {
-            items.put(i.getKey(), new SelectorItem(i.getKey(), i.getQuery()));
+            items.put(i.getKey(), new SelectorItem(i.getKey(), i.getQuery(), false));
             savePreferences();
             filterItems();
         });
@@ -268,11 +270,16 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         Map<String, SelectorItem> result = new HashMap<>();
 
         for (Map<String, String> entry : toRetrieve) {
-            String key = entry.get(KEY_KEY);
-            String query = entry.get(QUERY_KEY);
-            int usageCount = Integer.parseInt(entry.get(USE_COUNT_KEY));
+            try {
+                String key = entry.get(KEY_KEY);
+                String query = entry.get(QUERY_KEY);
+                boolean isHistoric = Boolean.parseBoolean(entry.get(HISTORY_KEY));
+                int usageCount = Integer.parseInt(entry.get(USE_COUNT_KEY));
 
-            result.put(key, new SelectorItem(key, query, usageCount));
+                result.put(key, new SelectorItem(key, query, isHistoric, usageCount));
+            } catch (IllegalArgumentException e) {
+                Main.error(e);
+            }
         }
 
         return result;
@@ -510,7 +517,10 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                             tr("Warning"),
                             JOptionPane.WARNING_MESSAGE);
                 } else {
-                    this.outputItem = Optional.of(new SelectorItem(this.name.getText(), this.query.getText()));
+                    this.outputItem = Optional.of(new SelectorItem(
+                            this.name.getText(),
+                            this.query.getText(),
+                            this.name.getText().contains(TRANSLATED_HISTORY)));
                     super.buttonAction(buttonIndex, evt);
                 }
             } else {
@@ -527,27 +537,30 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         private final String itemKey;
         private final String query;
         private int usageCount;
+        private boolean isHistoric;
 
         /**
          * Constructs a new {@code SelectorItem}.
          * @param key The key of this item.
          * @param query The query of the item.
+         * @param historic The flag is the item is historic.
          * @exception NullPointerException if any parameter is {@code null}.
          * @exception IllegalArgumentException if any parameter is empty.
          */
-        public SelectorItem(String key, String query) {
-            this(key, query, 1);
+        public SelectorItem(String key, String query, boolean historic) {
+            this(key, query, historic, 1);
         }
 
         /**
          * Constructs a new {@code SelectorItem}.
          * @param key The key of this item.
          * @param query The query of the item.
+         * @param historic The flag is the item is historic.
          * @param usageCount The number of times this query was used.
          * @exception NullPointerException if any parameter is {@code null}.
          * @exception IllegalArgumentException if any parameter is empty.
          */
-        public SelectorItem(String key, String query, int usageCount) {
+        public SelectorItem(String key, String query, boolean historic, int usageCount) {
             Objects.requireNonNull(key);
             Objects.requireNonNull(query);
 
@@ -585,6 +598,14 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
          */
         public int getUsageCount() {
             return this.usageCount;
+        }
+
+        /**
+         * Gets the flag defining if the item is historic.
+         * @return {@code true} if the item is historic, {@code false} otherwise.
+         */
+        public boolean isHistoric() {
+            return this.isHistoric;
         }
 
         /**
