@@ -205,7 +205,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         Optional<SelectorItem> newItem = dialog.getOutputItem();
         newItem.ifPresent(i -> {
-            items.put(i.getKey(), new SelectorItem(i.getKey(), i.getQuery()));
+            items.put(i.getKey(), i);
             savePreferences();
             filterItems();
         });
@@ -424,8 +424,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         private static final int SUCCESS_BTN = 0;
         private static final int CANCEL_BTN = 1;
 
-        private boolean creatingNew;
-        private SelectorItem itemToEdit;
+        private final transient SelectorItem itemToEdit;
 
         /**
          * Added/Edited object to be returned. If {@link Optional#empty()} then probably
@@ -510,21 +509,38 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                             tr("The item cannot be created with provided name"),
                             tr("Warning"),
                             JOptionPane.WARNING_MESSAGE);
+
+                    return;
                 } else if (!this.queryValidator.isValid()) {
                     JOptionPane.showMessageDialog(
                             componentParent,
                             tr("The item cannot be created with an empty query"),
                             tr("Warning"),
                             JOptionPane.WARNING_MESSAGE);
-                } else {
+
+                    return;
+                } else if (this.itemToEdit != null) { // editing the item
+                    String newKey = this.name.getText();
+                    String newQuery = this.query.getText();
+
+                    String itemKey = this.itemToEdit.getKey();
+                    String itemQuery = this.itemToEdit.getQuery();
+
+                    this.outputItem = Optional.of(new SelectorItem(
+                            this.name.getText(),
+                            this.query.getText(),
+                            !newKey.equals(itemKey) || !newQuery.equals(itemQuery)
+                                ? LocalDateTime.now()
+                                : this.itemToEdit.getLastEdit()));
+
+                } else { // creating new
                     this.outputItem = Optional.of(new SelectorItem(
                             this.name.getText(),
                             this.query.getText()));
-                    super.buttonAction(buttonIndex, evt);
                 }
-            } else {
-                super.buttonAction(buttonIndex, evt);
             }
+
+            super.buttonAction(buttonIndex, evt);
         }
     }
 
