@@ -416,7 +416,6 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         private final JTextField name;
         private final JosmTextArea query;
-        private final int initialNameHash;
 
         private final transient AbstractTextComponentValidator queryValidator;
         private final transient AbstractTextComponentValidator nameValidator;
@@ -447,7 +446,6 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
             String nameToEdit = itemToEdit == null ? "" : itemToEdit.getKey();
             String queryToEdit = itemToEdit == null ? "" : itemToEdit.getQuery();
-            this.initialNameHash = nameToEdit.hashCode();
 
             this.name = new JTextField(nameToEdit);
             this.query = new JosmTextArea(queryToEdit);
@@ -466,11 +464,12 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                 @Override
                 public boolean isValid() {
                     String currentName = name.getText();
-                    int currentHash = currentName.hashCode();
 
-                    return !Utils.isStripEmpty(currentName) &&
-                            !(currentHash != initialNameHash &&
-                                    items.containsKey(currentName));
+                    boolean notEmpty = !Utils.isStripEmpty(currentName);
+                    boolean exist = !currentName.equals(nameToEdit) &&
+                                        items.containsKey(currentName);
+
+                    return notEmpty && !exist;
                 }
             };
 
