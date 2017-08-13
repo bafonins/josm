@@ -272,6 +272,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
                 result.put(key, new SelectorItem(key, query, lastEdit));
             } catch (IllegalArgumentException | DateTimeParseException e) {
+                // skip any corrupted item
                 Main.error(e);
             }
         }
