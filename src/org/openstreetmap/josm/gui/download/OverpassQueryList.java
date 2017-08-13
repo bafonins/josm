@@ -15,6 +15,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -74,9 +75,8 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      */
     private static final String KEY_KEY = "key";
     private static final String QUERY_KEY = "query";
-    private static final String USE_COUNT_KEY = "useCount";
+    private static final String LAST_EDIT_KEY = "lastEdit";
     private static final String PREFERENCE_ITEMS = "download.overpass.query";
-    private static final String HISTORY_KEY = "isHistoric";
 
     private static final String TRANSLATED_HISTORY = tr("history");
 
@@ -111,11 +111,6 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         }
 
         SelectorItem item = lsResultModel.getElementAt(idx);
-        item.increaseUsageCount();
-
-        this.items.values().stream()
-                .filter(it -> !it.getKey().equals(item.getKey()))
-                .forEach(SelectorItem::decreaseUsageCount);
 
         filterItems();
 
@@ -131,13 +126,12 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
      */
     public synchronized void saveHistoricItem(String query) {
         boolean historicExist = this.items.values().stream()
-                .filter(SelectorItem::isHistoric)
                 .map(SelectorItem::getQuery)
                 .anyMatch(q -> q.equals(query));
 
         if (!historicExist) {
             SelectorItem item = new SelectorItem(
-                    TRANSLATED_HISTORY + " " + LocalDateTime.now().format(FORMAT), query, true);
+                    TRANSLATED_HISTORY + " " + LocalDateTime.now().format(FORMAT), query);
 
             this.items.put(item.getKey(), item);
 
@@ -211,7 +205,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
         Optional<SelectorItem> newItem = dialog.getOutputItem();
         newItem.ifPresent(i -> {
-            items.put(i.getKey(), new SelectorItem(i.getKey(), i.getQuery(), false));
+            items.put(i.getKey(), new SelectorItem(i.getKey(), i.getQuery()));
             savePreferences();
             filterItems();
         });
@@ -226,6 +220,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
     protected void filterItems() {
         String text = edSearchText.getText().toLowerCase(Locale.ENGLISH);
         List<SelectorItem> matchingItems = this.items.values().stream()
+                .sorted((i1, i2) -> i2.getLastEdit().compareTo(i1.getLastEdit()))
                 .filter(item -> item.getKey().contains(text))
                 .collect(Collectors.toList());
         
@@ -252,8 +247,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
             Map<String, String> it = new HashMap<>();
             it.put(KEY_KEY, item.getKey());
             it.put(QUERY_KEY, item.getQuery());
-            it.put(HISTORY_KEY, Boolean.toString(item.isHistoric()));
-            it.put(USE_COUNT_KEY, Integer.toString(item.getUsageCount()));
+            it.put(LAST_EDIT_KEY, item.getLastEdit().format(FORMAT));
 
             toSave.add(it);
         }
@@ -274,11 +268,10 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
             try {
                 String key = entry.get(KEY_KEY);
                 String query = entry.get(QUERY_KEY);
-                boolean isHistoric = Boolean.parseBoolean(entry.get(HISTORY_KEY));
-                int usageCount = Integer.parseInt(entry.get(USE_COUNT_KEY));
+                LocalDateTime lastEdit = LocalDateTime.parse(entry.get(LAST_EDIT_KEY), FORMAT);
 
-                result.put(key, new SelectorItem(key, query, isHistoric, usageCount));
-            } catch (IllegalArgumentException e) {
+                result.put(key, new SelectorItem(key, query, lastEdit));
+            } catch (IllegalArgumentException | DateTimeParseException e) {
                 Main.error(e);
             }
         }
@@ -525,8 +518,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                 } else {
                     this.outputItem = Optional.of(new SelectorItem(
                             this.name.getText(),
-                            this.query.getText(),
-                            false));
+                            this.query.getText()));
                     super.buttonAction(buttonIndex, evt);
                 }
             } else {
@@ -542,33 +534,31 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
     public static class SelectorItem {
         private final String itemKey;
         private final String query;
-        private int usageCount;
-        private boolean isHistoric;
+        private final LocalDateTime lastEdit;
 
         /**
          * Constructs a new {@code SelectorItem}.
          * @param key The key of this item.
          * @param query The query of the item.
-         * @param historic The flag is the item is historic.
          * @exception NullPointerException if any parameter is {@code null}.
          * @exception IllegalArgumentException if any parameter is empty.
          */
-        public SelectorItem(String key, String query, boolean historic) {
-            this(key, query, historic, 1);
+        public SelectorItem(String key, String query) {
+            this(key, query, LocalDateTime.now());
         }
 
         /**
          * Constructs a new {@code SelectorItem}.
          * @param key The key of this item.
          * @param query The query of the item.
-         * @param historic The flag is the item is historic.
-         * @param usageCount The number of times this query was used.
+         * @param lastEdit The latest when the item was
          * @exception NullPointerException if any parameter is {@code null}.
          * @exception IllegalArgumentException if any parameter is empty.
          */
-        public SelectorItem(String key, String query, boolean historic, int usageCount) {
-            Objects.requireNonNull(key);
-            Objects.requireNonNull(query);
+        public SelectorItem(String key, String query, LocalDateTime lastEdit) {
+            Objects.requireNonNull(key, "The name of the item cannot be null");
+            Objects.requireNonNull(query, "The query of the item cannot be null");
+            Objects.requireNonNull(lastEdit, "The last edit date time cannot be null");
 
             if (Utils.isStripEmpty(key)) {
                 throw new IllegalArgumentException("The key of the item cannot be empty");
@@ -579,8 +569,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
 
             this.itemKey = key;
             this.query = query;
-            this.isHistoric = historic;
-            this.usageCount = usageCount;
+            this.lastEdit = lastEdit;
         }
 
         /**
@@ -600,39 +589,11 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
         }
 
         /**
-         * Gets the number of times the query was used by the user.
-         * @return The usage count of this item.
+         * Gets the latest date time when the item was created/changed.
+         * @return The latest date time when the item was created/changed.
          */
-        public int getUsageCount() {
-            return this.usageCount;
-        }
-
-        /**
-         * Gets the flag defining if the item is historic.
-         * @return {@code true} if the item is historic, {@code false} otherwise.
-         */
-        public boolean isHistoric() {
-            return this.isHistoric;
-        }
-
-        /**
-         * Increments the {@link SelectorItem#usageCount} by one till
-         * it reaches {@link Integer#MAX_VALUE}.
-         */
-        public void increaseUsageCount() {
-            if (this.usageCount < Integer.MAX_VALUE) {
-                this.usageCount++;
-            }
-        }
-
-        /**
-         * Decrements the {@link SelectorItem#usageCount} ny one till
-         * it reaches 0.
-         */
-        public void decreaseUsageCount() {
-            if (this.usageCount > 0) {
-                this.usageCount--;
-            }
+        public LocalDateTime getLastEdit() {
+            return lastEdit;
         }
 
         @Override
