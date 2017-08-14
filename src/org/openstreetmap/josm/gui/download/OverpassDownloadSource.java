@@ -4,34 +4,36 @@ import org.openstreetmap.josm.data.Bounds;
 
 import java.util.Optional;
 
+import static org.openstreetmap.josm.tools.I18n.tr;
+
 public class OverpassDownloadSource implements DownloadSource<String> {
 
 
     @Override
     public AbstractDownloadSourcePanel<String> createPanel() {
-        return null;
+        return new OverpassDownloadSourcePanel();
     }
 
     @Override
     public void doDownload(Bounds bbox, String data, DownloadSettings settings) {
-
+        // TODO: implement this
     }
 
     @Override
     public String getLabel() {
-        return null;
+        return tr("Download from Overpass API");
     }
 
     @Override
     public void addGui(DownloadDialog dialog) {
-
+        dialog.addDownloadSource(createPanel(), getLabel());
     }
 
     class OverpassDownloadSourcePanel extends AbstractDownloadSourcePanel<String> {
 
         @Override
         public DownloadSource<String> getDownloadSource() {
-            return null;
+            return OverpassDownloadSource.this;
         }
 
         @Override
