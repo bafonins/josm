@@ -22,4 +22,10 @@ public interface DownloadSource<T> {
      * @return A string representation of this download source.
      */
     String getLabel();
+
+    /**
+     * Add a download source to the dialog, see {@link DownloadDialog}.
+     * @param dialog The download dialog.
+     */
+    void addGui(DownloadDialog dialog);
 }
