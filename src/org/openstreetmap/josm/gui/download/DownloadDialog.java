@@ -302,6 +302,16 @@ public class DownloadDialog extends JDialog {
     }
 
     /**
+     * Adds a new download source to the download dialog
+     *
+     * @param source The gui representation of the panel to be added.
+     * @param label The display name of the download source.
+     */
+    public void addDownloadSource(JPanel source, String label) {
+        downloadSourcesTab.add(label, source);
+    }
+
+    /**
      * Refreshes the tile sources
      * @since 6364
      */
