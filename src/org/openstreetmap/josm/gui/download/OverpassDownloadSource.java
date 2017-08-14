@@ -4,16 +4,16 @@ import org.openstreetmap.josm.data.Bounds;
 
 import java.util.Optional;
 
-public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSource.OverpassDownloadSettings> {
+public class OverpassDownloadSource implements DownloadSource<String> {
 
 
     @Override
-    public AbstractDownloadSourcePanel<OverpassDownloadSettings> createPanel() {
+    public AbstractDownloadSourcePanel<String> createPanel() {
         return null;
     }
 
     @Override
-    public void doDownload(OverpassDownloadSettings data) {
+    public void doDownload(Bounds bbox, String data, DownloadSettings settings) {
 
     }
 
@@ -22,10 +22,10 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
         return null;
     }
 
-    class OverpassDownloadSourcePanel extends AbstractDownloadSourcePanel<OverpassDownloadSettings> {
+    class OverpassDownloadSourcePanel extends AbstractDownloadSourcePanel<String> {
 
         @Override
-        public DownloadSource<OverpassDownloadSettings> getDownloadSource() {
+        public DownloadSource<String> getDownloadSource() {
             return null;
         }
 
@@ -45,15 +45,8 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
         }
 
         @Override
-        boolean handleDownload(OverpassDownloadSettings data) {
+        boolean handleDownload(Bounds bbox, String data, DownloadSettings settings) {
             return false;
-        }
-    }
-
-    class OverpassDownloadSettings extends DownloadSettings {
-
-        public OverpassDownloadSettings(boolean downloadAsNewLayer, boolean zoomToDownloadedData) {
-            super(downloadAsNewLayer, zoomToDownloadedData);
         }
     }
 }
