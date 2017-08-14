@@ -59,7 +59,7 @@ public class OSMDownloadSource implements DownloadSource<Object> {
             final ChangeListener checkboxChangeListener = e -> updateSizeCheck();
 
             // adding the download tasks
-            add(new JLabel(tr("Data Sources and Types:")), GBC.std().insets(5, 5, 1, 5));
+            add(new JLabel(tr("Data Sources and Types:")), GBC.std().insets(5, 5, 1, 5).anchor(GBC.CENTER));
             cbDownloadOsmData = new JCheckBox(tr("OpenStreetMap data"), true);
             cbDownloadOsmData.setToolTipText(tr("Select to download OSM data in the selected download area."));
             cbDownloadOsmData.getModel().addChangeListener(checkboxChangeListener);
@@ -73,9 +73,7 @@ public class OSMDownloadSource implements DownloadSource<Object> {
             add(cbDownloadOsmData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadGpxData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadNotes, GBC.eol().insets(1, 5, 1, 5));
-
-            // place for selectors
-
+            
             Font labelFont = sizeCheck.getFont();
             sizeCheck.setFont(labelFont.deriveFont(Font.PLAIN, labelFont.getSize()));
 
