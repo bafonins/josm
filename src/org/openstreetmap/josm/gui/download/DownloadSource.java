@@ -27,5 +27,5 @@ public interface DownloadSource<T> {
      * Add a download source to the dialog, see {@link DownloadDialog}.
      * @param dialog The download dialog.
      */
-    void addGui(DownloadDialog dialog);
+    void addGui(final DownloadDialog dialog);
 }
