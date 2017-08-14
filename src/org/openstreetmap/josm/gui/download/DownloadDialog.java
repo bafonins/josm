@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.swing.AbstractAction;
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -63,6 +64,22 @@ public class DownloadDialog extends JDialog {
     private static final BooleanProperty DOWNLOAD_AUTORUN = new BooleanProperty("download.autorun", false);
     private static final BooleanProperty DOWNLOAD_NEWLAYER = new BooleanProperty("download.newlayer", false);
     private static final BooleanProperty DOWNLOAD_ZOOMTODATA = new BooleanProperty("download.zoomtodata", true);
+
+    private static final BooleanProperty DOWNLOAD_OSM_NEWLAYER = new BooleanProperty("download.osm.newlayer", false);
+    private static final BooleanProperty ODOWNLOAD_OSM_ZOOM = new BooleanProperty("download.osm.zoomtodata", false);
+    private static final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.data", true);
+
+    private static final BooleanProperty DOWNLOAD_NOTES_NEWLAYER = new BooleanProperty("download.notes.newlayer", false);
+    private static final BooleanProperty DOWNLOAD_NOTES_ZOOM = new BooleanProperty("download.notes.zoomtodata", false);
+    private static final BooleanProperty DOWNLOAD_NOTES = new BooleanProperty("download.notes.data", false);
+
+    private static final BooleanProperty DOWNLOAD_GPX_NEWLAYER = new BooleanProperty("download.gpx.newlayer", false);
+    private static final BooleanProperty DOWNLOAD_GPX_ZOOM = new BooleanProperty("download.gpx.zoomtodata", false);
+    private static final BooleanProperty DOWNLOAD_GPX = new BooleanProperty("download.gpx.data", false);
+
+    private static final BooleanProperty DOWNLOAD_OVERPASS_NEWLAYER = new BooleanProperty("download.overpass.newlayer", false);
+    private static final BooleanProperty DOWNLOAD_OVERPASS_ZOOM = new BooleanProperty("download.overpass.zoomtodata", false);
+    private static final BooleanProperty DOWNLOAD_OVERPASS = new BooleanProperty("download.overpass.data", false);
 
     /** the unique instance of the download dialog */
     private static DownloadDialog instance;
@@ -200,6 +217,31 @@ public class DownloadDialog extends JDialog {
         InputMapUtils.enableEnter(btnHelp);
 
         return pnl;
+    }
+
+    protected JPanel getMainPanel() {
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        JPanel downloadSourcesPanel = new JPanel();
+        downloadSourcesPanel.setLayout(new BoxLayout(downloadSourcesPanel, BoxLayout.X_AXIS));
+
+        JPanel osmCheckBoxes = new JPanel();
+        osmCheckBoxes.setLayout(new BoxLayout(osmCheckBoxes, BoxLayout.Y_AXIS));
+        JPanel notesCheckBoxes= new JPanel();
+        osmCheckBoxes.setLayout(new BoxLayout(notesCheckBoxes, BoxLayout.Y_AXIS));
+        JPanel gpxCheckBoxes = new JPanel();
+        osmCheckBoxes.setLayout(new BoxLayout(gpxCheckBoxes, BoxLayout.Y_AXIS));
+        JPanel overpassCheckBoxes = new JPanel();
+        osmCheckBoxes.setLayout(new BoxLayout(overpassCheckBoxes, BoxLayout.Y_AXIS));
+
+
+
+
+
+
+
+
+
+        return mainPanel;
     }
 
     /**
