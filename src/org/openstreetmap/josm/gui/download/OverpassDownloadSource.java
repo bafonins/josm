@@ -22,6 +22,11 @@ public class OverpassDownloadSource implements DownloadSource<String> {
         return null;
     }
 
+    @Override
+    public void addGui(DownloadDialog dialog) {
+
+    }
+
     class OverpassDownloadSourcePanel extends AbstractDownloadSourcePanel<String> {
 
         @Override

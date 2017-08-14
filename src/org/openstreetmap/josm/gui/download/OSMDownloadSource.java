@@ -30,7 +30,12 @@ public class OSMDownloadSource implements DownloadSource<Object> {
 
     @Override
     public String getLabel() {
-        return "Download from OSM";
+        return tr("Download from OSM");
+    }
+
+    @Override
+    public void addGui(DownloadDialog dialog) {
+        dialog.addDownloadSource(createPanel(), getLabel());
     }
 
     class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<Object> {
