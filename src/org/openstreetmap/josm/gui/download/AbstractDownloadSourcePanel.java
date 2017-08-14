@@ -45,14 +45,6 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
     public abstract Optional<Bounds> getSelectedDownloadArea();
 
     /**
-     * Returns The previously saved bounding box from preferences for the data source.
-     * @return An {@link Optional} of the saved bounding box in preferences.
-     */
-    public static Optional<Bounds> getSavedDownloadBounds() {
-        return Optional.empty();
-    }
-
-    /**
      * Performs the logic needed in case if the user triggered the download
      * action in {@link DownloadDialog}.
      * @param data The data.
@@ -68,6 +60,7 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
      */
     public void handleCancel() {
         // nothing, let download dialog to close
+        // override if necessary
     }
 
 }
