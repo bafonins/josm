@@ -38,7 +38,7 @@ public class OSMDownloadSource implements DownloadSource<Object> {
         dialog.addDownloadSource(createPanel(), getLabel());
     }
 
-    class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<Object> {
+    public static class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<Object> {
 
         private Bounds currentBounds;
 
@@ -73,7 +73,7 @@ public class OSMDownloadSource implements DownloadSource<Object> {
             add(cbDownloadOsmData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadGpxData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadNotes, GBC.eol().insets(1, 5, 1, 5));
-            
+
             Font labelFont = sizeCheck.getFont();
             sizeCheck.setFont(labelFont.deriveFont(Font.PLAIN, labelFont.getSize()));
 
@@ -82,7 +82,7 @@ public class OSMDownloadSource implements DownloadSource<Object> {
 
         @Override
         public DownloadSource<Object> getDownloadSource() {
-            return OSMDownloadSource.this;
+            return null;
         }
 
         @Override

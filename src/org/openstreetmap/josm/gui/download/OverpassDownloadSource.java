@@ -1,6 +1,8 @@
 package org.openstreetmap.josm.gui.download;
 
 import org.openstreetmap.josm.data.Bounds;
+import org.openstreetmap.josm.data.preferences.BooleanProperty;
+import org.openstreetmap.josm.gui.widgets.JosmTextArea;
 
 import java.util.Optional;
 
@@ -29,11 +31,22 @@ public class OverpassDownloadSource implements DownloadSource<String> {
         dialog.addDownloadSource(createPanel(), getLabel());
     }
 
-    class OverpassDownloadSourcePanel extends AbstractDownloadSourcePanel<String> {
+    public static class OverpassDownloadSourcePanel extends AbstractDownloadSourcePanel<String> {
+
+        private JosmTextArea overpassQuery;
+        private OverpassQueryList overpassQueryList;
+
+        private static final BooleanProperty OVERPASS_QUERY_LIST_OPENED =
+                new BooleanProperty("download.overpass.query-list.opened", false);
+        private static final String ACTION_IMG_SUBDIR = "dialogs";
+
+        public OverpassDownloadSourcePanel() {
+
+        }
 
         @Override
         public DownloadSource<String> getDownloadSource() {
-            return OverpassDownloadSource.this;
+            return null;
         }
 
         @Override
