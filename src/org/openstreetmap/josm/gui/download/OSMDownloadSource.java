@@ -42,7 +42,7 @@ public class OSMDownloadSource implements DownloadSource<Object> {
         private final JCheckBox cbDownloadNotes;
         private final JLabel sizeCheck = new JLabel();
 
-        private final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.osmdata", true);
+        private final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.data", true);
         private final BooleanProperty DOWNLOAD_GPS = new BooleanProperty("download.osm.gps", false);
         private final BooleanProperty DOWNLOAD_NOTES = new BooleanProperty("download.osm.notes", false);
 

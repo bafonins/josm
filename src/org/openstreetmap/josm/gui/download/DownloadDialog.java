@@ -69,41 +69,6 @@ public class DownloadDialog extends JDialog {
     private static final BooleanProperty DOWNLOAD_NEWLAYER = new BooleanProperty("download.newlayer", false);
     private static final BooleanProperty DOWNLOAD_ZOOMTODATA = new BooleanProperty("download.zoomtodata", true);
 
-    private static final BooleanProperty DOWNLOAD_OSM_NEWLAYER = new BooleanProperty("download.osm.newlayer", false);
-    private static final BooleanProperty DOWNLOAD_OSM_ZOOM = new BooleanProperty("download.osm.zoomtodata", false);
-    private static final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.data", true);
-
-    private static final BooleanProperty DOWNLOAD_NOTES_NEWLAYER = new BooleanProperty("download.notes.newlayer", false);
-    private static final BooleanProperty DOWNLOAD_NOTES_ZOOM = new BooleanProperty("download.notes.zoomtodata", false);
-    private static final BooleanProperty DOWNLOAD_NOTES = new BooleanProperty("download.notes.data", false);
-
-    private static final BooleanProperty DOWNLOAD_GPX_NEWLAYER = new BooleanProperty("download.gpx.newlayer", false);
-    private static final BooleanProperty DOWNLOAD_GPX_ZOOM = new BooleanProperty("download.gpx.zoomtodata", false);
-    private static final BooleanProperty DOWNLOAD_GPX = new BooleanProperty("download.gpx.data", false);
-
-    private static final BooleanProperty DOWNLOAD_OVERPASS_NEWLAYER = new BooleanProperty("download.overpass.newlayer", false);
-    private static final BooleanProperty DOWNLOAD_OVERPASS_ZOOM = new BooleanProperty("download.overpass.zoomtodata", false);
-    private static final BooleanProperty DOWNLOAD_OVERPASS = new BooleanProperty("download.overpass.data", false);
-
-    /**
-     * Checkboxes for each download source.
-     */
-    protected JCheckBox downloadOsm;
-    protected JCheckBox osmNewLayer;
-    protected JCheckBox osmZoom;
-
-    protected JCheckBox downloadNotes;
-    protected JCheckBox notesNewLayer;
-    protected JCheckBox notesZoom;
-
-    protected JCheckBox downloadGPX;
-    protected JCheckBox gpxNewLayer;
-    protected JCheckBox gpxZoom;
-
-    protected JCheckBox downloadOverpass;
-    protected JCheckBox overpassNewLayer;
-    protected JCheckBox overpassZoom;
-
     /** the unique instance of the download dialog */
     private static DownloadDialog instance;
 
@@ -123,6 +88,7 @@ public class DownloadDialog extends JDialog {
             Arrays.asList(new OSMDownloadSource(), new OverpassDownloadSource());
     protected final transient List<DownloadSelection> downloadSelections = new ArrayList<>();
     protected final JTabbedPane tpDownloadAreaSelectors = new JTabbedPane();
+    protected final JTabbedPane downloadSourcesTab = new JTabbedPane();
 
     protected JCheckBox cbNewLayer;
     protected JCheckBox cbStartup;
@@ -238,95 +204,6 @@ public class DownloadDialog extends JDialog {
         InputMapUtils.enableEnter(btnHelp);
 
         return pnl;
-    }
-
-    protected JPanel getMainPanel() {
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        JPanel downloadSourcesPanel = new JPanel();
-        downloadSourcesPanel.setLayout(new BoxLayout(downloadSourcesPanel, BoxLayout.X_AXIS));
-
-        JPanel osmCheckBoxes = this.initializeOsmCheckBoxes();
-        JPanel notesCheckBoxes = this.initializeNotesCheckBoxes();
-        JPanel gpxCheckBoxes = this.initializeGPXCheckBoxes();
-        JPanel overpassCheckBoxes = this.initializeOverpassCheckBoxes();
-
-        downloadSourcesPanel.add(osmCheckBoxes);
-        downloadSourcesPanel.add(notesCheckBoxes);
-        downloadSourcesPanel.add(gpxCheckBoxes);
-
-        return mainPanel;
-    }
-
-    private JPanel initializeOsmCheckBoxes() {
-        JPanel osmCheckBoxes = new JPanel();
-        osmCheckBoxes.setLayout(new BoxLayout(osmCheckBoxes, BoxLayout.Y_AXIS));
-
-        this.downloadOsm = new JCheckBox(tr("OpenStreetMap data"), DOWNLOAD_OSM.get());
-        this.downloadOsm.setToolTipText(tr("Select to download OSM data in the selected download area."));
-        this.osmNewLayer = new JCheckBox(tr("Download as new layer"), DOWNLOAD_OSM_NEWLAYER.get());
-        this.osmNewLayer.setToolTipText(tr("Download OSM data as a new layer"));
-        this.osmZoom = new JCheckBox(tr("Zoom to downloaded data"), DOWNLOAD_OSM_ZOOM.get());
-        this.osmZoom.setToolTipText(tr("Zoom to downloaded OSM data"));
-
-        osmCheckBoxes.add(this.downloadOsm);
-        osmCheckBoxes.add(this.osmNewLayer);
-        osmCheckBoxes.add(this.osmZoom);
-
-        return osmCheckBoxes;
-    }
-
-    private JPanel initializeNotesCheckBoxes() {
-        JPanel notesCheckBoxes= new JPanel();
-        notesCheckBoxes.setLayout(new BoxLayout(notesCheckBoxes, BoxLayout.Y_AXIS));
-
-        this.downloadNotes = new JCheckBox(tr("Notes"), DOWNLOAD_NOTES.get());
-        this.downloadNotes.setToolTipText(tr("Select to download notes in the selected download area."));
-        this.notesNewLayer = new JCheckBox(tr("Download as new layer"), DOWNLOAD_NOTES_NEWLAYER.get());
-        this.notesNewLayer.setToolTipText(tr("Download notes as a new layer"));
-        this.notesZoom = new JCheckBox(tr("Zoom to downloaded data"), DOWNLOAD_NOTES_ZOOM.get());
-        this.notesZoom.setToolTipText(tr("Zoom to downloaded notes"));
-
-        notesCheckBoxes.add(this.downloadNotes);
-        notesCheckBoxes.add(this.notesNewLayer);
-        notesCheckBoxes.add(this.notesZoom);
-
-        return notesCheckBoxes;
-    }
-
-    private JPanel initializeGPXCheckBoxes() {
-        JPanel gpxCheckBoxes = new JPanel();
-        gpxCheckBoxes.setLayout(new BoxLayout(gpxCheckBoxes, BoxLayout.Y_AXIS));
-
-        this.downloadGPX = new JCheckBox(tr("Raw GPS data"), DOWNLOAD_GPX.get());
-        this.downloadGPX.setToolTipText(tr("Select to download GPS traces in the selected download area."));
-        this.gpxNewLayer = new JCheckBox(tr("Download as new layer"), DOWNLOAD_GPX_NEWLAYER.get());
-        this.gpxNewLayer.setToolTipText(tr("Download GPS traces as a new layer"));
-        this.gpxZoom = new JCheckBox(tr("Zoom to downloaded data"), DOWNLOAD_GPX_ZOOM.get());
-        this.gpxZoom.setToolTipText(tr("Zoom to downloaded GPS traces"));
-
-        gpxCheckBoxes.add(this.downloadGPX);
-        gpxCheckBoxes.add(this.gpxNewLayer);
-        gpxCheckBoxes.add(this.gpxZoom);
-
-        return gpxCheckBoxes;
-    }
-
-    private JPanel initializeOverpassCheckBoxes() {
-        JPanel overpassCheckBoxes = new JPanel();
-        overpassCheckBoxes.setLayout(new BoxLayout(overpassCheckBoxes, BoxLayout.Y_AXIS));
-
-        this.downloadOverpass = new JCheckBox(tr("Download from Overpass API"), DOWNLOAD_OVERPASS.get());
-        this.downloadOverpass.setToolTipText(tr("Select to download data via Overpass API."));
-        this.overpassNewLayer = new JCheckBox(tr("Download as new layer"), DOWNLOAD_OVERPASS_NEWLAYER.get());
-        this.overpassNewLayer.setToolTipText(tr("Download data as a new layer"));
-        this.overpassZoom = new JCheckBox(tr("Zoom to downloaded data"), DOWNLOAD_OVERPASS_ZOOM.get());
-        this.overpassZoom.setToolTipText(tr("Zoom to downloaded data"));
-
-        overpassCheckBoxes.add(this.downloadOverpass);
-        overpassCheckBoxes.add(this.overpassNewLayer);
-        overpassCheckBoxes.add(this.overpassZoom);
-
-        return overpassCheckBoxes;
     }
 
     /**
