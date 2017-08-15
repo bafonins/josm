@@ -63,4 +63,12 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
         // override if necessary
     }
 
+    /**
+     * Updates the bounding box for the dialog.
+     * @param bbox The bounding box.
+     */
+    public void updateBoundingBox(Bounds bbox) {
+        // override if the dialog requires bbox
+    }
+
 }
