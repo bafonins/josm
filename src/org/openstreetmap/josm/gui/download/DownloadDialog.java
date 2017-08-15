@@ -26,6 +26,7 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 
@@ -126,8 +127,14 @@ public class DownloadDialog extends JDialog {
         // the default selectors!)
         downloadSelections.forEach(ds -> ds.addGui(this));
 
-        mainPanel.add(downloadSourcesTab, GBC.eol().fill());
-        mainPanel.add(tpDownloadAreaSelectors, GBC.eol().fill());
+        JSplitPane split = new JSplitPane(
+                JSplitPane.VERTICAL_SPLIT,
+                downloadSourcesTab,
+                tpDownloadAreaSelectors);
+
+//        mainPanel.add(downloadSourcesTab, GBC.eol().fill());
+//        mainPanel.add(tpDownloadAreaSelectors, GBC.eol().fill());
+        mainPanel.add(split, GBC.eol().fill());
 
         try {
             tpDownloadAreaSelectors.setSelectedIndex(DOWNLOAD_TAB.get());
