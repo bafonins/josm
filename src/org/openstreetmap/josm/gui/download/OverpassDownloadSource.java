@@ -13,7 +13,7 @@ public class OverpassDownloadSource implements DownloadSource<String> {
 
     @Override
     public AbstractDownloadSourcePanel<String> createPanel() {
-        return new OverpassDownloadSourcePanel();
+        return new OverpassDownloadSourcePanel(this);
     }
 
     @Override
@@ -40,13 +40,13 @@ public class OverpassDownloadSource implements DownloadSource<String> {
                 new BooleanProperty("download.overpass.query-list.opened", false);
         private static final String ACTION_IMG_SUBDIR = "dialogs";
 
-        public OverpassDownloadSourcePanel() {
-
+        public OverpassDownloadSourcePanel(OverpassDownloadSource ds) {
+            super(ds);
         }
 
         @Override
-        public DownloadSource<String> getDownloadSource() {
-            return null;
+        public String getData() {
+            return overpassQuery.getText();
         }
 
         @Override

@@ -3,9 +3,20 @@ package org.openstreetmap.josm.gui.download;
 import org.openstreetmap.josm.data.Bounds;
 
 import javax.swing.JPanel;
+import java.util.Objects;
 import java.util.Optional;
 
 public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
+
+    public AbstractDownloadSourcePanel(DownloadSource<T> downloadSource) {
+        Objects.requireNonNull(downloadSource);
+        this.downloadSource = downloadSource;
+    }
+
+    /**
+     * The download source of this panel.
+     */
+    protected DownloadSource<T> downloadSource;
 
     /**
      * The data for {@link DownloadSource} represented by this panel.
@@ -16,15 +27,15 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
      * Gets the data.
      * @return Returns the data.
      */
-    public T getData() {
-        return data;
-    }
+    public abstract T getData();
 
     /**
      * Gets the download source of this panel.
      * @return Returns the download source of this panel.
      */
-    public abstract DownloadSource<T> getDownloadSource();
+    public DownloadSource<T> getDownloadSource() {
+        return this.downloadSource;
+    }
 
     /**
      * Saves the current user preferences devoted to the data source.

@@ -1,31 +1,98 @@
 package org.openstreetmap.josm.gui.download;
 
 import org.openstreetmap.josm.Main;
+import org.openstreetmap.josm.actions.downloadtasks.AbstractDownloadTask;
+import org.openstreetmap.josm.actions.downloadtasks.DownloadGpsTask;
+import org.openstreetmap.josm.actions.downloadtasks.DownloadNotesTask;
+import org.openstreetmap.josm.actions.downloadtasks.DownloadOsmTask;
+import org.openstreetmap.josm.actions.downloadtasks.PostDownloadHandler;
 import org.openstreetmap.josm.data.Bounds;
+import org.openstreetmap.josm.data.ProjectionBounds;
+import org.openstreetmap.josm.data.ViewportData;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
+import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.tools.GBC;
+import org.openstreetmap.josm.tools.Pair;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.event.ChangeListener;
-import java.awt.Color;
-import java.awt.Font;
+
 import java.awt.GridBagLayout;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.openstreetmap.josm.tools.I18n.tr;
 
-public class OSMDownloadSource implements DownloadSource<Object> {
+public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDownloadData> {
 
     @Override
-    public AbstractDownloadSourcePanel<Object> createPanel() {
-        return new OSMDownloadSourcePanel();
+    public AbstractDownloadSourcePanel<OSMDownloadData> createPanel() {
+        return new OSMDownloadSourcePanel(this);
     }
 
     @Override
-    public void doDownload(Bounds bbox, Object data, DownloadSettings settings) {
-        // TODO: implement download
+    public void doDownload(Bounds bbox, OSMDownloadData data, DownloadSettings settings) {
+        boolean zoom = settings.zoomToData();
+        boolean newLayer = settings.asNewLayer();
+        List<Pair<AbstractDownloadTask<?>, Future<?>>> tasks = new ArrayList<>();
+
+        if (data.isDownloadOSMData()) {
+            DownloadOsmTask task = new DownloadOsmTask();
+            task.setZoomAfterDownload(zoom && !data.isDownloadGPX() && !data.isDownloadNotes());
+            Future<?> future = task.download(newLayer, bbox, null);
+            Main.worker.submit(new PostDownloadHandler(task, future));
+            if (zoom) {
+                tasks.add(new Pair<>(task, future));
+            }
+        }
+
+        if (data.isDownloadGPX()) {
+            DownloadGpsTask task = new DownloadGpsTask();
+            task.setZoomAfterDownload(zoom && !data.isDownloadOSMData() && !data.isDownloadNotes());
+            Future<?> future = task.download(newLayer, bbox, null);
+            Main.worker.submit(new PostDownloadHandler(task, future));
+            if (zoom) {
+                tasks.add(new Pair<>(task, future));
+            }
+        }
+
+        if (data.isDownloadNotes()) {
+            DownloadNotesTask task = new DownloadNotesTask();
+            task.setZoomAfterDownload(zoom && !data.isDownloadOSMData() && !data.isDownloadGPX());
+            Future<?> future = task.download(false, bbox, null);
+            Main.worker.submit(new PostDownloadHandler(task, future));
+            if (zoom) {
+                tasks.add(new Pair<>(task, future));
+            }
+        }
+
+        if (zoom && tasks.size() > 1) {
+            Main.worker.submit(() -> {
+                ProjectionBounds bounds = null;
+                // Wait for completion of download jobs
+                for (Pair<AbstractDownloadTask<?>, Future<?>> p : tasks) {
+                    try {
+                        p.b.get();
+                        ProjectionBounds b = p.a.getDownloadProjectionBounds();
+                        if (bounds == null) {
+                            bounds = b;
+                        } else if (b != null) {
+                            bounds.extend(b);
+                        }
+                    } catch (InterruptedException | ExecutionException ex) {
+                        Main.warn(ex);
+                    }
+                }
+                // Zoom to the larger download bounds
+                if (Main.map != null && bounds != null) {
+                    final ProjectionBounds pb = bounds;
+                    GuiHelper.runInEDTAndWait(() -> Main.map.mapView.zoomTo(new ViewportData(pb)));
+                }
+            });
+        }
     }
 
     @Override
@@ -38,49 +105,42 @@ public class OSMDownloadSource implements DownloadSource<Object> {
         dialog.addDownloadSource(createPanel(), getLabel());
     }
 
-    public static class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<Object> {
+    public static class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<OSMDownloadData> {
 
         private final JCheckBox cbDownloadOsmData;
         private final JCheckBox cbDownloadGpxData;
         private final JCheckBox cbDownloadNotes;
-        private final JLabel sizeCheck = new JLabel();
 
         private final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.data", true);
         private final BooleanProperty DOWNLOAD_GPS = new BooleanProperty("download.osm.gps", false);
         private final BooleanProperty DOWNLOAD_NOTES = new BooleanProperty("download.osm.notes", false);
 
-        public OSMDownloadSourcePanel() {
-            super();
+        public OSMDownloadSourcePanel(OSMDownloadSource ds) {
+            super(ds);
             setLayout(new GridBagLayout());
-
-            // size check depends on selected data source
-//            final ChangeListener checkboxChangeListener = e -> updateSizeCheck();
 
             // adding the download tasks
             add(new JLabel(tr("Data Sources and Types:")), GBC.std().insets(5, 5, 1, 5).anchor(GBC.CENTER));
             cbDownloadOsmData = new JCheckBox(tr("OpenStreetMap data"), true);
             cbDownloadOsmData.setToolTipText(tr("Select to download OSM data in the selected download area."));
-//            cbDownloadOsmData.getModel().addChangeListener(checkboxChangeListener);
+
             cbDownloadGpxData = new JCheckBox(tr("Raw GPS data"));
             cbDownloadGpxData.setToolTipText(tr("Select to download GPS traces in the selected download area."));
-//            cbDownloadGpxData.getModel().addChangeListener(checkboxChangeListener);
+
             cbDownloadNotes = new JCheckBox(tr("Notes"));
             cbDownloadNotes.setToolTipText(tr("Select to download notes in the selected download area."));
-//            cbDownloadNotes.getModel().addChangeListener(checkboxChangeListener);
 
             add(cbDownloadOsmData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadGpxData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadNotes, GBC.eol().insets(1, 5, 1, 5));
-
-            Font labelFont = sizeCheck.getFont();
-            sizeCheck.setFont(labelFont.deriveFont(Font.PLAIN, labelFont.getSize()));
-
-            add(sizeCheck, GBC.eol().anchor(GBC.EAST).insets(5, 5, 5, 2));
         }
 
         @Override
-        public DownloadSource<Object> getDownloadSource() {
-            return null;
+        public OSMDownloadData getData() {
+            return new OSMDownloadData(
+                    isDownloadOsmData(),
+                    isDownloadNotes(),
+                    isDownloadGpxData());
         }
 
         @Override
@@ -98,7 +158,7 @@ public class OSMDownloadSource implements DownloadSource<Object> {
         }
 
         @Override
-        public boolean handleDownload(Bounds bbox, Object data, DownloadSettings settings) {
+        public boolean handleDownload(Bounds bbox, OSMDownloadData data, DownloadSettings settings) {
             /*
              * It is mandatory to specify the area to download from OSM.
              */
@@ -165,32 +225,29 @@ public class OSMDownloadSource implements DownloadSource<Object> {
         public boolean isDownloadNotes() {
             return cbDownloadNotes.isSelected();
         }
+    }
 
-//        protected void updateSizeCheck() {
-//            boolean isAreaTooLarge = false;
-//            if (currentBounds == null) {
-//                sizeCheck.setText(tr("No area selected yet"));
-//                sizeCheck.setForeground(Color.darkGray);
-//            } else if (isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
-//                // see max_note_request_area in
-//                // https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
-//                isAreaTooLarge = currentBounds.getArea() > Main.pref.getDouble("osm-server.max-request-area-notes", 25);
-//            } else {
-//                // see max_request_area in
-//                // https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
-//                isAreaTooLarge = currentBounds.getArea() > Main.pref.getDouble("osm-server.max-request-area", 0.25);
-//            }
-//            displaySizeCheckResult(isAreaTooLarge);
-//        }
-//
-//        protected void displaySizeCheckResult(boolean isAreaTooLarge) {
-//            if (isAreaTooLarge) {
-//                sizeCheck.setText(tr("Download area too large; will probably be rejected by server"));
-//                sizeCheck.setForeground(Color.red);
-//            } else {
-//                sizeCheck.setText(tr("Download area ok, size probably acceptable to server"));
-//                sizeCheck.setForeground(Color.darkGray);
-//            }
-//        }
+    public static class OSMDownloadData {
+        private boolean downloadOSMData;
+        private boolean downloadNotes;
+        private boolean downloadGPX;
+
+        public OSMDownloadData(boolean downloadOSMData, boolean downloadNotes, boolean downloadGPX) {
+            this.downloadOSMData = downloadOSMData;
+            this.downloadNotes = downloadNotes;
+            this.downloadGPX = downloadGPX;
+        }
+
+        public boolean isDownloadOSMData() {
+            return downloadOSMData;
+        }
+
+        public boolean isDownloadNotes() {
+            return downloadNotes;
+        }
+
+        public boolean isDownloadGPX() {
+            return downloadGPX;
+        }
     }
 }

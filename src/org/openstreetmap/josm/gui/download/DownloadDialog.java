@@ -5,11 +5,9 @@ import static org.openstreetmap.josm.gui.help.HelpUtil.ht;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -18,23 +16,18 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import javax.swing.AbstractAction;
-import javax.swing.BoxLayout;
-import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
-import javax.swing.event.ChangeListener;
 
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.ExpertToggleAction;
@@ -84,8 +77,7 @@ public class DownloadDialog extends JDialog {
         return instance;
     }
 
-    protected final transient List<DownloadSource> downloadSources =
-            Arrays.asList(new OSMDownloadSource(), new OverpassDownloadSource());
+    protected final transient List<DownloadSource> downloadSources = new ArrayList<>();
     protected final transient List<DownloadSelection> downloadSelections = new ArrayList<>();
     protected final JTabbedPane tpDownloadAreaSelectors = new JTabbedPane();
     protected final JTabbedPane downloadSourcesTab = new JTabbedPane();
@@ -97,22 +89,27 @@ public class DownloadDialog extends JDialog {
     protected SlippyMapChooser slippyMapChooser;
     protected transient Bounds currentBounds;
     protected boolean canceled;
-    protected JPanel panelForDownloadSource;
-    protected AbstractDownloadSourcePanel currentDownloadSourcePanel;
+    protected JPanel mainPanel;
 
     /** the download action and button */
     private final DownloadAction actDownload = new DownloadAction();
     protected final JButton btnDownload = new JButton(actDownload);
 
     protected final JPanel buildMainPanel() {
-        panelForDownloadSource = new JPanel(new GridBagLayout());
+        mainPanel = new JPanel(new GridBagLayout());
 
+        //defualt download sources
+        downloadSources.add(new OSMDownloadSource());
+        downloadSources.add(new OverpassDownloadSource());
+
+        // register all download sources
+        downloadSources.forEach(ds -> ds.addGui(this));
 
         // must be created before hook
         slippyMapChooser = new SlippyMapChooser();
 
         // hook for subclasses
-        buildMainPanelAboveDownloadSelections(panelForDownloadSource);
+        buildMainPanelAboveDownloadSelections(mainPanel);
 
         // predefined download selections
         downloadSelections.add(slippyMapChooser);
@@ -127,11 +124,10 @@ public class DownloadDialog extends JDialog {
         // now everybody may add their tab to the tabbed pane
         // (not done right away to allow plugins to remove one of
         // the default selectors!)
-        for (DownloadSelection s : downloadSelections) {
-            s.addGui(this);
-        }
+        downloadSelections.forEach(ds -> ds.addGui(this));
 
-        panelForDownloadSource.add(tpDownloadAreaSelectors, GBC.eol().fill());
+        mainPanel.add(downloadSourcesTab, GBC.eol().fill());
+        mainPanel.add(tpDownloadAreaSelectors, GBC.eol().fill());
 
         try {
             tpDownloadAreaSelectors.setSelectedIndex(DOWNLOAD_TAB.get());
@@ -153,18 +149,18 @@ public class DownloadDialog extends JDialog {
         cbZoomToDownloadedData = new JCheckBox(tr("Zoom to downloaded data"));
         cbZoomToDownloadedData.setToolTipText(tr("Select to zoom to entire newly downloaded data."));
 
-        panelForDownloadSource.add(cbNewLayer, GBC.std().anchor(GBC.WEST).insets(5, 5, 5, 5));
-        panelForDownloadSource.add(cbStartup, GBC.std().anchor(GBC.WEST).insets(15, 5, 5, 5));
-        panelForDownloadSource.add(cbZoomToDownloadedData, GBC.std().anchor(GBC.WEST).insets(15, 5, 5, 5));
+        mainPanel.add(cbNewLayer, GBC.std().anchor(GBC.WEST).insets(5, 5, 5, 5));
+        mainPanel.add(cbStartup, GBC.std().anchor(GBC.WEST).insets(15, 5, 5, 5));
+        mainPanel.add(cbZoomToDownloadedData, GBC.std().anchor(GBC.WEST).insets(15, 5, 5, 5));
 
         ExpertToggleAction.addVisibilitySwitcher(cbZoomToDownloadedData);
 
         if (!ExpertToggleAction.isExpert()) {
             JLabel infoLabel = new JLabel(
                     tr("Use left click&drag to select area, arrows or right mouse button to scroll map, wheel or +/- to zoom."));
-            panelForDownloadSource.add(infoLabel, GBC.eol().anchor(GBC.SOUTH).insets(0, 0, 0, 0));
+            mainPanel.add(infoLabel, GBC.eol().anchor(GBC.SOUTH).insets(0, 0, 0, 0));
         }
-        return panelForDownloadSource;
+        return mainPanel;
     }
 
     /* This should not be necessary, but if not here, repaint is not always correct in SlippyMap! */
@@ -428,6 +424,10 @@ public class DownloadDialog extends JDialog {
         return canceled;
     }
 
+    public DownloadSettings getDownloadSettings() {
+        return new DownloadSettings(isNewLayerRequired(), isZoomToDownloadedDataRequired());
+    }
+
     protected void setCanceled(boolean canceled) {
         this.canceled = canceled;
     }
@@ -450,7 +450,9 @@ public class DownloadDialog extends JDialog {
 
         @Override
         public void actionPerformed(ActionEvent e) {
+            AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) downloadSourcesTab.getSelectedComponent();
             run();
+            pnl.handleCancel();
         }
     }
 
@@ -463,14 +465,18 @@ public class DownloadDialog extends JDialog {
         }
 
         public void run() {
-
             setCanceled(false);
             setVisible(false);
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            run();
+            AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) downloadSourcesTab.getSelectedComponent();
+            DownloadSettings dsettings = getDownloadSettings();
+            if (pnl.handleDownload(currentBounds, pnl.getData(), dsettings)) {
+                run();
+                pnl.getDownloadSource().doDownload(currentBounds, pnl.getData(), dsettings);
+            }
         }
     }
 
