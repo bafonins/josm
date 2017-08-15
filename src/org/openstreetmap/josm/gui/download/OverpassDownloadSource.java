@@ -13,6 +13,9 @@ import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.ImageProvider;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -79,6 +82,20 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
             super(ds);
             setLayout(new BorderLayout());
 
+            String tooltip = tr("Build an Overpass query using the Overpass Turbo Query Wizard tool");
+            Action queryWizardAction = new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    new OverpassQueryWizardDialog(DownloadDialog.getInstance()).showDialog();
+                }
+            };
+
+            JButton openQueryWizard = new JButton(tr("Query Wizard"));
+            openQueryWizard.setToolTipText(tooltip);
+            openQueryWizard.addActionListener(queryWizardAction);
+
+//            add(new JLabel(tr("Overpass query:")), GBC.std().insets(5, 5, 0, 0).anchor(GBC.NORTHWEST));
+
             // CHECKSTYLE.OFF: LineLength
             this.overpassQuery = new JosmTextArea(
                     "/*\n" +
@@ -137,6 +154,13 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
             innerPanel.add(scrollPane, BorderLayout.CENTER);
             innerPanel.add(arrowButton, BorderLayout.EAST);
 
+            JPanel leftPanel = new JPanel(new GridBagLayout());
+            leftPanel.add(new JLabel(tr("Overpass query:")), GBC.eol().insets(5, 1, 5, 1).anchor(GBC.NORTHWEST));
+            leftPanel.add(new JLabel(), GBC.eol().fill(GBC.VERTICAL));
+            leftPanel.add(openQueryWizard, GBC.eol().anchor(GBC.CENTER));
+            leftPanel.add(new JLabel(), GBC.eol().fill(GBC.VERTICAL));
+
+            add(leftPanel, BorderLayout.WEST);
             add(innerPanel, BorderLayout.CENTER);
             add(listPanel, BorderLayout.EAST);
         }

@@ -62,13 +62,13 @@ public final class OverpassQueryWizardDialog extends ExtendedDialog {
             + "#desc {width: 350px;}"
             + "</style>\n";
 
-    private final OverpassDownloadDialog parentDialog;
+    private final DownloadDialog parentDialog;
 
     /**
      * Create a new {@link OverpassQueryWizardDialog}
      * @param parentDialog The parent this dialog should be displayed for
      */
-    public OverpassQueryWizardDialog(OverpassDownloadDialog parentDialog) {
+    public OverpassQueryWizardDialog(DownloadDialog parentDialog) {
         super(parentDialog, tr("Overpass Turbo Query Wizard"),
                 tr("Build query"), tr("Build query and execute"), tr("Cancel"));
         this.parentDialog = parentDialog;
@@ -108,7 +108,7 @@ public final class OverpassQueryWizardDialog extends ExtendedDialog {
                     this.saveHistory();
                     super.buttonAction(BUILD_AN_EXECUTE_QUERY, evt);
 
-                    parentDialog.triggerDownload();
+//                    parentDialog.triggerDownload();
                 }
                 break;
             default:
@@ -164,7 +164,7 @@ public final class OverpassQueryWizardDialog extends ExtendedDialog {
         Optional<String> q = this.tryParseSearchTerm(wizardSearchTerm);
         if (q.isPresent()) {
             String query = q.get();
-            parentDialog.setOverpassQuery(query);
+//            parentDialog.setOverpassQuery(query);
 
             return true;
         }
