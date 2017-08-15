@@ -132,8 +132,6 @@ public class DownloadDialog extends JDialog {
                 downloadSourcesTab,
                 tpDownloadAreaSelectors);
 
-//        mainPanel.add(downloadSourcesTab, GBC.eol().fill());
-//        mainPanel.add(tpDownloadAreaSelectors, GBC.eol().fill());
         mainPanel.add(split, GBC.eol().fill());
 
         try {
@@ -263,7 +261,6 @@ public class DownloadDialog extends JDialog {
                 s.setDownloadArea(currentBounds);
             }
         }
-//        updateSizeCheck();
     }
 
     /**
