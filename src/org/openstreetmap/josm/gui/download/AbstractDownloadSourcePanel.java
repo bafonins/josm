@@ -37,14 +37,6 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
     public abstract void restoreSettings();
 
     /**
-     * Returns The currently selected download area.
-     * Note, that not every {@link DownloadSource} might need the bbox to proceed,
-     * because of that it is optional.
-     * @return An {@link Optional} of the currently selected download area.
-     */
-    public abstract Optional<Bounds> getSelectedDownloadArea();
-
-    /**
      * Performs the logic needed in case if the user triggered the download
      * action in {@link DownloadDialog}.
      * @param data The data.
@@ -52,7 +44,7 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
      * download action succeeded and {@link DownloadDialog} can be closed, e.g. validation,
      * otherwise {@code false}.
      */
-    abstract boolean handleDownload(Bounds bbox, T data, DownloadSettings settings);
+    public abstract boolean handleDownload(Bounds bbox, T data, DownloadSettings settings);
 
     /**
      * Performs the logic needed in case if the user triggered the cancel
@@ -62,13 +54,4 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
         // nothing, let download dialog to close
         // override if necessary
     }
-
-    /**
-     * Updates the bounding box for the dialog.
-     * @param bbox The bounding box.
-     */
-    public void updateBoundingBox(Bounds bbox) {
-        // override if the dialog requires bbox
-    }
-
 }

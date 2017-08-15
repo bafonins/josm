@@ -40,8 +40,6 @@ public class OSMDownloadSource implements DownloadSource<Object> {
 
     public static class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<Object> {
 
-        private Bounds currentBounds;
-
         private final JCheckBox cbDownloadOsmData;
         private final JCheckBox cbDownloadGpxData;
         private final JCheckBox cbDownloadNotes;
@@ -56,19 +54,19 @@ public class OSMDownloadSource implements DownloadSource<Object> {
             setLayout(new GridBagLayout());
 
             // size check depends on selected data source
-            final ChangeListener checkboxChangeListener = e -> updateSizeCheck();
+//            final ChangeListener checkboxChangeListener = e -> updateSizeCheck();
 
             // adding the download tasks
             add(new JLabel(tr("Data Sources and Types:")), GBC.std().insets(5, 5, 1, 5).anchor(GBC.CENTER));
             cbDownloadOsmData = new JCheckBox(tr("OpenStreetMap data"), true);
             cbDownloadOsmData.setToolTipText(tr("Select to download OSM data in the selected download area."));
-            cbDownloadOsmData.getModel().addChangeListener(checkboxChangeListener);
+//            cbDownloadOsmData.getModel().addChangeListener(checkboxChangeListener);
             cbDownloadGpxData = new JCheckBox(tr("Raw GPS data"));
             cbDownloadGpxData.setToolTipText(tr("Select to download GPS traces in the selected download area."));
-            cbDownloadGpxData.getModel().addChangeListener(checkboxChangeListener);
+//            cbDownloadGpxData.getModel().addChangeListener(checkboxChangeListener);
             cbDownloadNotes = new JCheckBox(tr("Notes"));
             cbDownloadNotes.setToolTipText(tr("Select to download notes in the selected download area."));
-            cbDownloadNotes.getModel().addChangeListener(checkboxChangeListener);
+//            cbDownloadNotes.getModel().addChangeListener(checkboxChangeListener);
 
             add(cbDownloadOsmData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadGpxData, GBC.std().insets(1, 5, 1, 5));
@@ -100,12 +98,7 @@ public class OSMDownloadSource implements DownloadSource<Object> {
         }
 
         @Override
-        public Optional<Bounds> getSelectedDownloadArea() {
-            return Optional.ofNullable(this.currentBounds);
-        }
-
-        @Override
-        boolean handleDownload(Bounds bbox, Object data, DownloadSettings settings) {
+        public boolean handleDownload(Bounds bbox, Object data, DownloadSettings settings) {
             /*
              * It is mandatory to specify the area to download from OSM.
              */
@@ -173,31 +166,31 @@ public class OSMDownloadSource implements DownloadSource<Object> {
             return cbDownloadNotes.isSelected();
         }
 
-        protected void updateSizeCheck() {
-            boolean isAreaTooLarge = false;
-            if (currentBounds == null) {
-                sizeCheck.setText(tr("No area selected yet"));
-                sizeCheck.setForeground(Color.darkGray);
-            } else if (isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
-                // see max_note_request_area in
-                // https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
-                isAreaTooLarge = currentBounds.getArea() > Main.pref.getDouble("osm-server.max-request-area-notes", 25);
-            } else {
-                // see max_request_area in
-                // https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
-                isAreaTooLarge = currentBounds.getArea() > Main.pref.getDouble("osm-server.max-request-area", 0.25);
-            }
-            displaySizeCheckResult(isAreaTooLarge);
-        }
-
-        protected void displaySizeCheckResult(boolean isAreaTooLarge) {
-            if (isAreaTooLarge) {
-                sizeCheck.setText(tr("Download area too large; will probably be rejected by server"));
-                sizeCheck.setForeground(Color.red);
-            } else {
-                sizeCheck.setText(tr("Download area ok, size probably acceptable to server"));
-                sizeCheck.setForeground(Color.darkGray);
-            }
-        }
+//        protected void updateSizeCheck() {
+//            boolean isAreaTooLarge = false;
+//            if (currentBounds == null) {
+//                sizeCheck.setText(tr("No area selected yet"));
+//                sizeCheck.setForeground(Color.darkGray);
+//            } else if (isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
+//                // see max_note_request_area in
+//                // https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
+//                isAreaTooLarge = currentBounds.getArea() > Main.pref.getDouble("osm-server.max-request-area-notes", 25);
+//            } else {
+//                // see max_request_area in
+//                // https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
+//                isAreaTooLarge = currentBounds.getArea() > Main.pref.getDouble("osm-server.max-request-area", 0.25);
+//            }
+//            displaySizeCheckResult(isAreaTooLarge);
+//        }
+//
+//        protected void displaySizeCheckResult(boolean isAreaTooLarge) {
+//            if (isAreaTooLarge) {
+//                sizeCheck.setText(tr("Download area too large; will probably be rejected by server"));
+//                sizeCheck.setForeground(Color.red);
+//            } else {
+//                sizeCheck.setText(tr("Download area ok, size probably acceptable to server"));
+//                sizeCheck.setForeground(Color.darkGray);
+//            }
+//        }
     }
 }

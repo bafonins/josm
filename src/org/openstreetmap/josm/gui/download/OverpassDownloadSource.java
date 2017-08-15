@@ -60,12 +60,7 @@ public class OverpassDownloadSource implements DownloadSource<String> {
         }
 
         @Override
-        public Optional<Bounds> getSelectedDownloadArea() {
-            return null;
-        }
-
-        @Override
-        boolean handleDownload(Bounds bbox, String data, DownloadSettings settings) {
+        public boolean handleDownload(Bounds bbox, String data, DownloadSettings settings) {
             return false;
         }
     }
