@@ -127,6 +127,10 @@ public class DownloadDialog extends JDialog {
         // the default selectors!)
         downloadSelections.forEach(ds -> ds.addGui(this));
 
+        // allow to collapse the panes completely
+        downloadSourcesTab.setMinimumSize(new Dimension(0, 0));
+        tpDownloadAreaSelectors.setMinimumSize(new Dimension(0, 0));
+
         JSplitPane split = new JSplitPane(
                 JSplitPane.VERTICAL_SPLIT,
                 downloadSourcesTab,
