@@ -227,26 +227,26 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         }
     }
 
-    public static class OSMDownloadData {
+    static class OSMDownloadData {
         private boolean downloadOSMData;
         private boolean downloadNotes;
         private boolean downloadGPX;
 
-        public OSMDownloadData(boolean downloadOSMData, boolean downloadNotes, boolean downloadGPX) {
+        OSMDownloadData(boolean downloadOSMData, boolean downloadNotes, boolean downloadGPX) {
             this.downloadOSMData = downloadOSMData;
             this.downloadNotes = downloadNotes;
             this.downloadGPX = downloadGPX;
         }
 
-        public boolean isDownloadOSMData() {
+        boolean isDownloadOSMData() {
             return downloadOSMData;
         }
 
-        public boolean isDownloadNotes() {
+        boolean isDownloadNotes() {
             return downloadNotes;
         }
 
-        public boolean isDownloadGPX() {
+        boolean isDownloadGPX() {
             return downloadGPX;
         }
     }
