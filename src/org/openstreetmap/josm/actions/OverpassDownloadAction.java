@@ -188,7 +188,7 @@ public class OverpassDownloadAction extends JosmAction {
             Action queryWizardAction = new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    new OverpassQueryWizardDialog(instance).showDialog();
+                    new OverpassQueryWizardDialog(null).showDialog();
                 }
             };
 
