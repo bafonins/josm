@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
 
-    public AbstractDownloadSourcePanel(DownloadSource<T> downloadSource) {
+    public AbstractDownloadSourcePanel(final DownloadSource<T> downloadSource) {
         Objects.requireNonNull(downloadSource);
         this.downloadSource = downloadSource;
     }
