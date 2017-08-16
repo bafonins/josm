@@ -64,7 +64,12 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
 
     @Override
     public void addGui(DownloadDialog dialog) {
-        dialog.addDownloadSource(createPanel(), getLabel());
+        dialog.addDownloadSource(this);
+    }
+
+    @Override
+    public boolean onlyExpert() {
+        return true;
     }
 
     public static class OverpassDownloadSourcePanel extends AbstractDownloadSourcePanel<OverpassDownloadData> {
@@ -84,7 +89,7 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
             Action queryWizardAction = new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    new OverpassQueryWizardDialog(DownloadDialog.getInstance()).showDialog();
+                    new OverpassQueryWizardDialog(OverpassDownloadSourcePanel.this).showDialog();
                 }
             };
 
@@ -209,6 +214,14 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
             }
 
             return true;
+        }
+
+        /**
+         * Sets query to the query text field.
+         * @param query The query to set.
+         */
+        public void setOverpassQuery(String query) {
+            this.overpassQuery.setText(query);
         }
 
         /**
