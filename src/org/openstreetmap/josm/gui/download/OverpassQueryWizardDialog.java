@@ -108,7 +108,7 @@ public final class OverpassQueryWizardDialog extends ExtendedDialog {
                     this.saveHistory();
                     super.buttonAction(BUILD_AN_EXECUTE_QUERY, evt);
 
-//                    parentDialog.triggerDownload();
+                    DownloadDialog.getInstance().startDownload();
                 }
                 break;
             default:
