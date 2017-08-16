@@ -16,6 +16,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -328,7 +329,12 @@ public class DownloadDialog extends JDialog {
      * @param downloadSource The download source to be added.
      */
     public void addDownloadSource(DownloadSource downloadSource) {
-        int idx = downloadSources.indexOf(downloadSource);
+        Optional<AbstractDownloadSourcePanel> p = Arrays.stream(downloadSourcesTab.getComponents())
+                .filter(it -> it instanceof AbstractDownloadSourcePanel)
+                .map(it -> (AbstractDownloadSourcePanel) it)
+                .filter(it -> it.getDownloadSource().equals(downloadSource))
+                .findAny();
+        int idx = p.map(downloadSourcesTab::indexOfComponent).orElse(-1);
 
         if (downloadSource.onlyExpert()) {
             ExpertToggleAction.addExpertModeChangeListener(isExpert -> {
