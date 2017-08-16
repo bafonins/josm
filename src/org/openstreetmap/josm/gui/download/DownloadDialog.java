@@ -275,7 +275,14 @@ public class DownloadDialog extends JDialog {
      */
     public void startDownload(Bounds b) {
         this.currentBounds = b;
-        actDownload.run();
+        actDownload.actionPerformed(null);
+    }
+
+    /**
+     * Starts download.
+     */
+    public void startDownload() {
+        actDownload.actionPerformed(null);
     }
 
     /**
@@ -298,6 +305,14 @@ public class DownloadDialog extends JDialog {
     }
 
     /**
+     * Determines if the dialog autorun is enabled in preferences.
+     * @return {@code true} if the download dialog must be open at startup, {@code false} otherwise
+     */
+    public static boolean isAutorunEnabled() {
+        return DOWNLOAD_AUTORUN.get();
+    }
+
+    /**
      * Adds a new download area selector to the download dialog
      *
      * @param selector the download are selector
@@ -310,12 +325,26 @@ public class DownloadDialog extends JDialog {
     /**
      * Adds a new download source to the download dialog
      *
-     * @param source The gui representation of the panel to be added.
-     * @param label The display name of the download source.
+     * @param downloadSource The download source to be added.
      */
-    public void addDownloadSource(JPanel source, String label) {
-        downloadSourcesTab.add(label, source);
+    public void addDownloadSource(DownloadSource downloadSource) {
+        int idx = downloadSources.indexOf(downloadSource);
+
+        if (downloadSource.onlyExpert()) {
+            ExpertToggleAction.addExpertModeChangeListener(isExpert -> {
+                if (isExpert) {
+                    downloadSourcesTab.add(downloadSource.createPanel(), downloadSource.getLabel(), idx);
+                } else {
+                    downloadSourcesTab.remove(idx);
+                }
+            });
+        }
+
+        if ((ExpertToggleAction.isExpert() && downloadSource.onlyExpert()) || !downloadSource.onlyExpert()) {
+            downloadSourcesTab.add(downloadSource.createPanel(), downloadSource.getLabel(), idx);
+        }
     }
+
 
     /**
      * Refreshes the tile sources
@@ -385,14 +414,6 @@ public class DownloadDialog extends JDialog {
             }
         }
         return null;
-    }
-
-    /**
-     * Determines if the dialog autorun is enabled in preferences.
-     * @return {@code true} if the download dialog must be open at startup, {@code false} otherwise
-     */
-    public static boolean isAutorunEnabled() {
-        return DOWNLOAD_AUTORUN.get();
     }
 
     /**

@@ -102,7 +102,12 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
 
     @Override
     public void addGui(DownloadDialog dialog) {
-        dialog.addDownloadSource(createPanel(), getLabel());
+        dialog.addDownloadSource(this);
+    }
+
+    @Override
+    public boolean onlyExpert() {
+        return false;
     }
 
     public static class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<OSMDownloadData> {

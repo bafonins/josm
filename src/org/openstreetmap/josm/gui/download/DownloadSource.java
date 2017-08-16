@@ -28,4 +28,11 @@ public interface DownloadSource<T> {
      * @param dialog The download dialog.
      */
     void addGui(final DownloadDialog dialog);
+
+    /**
+     * Defines whether this download source should be visible only in the expert mode.
+     * @return Returns {@code true} if the download source should be visible only in the
+     * expert mode, {@code false} otherwise.
+     */
+    boolean onlyExpert();
 }
