@@ -58,7 +58,8 @@ public class DownloadDialog extends JDialog {
      * Preference properties
      */
     private static final IntegerProperty DOWNLOAD_TAB = new IntegerProperty("download.tab", 0);
-
+    private static final IntegerProperty DOWNLOAD_SOURCE_TAB = new IntegerProperty("download-source.tab", 0);
+    private static final IntegerProperty DIALOG_SPLIT = new IntegerProperty("download.split", 200);
     private static final BooleanProperty DOWNLOAD_AUTORUN = new BooleanProperty("download.autorun", false);
     private static final BooleanProperty DOWNLOAD_NEWLAYER = new BooleanProperty("download.newlayer", false);
     private static final BooleanProperty DOWNLOAD_ZOOMTODATA = new BooleanProperty("download.zoomtodata", true);
@@ -86,11 +87,12 @@ public class DownloadDialog extends JDialog {
     protected JCheckBox cbNewLayer;
     protected JCheckBox cbStartup;
     protected JCheckBox cbZoomToDownloadedData;
-
     protected SlippyMapChooser slippyMapChooser;
+    protected JPanel mainPanel;
+    protected JSplitPane dialogSplit;
+
     protected transient Bounds currentBounds;
     protected boolean canceled;
-    protected JPanel mainPanel;
 
     /** the download action and button */
     private final DownloadAction actDownload = new DownloadAction();
@@ -131,12 +133,12 @@ public class DownloadDialog extends JDialog {
         downloadSourcesTab.setMinimumSize(new Dimension(0, 0));
         tpDownloadAreaSelectors.setMinimumSize(new Dimension(0, 0));
 
-        JSplitPane split = new JSplitPane(
+        dialogSplit = new JSplitPane(
                 JSplitPane.VERTICAL_SPLIT,
                 downloadSourcesTab,
                 tpDownloadAreaSelectors);
 
-        mainPanel.add(split, GBC.eol().fill());
+        mainPanel.add(dialogSplit, GBC.eol().fill());
 
         try {
             tpDownloadAreaSelectors.setSelectedIndex(DOWNLOAD_TAB.get());
@@ -330,6 +332,8 @@ public class DownloadDialog extends JDialog {
      */
     public void rememberSettings() {
         DOWNLOAD_TAB.put(tpDownloadAreaSelectors.getSelectedIndex());
+        DOWNLOAD_SOURCE_TAB.put(downloadSourcesTab.getSelectedIndex());
+        DIALOG_SPLIT.put(dialogSplit.getDividerLocation());
         DOWNLOAD_NEWLAYER.put(cbNewLayer.isSelected());
         DOWNLOAD_ZOOMTODATA.put(cbZoomToDownloadedData.isSelected());
         if (currentBounds != null) {
@@ -344,8 +348,11 @@ public class DownloadDialog extends JDialog {
         cbNewLayer.setSelected(DOWNLOAD_NEWLAYER.get());
         cbStartup.setSelected(isAutorunEnabled());
         cbZoomToDownloadedData.setSelected(DOWNLOAD_ZOOMTODATA.get());
+        dialogSplit.setDividerLocation(DIALOG_SPLIT.get());
         int idx = Utils.clamp(DOWNLOAD_TAB.get(), 0, tpDownloadAreaSelectors.getTabCount() - 1);
         tpDownloadAreaSelectors.setSelectedIndex(idx);
+        idx = Utils.clamp(DOWNLOAD_SOURCE_TAB.get(), 0, downloadSourcesTab.getTabCount() - 1);
+        downloadSourcesTab.setSelectedIndex(idx);
 
         if (Main.isDisplayingMapView()) {
             MapView mv = Main.map.mapView;
