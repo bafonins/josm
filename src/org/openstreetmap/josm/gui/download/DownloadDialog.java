@@ -329,12 +329,17 @@ public class DownloadDialog extends JDialog {
      * @param downloadSource The download source to be added.
      */
     public void addDownloadSource(DownloadSource downloadSource) {
-        Optional<AbstractDownloadSourcePanel> p = Arrays.stream(downloadSourcesTab.getComponents())
+        int idx = Arrays.stream(downloadSourcesTab.getComponents())
                 .filter(it -> it instanceof AbstractDownloadSourcePanel)
                 .map(it -> (AbstractDownloadSourcePanel) it)
                 .filter(it -> it.getDownloadSource().equals(downloadSource))
-                .findAny();
-        int idx = p.map(downloadSourcesTab::indexOfComponent).orElse(-1);
+                .findAny()
+                .map(downloadSourcesTab::indexOfComponent)
+                .orElse(-1);
+
+        if (idx == -1) {
+            downloadSources.add(downloadSource);
+        }
 
         if (downloadSource.onlyExpert()) {
             ExpertToggleAction.addExpertModeChangeListener(isExpert -> {
