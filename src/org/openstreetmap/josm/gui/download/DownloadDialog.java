@@ -489,6 +489,7 @@ public class DownloadDialog extends JDialog {
             AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) downloadSourcesTab.getSelectedComponent();
             DownloadSettings dsettings = getDownloadSettings();
             if (pnl.handleDownload(currentBounds, pnl.getData(), dsettings)) {
+                rememberSettings();
                 run();
                 pnl.getDownloadSource().doDownload(currentBounds, pnl.getData(), dsettings);
             }
