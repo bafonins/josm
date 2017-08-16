@@ -14,8 +14,6 @@ import org.openstreetmap.josm.tools.ImageProvider;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -93,9 +91,7 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
             JButton openQueryWizard = new JButton(tr("Query Wizard"));
             openQueryWizard.setToolTipText(tooltip);
             openQueryWizard.addActionListener(queryWizardAction);
-
-//            add(new JLabel(tr("Overpass query:")), GBC.std().insets(5, 5, 0, 0).anchor(GBC.NORTHWEST));
-
+            
             // CHECKSTYLE.OFF: LineLength
             this.overpassQuery = new JosmTextArea(
                     "/*\n" +
