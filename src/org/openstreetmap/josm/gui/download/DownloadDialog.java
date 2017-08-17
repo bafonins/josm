@@ -109,10 +109,9 @@ public class DownloadDialog extends JDialog {
         downloadSources.add(new OverpassDownloadSource());
 
         // register all download sources
-        downloadSources.forEach(ds -> ds.addGui(this));
-//        for (int i = 0; i < downloadSources.size(); i++) {
-//            downloadSources.get(i).addGui(this);
-//        }
+        for (int i = 0; i < downloadSources.size(); i++) {
+            downloadSources.get(i).addGui(this);
+        }
 
         // must be created before hook
         slippyMapChooser = new SlippyMapChooser();
@@ -133,7 +132,6 @@ public class DownloadDialog extends JDialog {
         // now everybody may add their tab to the tabbed pane
         // (not done right away to allow plugins to remove one of
         // the default selectors!)
-//        downloadSelections.forEach(ds -> ds.addGui(this));
         for (int i = 0; i < downloadSelections.size(); i++) {
             downloadSelections.get(i).addGui(this);
         }
@@ -329,11 +327,6 @@ public class DownloadDialog extends JDialog {
      * @param downloadSource The download source to be added.
      */
     public synchronized void addDownloadSource(DownloadSource downloadSource) {
-        int idx = getDownloadSourceIndex(downloadSource);
-//        if (idx == -1) {
-//            downloadSources.add(downloadSource);
-//        }
-
         if (downloadSource.onlyExpert()) {
             ExpertToggleAction.addExpertModeChangeListener(isExpert -> {
                 int index = getDownloadSourceIndex(downloadSource);
@@ -346,7 +339,7 @@ public class DownloadDialog extends JDialog {
         }
 
         if ((ExpertToggleAction.isExpert() && downloadSource.onlyExpert()) || !downloadSource.onlyExpert()) {
-            downloadSourcesTab.add(downloadSource.createPanel(), downloadSource.getLabel(), idx);
+            downloadSourcesTab.add(downloadSource.createPanel(), downloadSource.getLabel());
         }
     }
 
