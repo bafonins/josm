@@ -95,9 +95,13 @@ public class DownloadDialog extends JDialog {
     protected transient Bounds currentBounds;
     protected boolean canceled;
 
-    /** the download action and button */
-    private final DownloadAction actDownload = new DownloadAction();
-    protected final JButton btnDownload = new JButton(actDownload);
+    /** dialog buttons */
+//    private DownloadAction actDownload = new DownloadAction();
+//    private CancelAction actCancel = new CancelAction();
+    protected JButton btnDownload;
+    protected JButton btnCancel;
+    protected JButton btnHelp;
+
 
     protected final JPanel buildMainPanel() {
         mainPanel = new JPanel(new GridBagLayout());
@@ -189,33 +193,25 @@ public class DownloadDialog extends JDialog {
     }
 
     protected final JPanel buildButtonPanel() {
+        btnDownload = new JButton(new DownloadAction());
+        btnCancel = new JButton(new CancelAction());
+        btnHelp = new JButton(
+                new ContextSensitiveHelpAction(getRootPane().getClientProperty("help").toString()));
+
         JPanel pnl = new JPanel(new FlowLayout());
 
-        // -- download button
         pnl.add(btnDownload);
-        InputMapUtils.enableEnter(btnDownload);
-
-//        InputMapUtils.addEnterActionWhenAncestor(cbDownloadGpxData, actDownload);
-//        InputMapUtils.addEnterActionWhenAncestor(cbDownloadOsmData, actDownload);
-//        InputMapUtils.addEnterActionWhenAncestor(cbDownloadNotes, actDownload);
-        InputMapUtils.addEnterActionWhenAncestor(cbNewLayer, actDownload);
-        InputMapUtils.addEnterActionWhenAncestor(cbStartup, actDownload);
-        InputMapUtils.addEnterActionWhenAncestor(cbZoomToDownloadedData, actDownload);
-
-        // -- cancel button
-        JButton btnCancel;
-        CancelAction actCancel = new CancelAction();
-        btnCancel = new JButton(actCancel);
         pnl.add(btnCancel);
-        InputMapUtils.enableEnter(btnCancel);
-
-        // -- cancel on ESC
-        InputMapUtils.addEscapeAction(getRootPane(), actCancel);
-
-        // -- help button
-        JButton btnHelp = new JButton(new ContextSensitiveHelpAction(getRootPane().getClientProperty("help").toString()));
         pnl.add(btnHelp);
+
+        InputMapUtils.enableEnter(btnDownload);
+        InputMapUtils.enableEnter(btnCancel);
+        InputMapUtils.addEscapeAction(getRootPane(), btnCancel.getAction());
         InputMapUtils.enableEnter(btnHelp);
+
+        InputMapUtils.addEnterActionWhenAncestor(cbNewLayer, btnDownload.getAction());
+        InputMapUtils.addEnterActionWhenAncestor(cbStartup, btnDownload.getAction());
+        InputMapUtils.addEnterActionWhenAncestor(cbZoomToDownloadedData, btnDownload.getAction());
 
         return pnl;
     }
@@ -282,14 +278,14 @@ public class DownloadDialog extends JDialog {
      */
     public void startDownload(Bounds b) {
         this.currentBounds = b;
-        actDownload.actionPerformed(null);
+//        actDownload.actionPerformed(null);
     }
 
     /**
      * Starts download.
      */
     public void startDownload() {
-        actDownload.actionPerformed(null);
+//        actDownload.actionPerformed(null);
     }
 
     /**
@@ -344,9 +340,9 @@ public class DownloadDialog extends JDialog {
             ExpertToggleAction.addExpertModeChangeListener(isExpert -> {
                 int index = getDownloadSourceIndex(downloadSource);
                 if (isExpert) {
-                    downloadSourcesTab.add(downloadSource.createPanel(), downloadSource.getLabel(), idx);
+                    downloadSourcesTab.add(downloadSource.createPanel(), downloadSource.getLabel(), index);
                 } else if (index != -1) {
-                    downloadSourcesTab.remove(idx);
+                    downloadSourcesTab.remove(index);
                 }
             });
         }
