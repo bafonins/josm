@@ -102,12 +102,15 @@ public class DownloadDialog extends JDialog {
     protected final JPanel buildMainPanel() {
         mainPanel = new JPanel(new GridBagLayout());
 
-        //defualt download sources
+        //default download sources
         downloadSources.add(new OSMDownloadSource());
         downloadSources.add(new OverpassDownloadSource());
 
         // register all download sources
-        downloadSources.forEach(ds -> ds.addGui(this));
+//        downloadSources.forEach(ds -> ds.addGui(this));
+        for (int i = 0; i < downloadSources.size(); i++) {
+            downloadSources.get(i).addGui(this);
+        }
 
         // must be created before hook
         slippyMapChooser = new SlippyMapChooser();
@@ -128,7 +131,10 @@ public class DownloadDialog extends JDialog {
         // now everybody may add their tab to the tabbed pane
         // (not done right away to allow plugins to remove one of
         // the default selectors!)
-        downloadSelections.forEach(ds -> ds.addGui(this));
+//        downloadSelections.forEach(ds -> ds.addGui(this));
+        for (int i = 0; i < downloadSelections.size(); i++) {
+            downloadSelections.get(i).addGui(this);
+        }
 
         // allow to collapse the panes completely
         downloadSourcesTab.setMinimumSize(new Dimension(0, 0));
@@ -328,24 +334,18 @@ public class DownloadDialog extends JDialog {
      *
      * @param downloadSource The download source to be added.
      */
-    public void addDownloadSource(DownloadSource downloadSource) {
-        int idx = Arrays.stream(downloadSourcesTab.getComponents())
-                .filter(it -> it instanceof AbstractDownloadSourcePanel)
-                .map(it -> (AbstractDownloadSourcePanel) it)
-                .filter(it -> it.getDownloadSource().equals(downloadSource))
-                .findAny()
-                .map(downloadSourcesTab::indexOfComponent)
-                .orElse(-1);
-
+    public synchronized void addDownloadSource(DownloadSource downloadSource) {
+        int idx = getDownloadSourceIndex(downloadSource);
         if (idx == -1) {
             downloadSources.add(downloadSource);
         }
 
         if (downloadSource.onlyExpert()) {
             ExpertToggleAction.addExpertModeChangeListener(isExpert -> {
+                int index = getDownloadSourceIndex(downloadSource);
                 if (isExpert) {
                     downloadSourcesTab.add(downloadSource.createPanel(), downloadSource.getLabel(), idx);
-                } else {
+                } else if (index != -1) {
                     downloadSourcesTab.remove(idx);
                 }
             });
@@ -481,6 +481,21 @@ public class DownloadDialog extends JDialog {
 
     protected void buildMainPanelAboveDownloadSelections(JPanel pnl) {
         // Do nothing
+    }
+
+    /**
+     * Returns position of the download source in the tabbed pane.
+     * @param downloadSource The download source.
+     * @return The index of the download source, or -1 if it not in the pane.
+     */
+    protected int getDownloadSourceIndex(DownloadSource downloadSource) {
+        return Arrays.stream(downloadSourcesTab.getComponents())
+                .filter(it -> it instanceof AbstractDownloadSourcePanel)
+                .map(it -> (AbstractDownloadSourcePanel) it)
+                .filter(it -> it.getDownloadSource().equals(downloadSource))
+                .findAny()
+                .map(downloadSourcesTab::indexOfComponent)
+                .orElse(-1);
     }
 
     class CancelAction extends AbstractAction {
