@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Set;
+import java.util.Optional;
 
 import javax.swing.JOptionPane;
 
@@ -179,7 +179,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
      * to remove the highlight from them again as otherwise the whole data
      * set would have to be checked.
      */
-    private transient Set<OsmPrimitive> oldHighlights = new HashSet<>();
+    private transient Optional<OsmPrimitive> currentHighlight = Optional.empty();
 
     /**
      * Create a new SelectAction
@@ -249,13 +249,13 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
      * @return {@code true} if repaint is required
      */
     private boolean giveUserFeedback(MouseEvent e, int modifiers) {
-        Collection<OsmPrimitive> c = asColl(
+        Optional<OsmPrimitive> c = Optional.ofNullable(
                 mv.getNearestNodeOrWay(e.getPoint(), mv.isSelectablePredicate, true));
 
         updateKeyModifiersEx(modifiers);
-        determineMapMode(!c.isEmpty());
+        determineMapMode(c.isPresent());
 
-        Set<OsmPrimitive> newHighlights = new HashSet<>();
+        Optional<OsmPrimitive> newHighlight = Optional.empty();
 
         virtualManager.clear();
         if (mode == Mode.MOVE && !dragInProgress() && virtualManager.activateVirtualNodeNearPoint(e.getPoint())) {
@@ -265,26 +265,24 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
             }
             mv.setNewCursor(SelectActionCursor.virtual_node.cursor(), this);
             // don't highlight anything else if a virtual node will be
-            return repaintIfRequired(newHighlights);
+            return repaintIfRequired(newHighlight);
         }
 
         mv.setNewCursor(getCursor(c), this);
 
         // return early if there can't be any highlights
-        if (!drawTargetHighlight || mode != Mode.MOVE || c.isEmpty())
-            return repaintIfRequired(newHighlights);
+        if (!drawTargetHighlight || mode != Mode.MOVE || !c.isPresent())
+            return repaintIfRequired(newHighlight);
 
         // CTRL toggles selection, but if while dragging CTRL means merge
         final boolean isToggleMode = ctrl && !dragInProgress();
-        for (OsmPrimitive x : c) {
+        if (c.isPresent() && (isToggleMode || !c.get().isSelected())) {
             // only highlight primitives that will change the selection
             // when clicked. I.e. don't highlight selected elements unless
             // we are in toggle mode.
-            if (isToggleMode || !x.isSelected()) {
-                newHighlights.add(x);
-            }
+            newHighlight = c;
         }
-        return repaintIfRequired(newHighlights);
+        return repaintIfRequired(newHighlight);
     }
 
     /**
@@ -294,7 +292,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
      * @param nearbyStuff  primitives near the cursor
      * @return the cursor that should be displayed
      */
-    private Cursor getCursor(Collection<OsmPrimitive> nearbyStuff) {
+    private Cursor getCursor(Optional<OsmPrimitive> nearbyStuff) {
         String c = "rect";
         switch(mode) {
         case MOVE:
@@ -302,8 +300,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
                 c = "virtual_node";
                 break;
             }
-            final Iterator<OsmPrimitive> it = nearbyStuff.iterator();
-            final OsmPrimitive osm = it.hasNext() ? it.next() : null;
+            final OsmPrimitive osm = nearbyStuff.orElse(null);
 
             if (dragInProgress()) {
                 // only consider merge if ctrl is pressed and there are nodes in
@@ -355,35 +352,22 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
             needsRepaint = true;
             ds.clearHighlightedVirtualNodes();
         }
-        if (oldHighlights.isEmpty())
+        if (!currentHighlight.isPresent()) {
             return needsRepaint;
-
-        for (OsmPrimitive prim : oldHighlights) {
-            prim.setHighlighted(false);
+        } else {
+            currentHighlight.get().setHighlighted(false);
         }
-        oldHighlights = new HashSet<>();
+        currentHighlight = Optional.empty();
         return true;
     }
 
-    private boolean repaintIfRequired(Set<OsmPrimitive> newHighlights) {
-        if (!drawTargetHighlight)
+    private boolean repaintIfRequired(Optional<OsmPrimitive> newHighlight) {
+        if (!drawTargetHighlight || currentHighlight.equals(newHighlight))
             return false;
-
-        boolean needsRepaint = false;
-        for (OsmPrimitive x : newHighlights) {
-            if (oldHighlights.contains(x)) {
-                continue;
-            }
-            needsRepaint = true;
-            x.setHighlighted(true);
-        }
-        oldHighlights.removeAll(newHighlights);
-        for (OsmPrimitive x : oldHighlights) {
-            x.setHighlighted(false);
-            needsRepaint = true;
-        }
-        oldHighlights = newHighlights;
-        return needsRepaint;
+        currentHighlight.ifPresent(osm -> osm.setHighlighted(false));
+        newHighlight.ifPresent(osm -> osm.setHighlighted(true));
+        currentHighlight = newHighlight;
+        return true;
     }
 
     /**
@@ -522,10 +506,10 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
             boolean needsRepaint = removeHighlighting();
             if (p != null) {
                 p.setHighlighted(true);
-                oldHighlights.add(p);
+                currentHighlight = Optional.of(p);
                 needsRepaint = true;
             }
-            mv.setNewCursor(getCursor(asColl(p)), this);
+            mv.setNewCursor(getCursor(Optional.ofNullable(p)), this);
             // also update the stored mouse event, so we can display the correct cursor
             // when dragging a node onto another one and then press CTRL to merge
             oldEvent = e;

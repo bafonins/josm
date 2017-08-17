@@ -223,7 +223,7 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
                 .sorted((i1, i2) -> i2.getLastEdit().compareTo(i1.getLastEdit()))
                 .filter(item -> item.getKey().contains(text))
                 .collect(Collectors.toList());
-        
+
         super.lsResultModel.setItems(matchingItems);
     }
 
@@ -268,7 +268,9 @@ public final class OverpassQueryList extends SearchTextResultListPanel<OverpassQ
             try {
                 String key = entry.get(KEY_KEY);
                 String query = entry.get(QUERY_KEY);
-                LocalDateTime lastEdit = LocalDateTime.parse(entry.get(LAST_EDIT_KEY), FORMAT);
+                String lastEditText = entry.get(LAST_EDIT_KEY);
+                // Compatibility: Some entries may not have a last edit set.
+                LocalDateTime lastEdit = lastEditText == null ? LocalDateTime.MIN : LocalDateTime.parse(lastEditText, FORMAT);
 
                 result.put(key, new SelectorItem(key, query, lastEdit));
             } catch (IllegalArgumentException | DateTimeParseException e) {
