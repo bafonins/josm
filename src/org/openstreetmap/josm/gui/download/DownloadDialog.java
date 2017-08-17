@@ -96,8 +96,6 @@ public class DownloadDialog extends JDialog {
     protected boolean canceled;
 
     /** dialog buttons */
-//    private DownloadAction actDownload = new DownloadAction();
-//    private CancelAction actCancel = new CancelAction();
     protected JButton btnDownload;
     protected JButton btnCancel;
     protected JButton btnHelp;
@@ -111,10 +109,10 @@ public class DownloadDialog extends JDialog {
         downloadSources.add(new OverpassDownloadSource());
 
         // register all download sources
-//        downloadSources.forEach(ds -> ds.addGui(this));
-        for (int i = 0; i < downloadSources.size(); i++) {
-            downloadSources.get(i).addGui(this);
-        }
+        downloadSources.forEach(ds -> ds.addGui(this));
+//        for (int i = 0; i < downloadSources.size(); i++) {
+//            downloadSources.get(i).addGui(this);
+//        }
 
         // must be created before hook
         slippyMapChooser = new SlippyMapChooser();
@@ -278,14 +276,14 @@ public class DownloadDialog extends JDialog {
      */
     public void startDownload(Bounds b) {
         this.currentBounds = b;
-//        actDownload.actionPerformed(null);
+        startDownload();
     }
 
     /**
      * Starts download.
      */
     public void startDownload() {
-//        actDownload.actionPerformed(null);
+        btnDownload.doClick();
     }
 
     /**
@@ -332,9 +330,9 @@ public class DownloadDialog extends JDialog {
      */
     public synchronized void addDownloadSource(DownloadSource downloadSource) {
         int idx = getDownloadSourceIndex(downloadSource);
-        if (idx == -1) {
-            downloadSources.add(downloadSource);
-        }
+//        if (idx == -1) {
+//            downloadSources.add(downloadSource);
+//        }
 
         if (downloadSource.onlyExpert()) {
             ExpertToggleAction.addExpertModeChangeListener(isExpert -> {
