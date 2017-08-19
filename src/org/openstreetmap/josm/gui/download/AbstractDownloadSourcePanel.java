@@ -5,8 +5,12 @@ import org.openstreetmap.josm.data.Bounds;
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import java.util.Objects;
-import java.util.Optional;
 
+/**
+ * GUI representation of {@link DownloadSource} that is shown to the user in
+ * {@link DownloadDialog}.
+ * @param <T> The type of the data that a download source uses.
+ */
 public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
 
     public AbstractDownloadSourcePanel(final DownloadSource<T> downloadSource) {

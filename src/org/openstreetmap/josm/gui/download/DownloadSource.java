@@ -3,6 +3,10 @@ package org.openstreetmap.josm.gui.download;
 
 import org.openstreetmap.josm.data.Bounds;
 
+/**
+ * Defines an interface for different download sources.
+ * @param <T> The type of the data that a download source uses.
+ */
 public interface DownloadSource<T> {
 
     /**
