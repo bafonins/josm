@@ -106,7 +106,6 @@ public class DownloadDialog extends JDialog {
     protected JButton btnCancel;
     protected JButton btnHelp;
 
-
     /**
      * Builds the main panel of the dialog.
      * @return The panel of the dialog.
