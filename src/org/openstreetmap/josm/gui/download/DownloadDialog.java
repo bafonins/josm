@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
@@ -81,11 +82,8 @@ public class DownloadDialog extends JDialog {
         return instance;
     }
 
-    protected final transient List<DownloadSource> downloadSources =
-            Arrays.asList(new OSMDownloadSource(), new OverpassDownloadSource());
-    protected final transient List<DownloadSelection> downloadSelections =
-            Arrays.asList(new SlippyMapChooser(), new BookmarkSelection(), new BoundingBoxSelection(),
-                            new PlaceSelection(), new TileSelection());
+    protected final transient List<DownloadSource> downloadSources = new ArrayList<>();
+    protected final transient List<DownloadSelection> downloadSelections = new ArrayList<>();
     protected final JTabbedPane tpDownloadAreaSelectors = new JTabbedPane();
     protected final JTabbedPane downloadSourcesTab = new JTabbedPane();
 
@@ -98,6 +96,7 @@ public class DownloadDialog extends JDialog {
 
     protected transient Bounds currentBounds;
     protected boolean canceled;
+    protected ExpertToggleAction.ExpertModeChangeListener expertListener;
 
     protected JButton btnDownload;
     protected JButton btnCancel;
@@ -111,10 +110,23 @@ public class DownloadDialog extends JDialog {
     protected final JPanel buildMainPanel() {
         mainPanel = new JPanel(new GridBagLayout());
 
+        downloadSources.add(new OSMDownloadSource());
+        downloadSources.add(new OverpassDownloadSource());
+
         // register all default download sources
         for (int i = 0; i < downloadSources.size(); i++) {
             downloadSources.get(i).addGui(this);
         }
+
+        // must be created before hook
+        slippyMapChooser = new SlippyMapChooser();
+
+        // predefined download selections
+        downloadSelections.add(slippyMapChooser);
+        downloadSelections.add(new BookmarkSelection());
+        downloadSelections.add(new BoundingBoxSelection());
+        downloadSelections.add(new PlaceSelection());
+        downloadSelections.add(new TileSelection());
 
         // add selections from plugins
         PluginHandler.addDownloadSelection(downloadSelections);
@@ -234,6 +246,7 @@ public class DownloadDialog extends JDialog {
             }
         });
         addWindowListener(new WindowEventHandler());
+        addExpertModeListenerForDownloadSources();
         restoreSettings();
     }
 
@@ -311,31 +324,13 @@ public class DownloadDialog extends JDialog {
      *
      * @param downloadSource The download source to be added.
      */
-    public synchronized void addDownloadSource(DownloadSource downloadSource) {
-        if (downloadSource.onlyExpert()) {
-            ExpertToggleAction.addExpertModeChangeListener(isExpert -> {
-                int index = getDownloadSourceIndex(downloadSource);
-                if (isExpert) {
-                    AbstractDownloadSourcePanel pnl = downloadSource.createPanel();
-                    downloadSourcesTab.add(pnl, downloadSource.getLabel(), index);
-                    addIconToDownloadSourcesTab(pnl.getIcon(), index);
-                } else if (index != -1) {
-                    downloadSourcesTab.remove(index);
-                }
-            });
-        }
-
+    public void addDownloadSource(DownloadSource downloadSource) {
         if ((ExpertToggleAction.isExpert() && downloadSource.onlyExpert()) || !downloadSource.onlyExpert()) {
             AbstractDownloadSourcePanel pnl = downloadSource.createPanel();
             downloadSourcesTab.add(pnl, downloadSource.getLabel());
             addIconToDownloadSourcesTab(pnl.getIcon(), downloadSourcesTab.getTabCount() - 1);
         }
     }
-
-    public void addEnterDownloadActionWhenAncestor(JComponent comp) {
-        InputMapUtils.addEnterActionWhenAncestor(comp, btnDownload.getAction());
-    }
-
 
     /**
      * Refreshes the tile sources
@@ -488,6 +483,33 @@ public class DownloadDialog extends JDialog {
 
     }
 
+    private void addExpertModeListenerForDownloadSources() {
+        expertListener = isExpert -> {
+            Main.info("expert mode changed, is expert = " + isExpert);
+            if (isExpert) {
+                downloadSources.stream()
+                        .filter(DownloadSource::onlyExpert)
+                        .filter(it -> getDownloadSourceIndex(it) == -1)
+                        .forEach(it -> {
+                            AbstractDownloadSourcePanel pnl = it.createPanel();
+                            downloadSourcesTab.add(pnl, it.getLabel());
+                            addIconToDownloadSourcesTab(pnl.getIcon(), downloadSourcesTab.getTabCount() - 1);
+                        });
+            } else {
+                Component[] comps = downloadSourcesTab.getComponents();
+
+                IntStream.range(0, downloadSourcesTab.getTabCount())
+                        .mapToObj(i -> comps[i])
+                        .filter(it -> it instanceof AbstractDownloadSourcePanel)
+                        .map(it -> (AbstractDownloadSourcePanel) it)
+                        .filter(it -> it.getDownloadSource().onlyExpert())
+                        .forEach(downloadSourcesTab::remove);
+            }
+        };
+
+        ExpertToggleAction.addExpertModeChangeListener(expertListener);
+    }
+
     class CancelAction extends AbstractAction {
         CancelAction() {
             putValue(NAME, tr("Cancel"));
@@ -504,7 +526,7 @@ public class DownloadDialog extends JDialog {
         public void actionPerformed(ActionEvent e) {
             AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) downloadSourcesTab.getSelectedComponent();
             run();
-            pnl.handleCancel();
+            pnl.checkCancel();
         }
     }
 
@@ -525,7 +547,7 @@ public class DownloadDialog extends JDialog {
         public void actionPerformed(ActionEvent e) {
             AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) downloadSourcesTab.getSelectedComponent();
             DownloadSettings dsettings = getDownloadSettings();
-            if (pnl.handleDownload(currentBounds, pnl.getData(), dsettings)) {
+            if (pnl.checkDownload(currentBounds, pnl.getData(), dsettings)) {
                 rememberSettings();
                 run();
                 pnl.getDownloadSource().doDownload(currentBounds, pnl.getData(), dsettings);

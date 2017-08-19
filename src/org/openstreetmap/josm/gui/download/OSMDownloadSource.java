@@ -165,7 +165,7 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         }
 
         @Override
-        public boolean handleDownload(Bounds bbox, OSMDownloadData data, DownloadSettings settings) {
+        public boolean checkDownload(Bounds bbox, OSMDownloadData data, DownloadSettings settings) {
             /*
              * It is mandatory to specify the area to download from OSM.
              */

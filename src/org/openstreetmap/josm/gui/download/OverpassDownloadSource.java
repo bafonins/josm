@@ -199,7 +199,7 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
         }
 
         @Override
-        public boolean handleDownload(Bounds bbox, OverpassDownloadData data, DownloadSettings settings) {
+        public boolean checkDownload(Bounds bbox, OverpassDownloadData data, DownloadSettings settings) {
             /*
              * Absence of the selected area can be justified only if the overpass query
              * is not restricted to bbox.

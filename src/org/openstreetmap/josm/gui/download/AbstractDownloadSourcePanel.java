@@ -60,13 +60,13 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
      * download action succeeded and {@link DownloadDialog} can be closed, e.g. validation,
      * otherwise {@code false}.
      */
-    public abstract boolean handleDownload(Bounds bbox, T data, DownloadSettings settings);
+    public abstract boolean checkDownload(Bounds bbox, T data, DownloadSettings settings);
 
     /**
      * Performs the logic needed in case if the user triggered the cancel
      * action in {@link DownloadDialog}.
      */
-    public void handleCancel() {
+    public void checkCancel() {
         // nothing, let download dialog to close
         // override if necessary
     }
