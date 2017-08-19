@@ -19,7 +19,6 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.JTextComponent;
 
 import org.openstreetmap.josm.Main;
-import org.openstreetmap.josm.actions.OverpassDownloadAction.OverpassDownloadDialog;
 import org.openstreetmap.josm.data.preferences.CollectionProperty;
 import org.openstreetmap.josm.gui.ExtendedDialog;
 import org.openstreetmap.josm.gui.util.GuiHelper;
