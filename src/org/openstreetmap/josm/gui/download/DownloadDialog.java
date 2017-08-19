@@ -94,9 +94,13 @@ public class DownloadDialog extends JDialog {
     protected JPanel mainPanel;
     protected JSplitPane dialogSplit;
 
+    /*
+     * Keep the reference globally to avoid having it garbage collected
+     */
+    protected final ExpertToggleAction.ExpertModeChangeListener expertListener =
+            getExpertModeListenerForDownloadSources();
     protected transient Bounds currentBounds;
     protected boolean canceled;
-    protected ExpertToggleAction.ExpertModeChangeListener expertListener;
 
     protected JButton btnDownload;
     protected JButton btnCancel;
@@ -246,7 +250,7 @@ public class DownloadDialog extends JDialog {
             }
         });
         addWindowListener(new WindowEventHandler());
-        addExpertModeListenerForDownloadSources();
+        ExpertToggleAction.addExpertModeChangeListener(expertListener);
         restoreSettings();
     }
 
@@ -326,9 +330,7 @@ public class DownloadDialog extends JDialog {
      */
     public void addDownloadSource(DownloadSource downloadSource) {
         if ((ExpertToggleAction.isExpert() && downloadSource.onlyExpert()) || !downloadSource.onlyExpert()) {
-            AbstractDownloadSourcePanel pnl = downloadSource.createPanel();
-            downloadSourcesTab.add(pnl, downloadSource.getLabel());
-            addIconToDownloadSourcesTab(pnl.getIcon(), downloadSourcesTab.getTabCount() - 1);
+            addNewDownloadSourceTab(downloadSource);
         }
     }
 
@@ -474,27 +476,29 @@ public class DownloadDialog extends JDialog {
                 .orElse(-1);
     }
 
-    private void addIconToDownloadSourcesTab(Icon icon, int idx) {
+    /**
+     * Adds the download source to the download sources tab.
+     * @param downloadSource The download source to be added.
+     */
+    private void addNewDownloadSourceTab(DownloadSource downloadSource) {
+        AbstractDownloadSourcePanel pnl = downloadSource.createPanel();
+        downloadSourcesTab.add(pnl, downloadSource.getLabel());
+        Icon icon = pnl.getIcon();
         if (icon != null) {
+            int idx = getDownloadSourceIndex(downloadSource);
             downloadSourcesTab.setIconAt(
                     idx != -1 ? idx : downloadSourcesTab.getTabCount() - 1,
                     icon);
         }
-
     }
 
-    private void addExpertModeListenerForDownloadSources() {
-        expertListener = isExpert -> {
-            Main.info("expert mode changed, is expert = " + isExpert);
+    private ExpertToggleAction.ExpertModeChangeListener getExpertModeListenerForDownloadSources() {
+        return isExpert -> {
             if (isExpert) {
                 downloadSources.stream()
                         .filter(DownloadSource::onlyExpert)
                         .filter(it -> getDownloadSourceIndex(it) == -1)
-                        .forEach(it -> {
-                            AbstractDownloadSourcePanel pnl = it.createPanel();
-                            downloadSourcesTab.add(pnl, it.getLabel());
-                            addIconToDownloadSourcesTab(pnl.getIcon(), downloadSourcesTab.getTabCount() - 1);
-                        });
+                        .forEach(this::addNewDownloadSourceTab);
             } else {
                 Component[] comps = downloadSourcesTab.getComponents();
 
@@ -506,8 +510,6 @@ public class DownloadDialog extends JDialog {
                         .forEach(downloadSourcesTab::remove);
             }
         };
-
-        ExpertToggleAction.addExpertModeChangeListener(expertListener);
     }
 
     class CancelAction extends AbstractAction {
