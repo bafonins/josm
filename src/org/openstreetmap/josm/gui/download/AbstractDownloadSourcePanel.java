@@ -2,6 +2,7 @@ package org.openstreetmap.josm.gui.download;
 
 import org.openstreetmap.josm.data.Bounds;
 
+import javax.swing.Icon;
 import javax.swing.JPanel;
 import java.util.Objects;
 import java.util.Optional;
@@ -64,5 +65,13 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
     public void handleCancel() {
         // nothing, let download dialog to close
         // override if necessary
+    }
+
+    /**
+     * Gets the icon of the download source panel.
+     * @return The icon.
+     */
+    public Icon getIcon() {
+        return null;
     }
 }

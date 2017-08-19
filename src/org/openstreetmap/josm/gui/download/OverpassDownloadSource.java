@@ -14,6 +14,7 @@ import org.openstreetmap.josm.tools.ImageProvider;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -222,6 +223,11 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
          */
         public void setOverpassQuery(String query) {
             this.overpassQuery.setText(query);
+        }
+
+        @Override
+        public Icon getIcon() {
+            return ImageProvider.get("download-overpass");
         }
 
         /**

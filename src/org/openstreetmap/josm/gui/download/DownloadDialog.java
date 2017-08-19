@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.swing.AbstractAction;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -95,7 +96,6 @@ public class DownloadDialog extends JDialog {
     protected transient Bounds currentBounds;
     protected boolean canceled;
 
-    /** dialog buttons */
     protected JButton btnDownload;
     protected JButton btnCancel;
     protected JButton btnHelp;
@@ -331,7 +331,9 @@ public class DownloadDialog extends JDialog {
             ExpertToggleAction.addExpertModeChangeListener(isExpert -> {
                 int index = getDownloadSourceIndex(downloadSource);
                 if (isExpert) {
-                    downloadSourcesTab.add(downloadSource.createPanel(), downloadSource.getLabel(), index);
+                    AbstractDownloadSourcePanel pnl = downloadSource.createPanel();
+                    downloadSourcesTab.add(pnl, downloadSource.getLabel(), index);
+                    addIconToDownloadSourcesTab(pnl.getIcon(), index);
                 } else if (index != -1) {
                     downloadSourcesTab.remove(index);
                 }
@@ -339,8 +341,14 @@ public class DownloadDialog extends JDialog {
         }
 
         if ((ExpertToggleAction.isExpert() && downloadSource.onlyExpert()) || !downloadSource.onlyExpert()) {
-            downloadSourcesTab.add(downloadSource.createPanel(), downloadSource.getLabel());
+            AbstractDownloadSourcePanel pnl = downloadSource.createPanel();
+            downloadSourcesTab.add(pnl, downloadSource.getLabel());
+            addIconToDownloadSourcesTab(pnl.getIcon(), downloadSourcesTab.getTabCount() - 1);
         }
+    }
+
+    public void addEnterDownloadActionWhenAncestor(JComponent comp) {
+        InputMapUtils.addEnterActionWhenAncestor(comp, btnDownload.getAction());
     }
 
 
@@ -483,6 +491,15 @@ public class DownloadDialog extends JDialog {
                 .findAny()
                 .map(downloadSourcesTab::indexOfComponent)
                 .orElse(-1);
+    }
+
+    private void addIconToDownloadSourcesTab(Icon icon, int idx) {
+        if (icon != null) {
+            downloadSourcesTab.setIconAt(
+                    idx != -1 ? idx : downloadSourcesTab.getTabCount() - 1,
+                    icon);
+        }
+
     }
 
     class CancelAction extends AbstractAction {

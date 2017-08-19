@@ -12,8 +12,10 @@ import org.openstreetmap.josm.data.ViewportData;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.tools.GBC;
+import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.Pair;
 
+import javax.swing.Icon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -229,6 +231,11 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
          */
         public boolean isDownloadNotes() {
             return cbDownloadNotes.isSelected();
+        }
+
+        @Override
+        public Icon getIcon() {
+            return ImageProvider.get("download");
         }
     }
 
