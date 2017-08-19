@@ -1,6 +1,6 @@
 package org.openstreetmap.josm.gui.download;
 
-public class DownloadSettings {
+public final class DownloadSettings {
 
     private boolean downloadAsNewLayer;
     private boolean zoomToDownloadedData;
