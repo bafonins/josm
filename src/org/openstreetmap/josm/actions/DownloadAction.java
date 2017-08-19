@@ -35,9 +35,5 @@ public class DownloadAction extends JosmAction {
         DownloadDialog dialog = DownloadDialog.getInstance();
         dialog.restoreSettings();
         dialog.setVisible(true);
-
-        if (dialog.isCanceled()) {
-            return;
-        }
     }
 }
