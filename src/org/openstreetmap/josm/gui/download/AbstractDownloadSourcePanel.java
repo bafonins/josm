@@ -69,7 +69,8 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
 
     /**
      * Gets the icon of the download source panel.
-     * @return The icon.
+     * @return The icon. Can be {@code null} if there is no icon associated with
+     * this download source.
      */
     public Icon getIcon() {
         return null;
