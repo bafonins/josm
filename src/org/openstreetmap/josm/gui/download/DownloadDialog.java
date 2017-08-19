@@ -81,8 +81,11 @@ public class DownloadDialog extends JDialog {
         return instance;
     }
 
-    protected final transient List<DownloadSource> downloadSources = new ArrayList<>();
-    protected final transient List<DownloadSelection> downloadSelections = new ArrayList<>();
+    protected final transient List<DownloadSource> downloadSources =
+            Arrays.asList(new OSMDownloadSource(), new OverpassDownloadSource());
+    protected final transient List<DownloadSelection> downloadSelections =
+            Arrays.asList(new SlippyMapChooser(), new BookmarkSelection(), new BoundingBoxSelection(),
+                            new PlaceSelection(), new TileSelection());
     protected final JTabbedPane tpDownloadAreaSelectors = new JTabbedPane();
     protected final JTabbedPane downloadSourcesTab = new JTabbedPane();
 
@@ -101,37 +104,22 @@ public class DownloadDialog extends JDialog {
     protected JButton btnHelp;
 
 
+    /**
+     * Builds the main panel of the dialog.
+     * @return The panel of the dialog.
+     */
     protected final JPanel buildMainPanel() {
         mainPanel = new JPanel(new GridBagLayout());
 
-        //default download sources
-        downloadSources.add(new OSMDownloadSource());
-        downloadSources.add(new OverpassDownloadSource());
-
-        // register all download sources
+        // register all default download sources
         for (int i = 0; i < downloadSources.size(); i++) {
             downloadSources.get(i).addGui(this);
         }
 
-        // must be created before hook
-        slippyMapChooser = new SlippyMapChooser();
-
-        // hook for subclasses
-        buildMainPanelAboveDownloadSelections(mainPanel);
-
-        // predefined download selections
-        downloadSelections.add(slippyMapChooser);
-        downloadSelections.add(new BookmarkSelection());
-        downloadSelections.add(new BoundingBoxSelection());
-        downloadSelections.add(new PlaceSelection());
-        downloadSelections.add(new TileSelection());
-
         // add selections from plugins
         PluginHandler.addDownloadSelection(downloadSelections);
 
-        // now everybody may add their tab to the tabbed pane
-        // (not done right away to allow plugins to remove one of
-        // the default selectors!)
+        // register all default download selections
         for (int i = 0; i < downloadSelections.size(); i++) {
             downloadSelections.get(i).addGui(this);
         }
@@ -146,13 +134,6 @@ public class DownloadDialog extends JDialog {
                 tpDownloadAreaSelectors);
 
         mainPanel.add(dialogSplit, GBC.eol().fill());
-
-        try {
-            tpDownloadAreaSelectors.setSelectedIndex(DOWNLOAD_TAB.get());
-        } catch (IndexOutOfBoundsException ex) {
-            Main.trace(ex);
-            DOWNLOAD_TAB.put(0);
-        }
 
         cbNewLayer = new JCheckBox(tr("Download as new layer"));
         cbNewLayer.setToolTipText(tr("<html>Select to download data into a new data layer.<br>"
@@ -188,6 +169,10 @@ public class DownloadDialog extends JDialog {
         super.paint(g);
     }
 
+    /**
+     * Builds the button pane of the dialog.
+     * @return The button panel of the dialog.
+     */
     protected final JPanel buildButtonPanel() {
         btnDownload = new JButton(new DownloadAction());
         btnCancel = new JButton(new CancelAction());
@@ -466,16 +451,17 @@ public class DownloadDialog extends JDialog {
         return canceled;
     }
 
+    /**
+     * Gets the global settings of the download dialog.
+     * @return The {@link DownloadSettings} object that describes the current state of
+     * the download dialog.
+     */
     public DownloadSettings getDownloadSettings() {
         return new DownloadSettings(isNewLayerRequired(), isZoomToDownloadedDataRequired());
     }
 
     protected void setCanceled(boolean canceled) {
         this.canceled = canceled;
-    }
-
-    protected void buildMainPanelAboveDownloadSelections(JPanel pnl) {
-        // Do nothing
     }
 
     /**
