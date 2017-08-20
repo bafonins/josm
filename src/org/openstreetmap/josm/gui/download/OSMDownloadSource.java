@@ -118,9 +118,9 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         private final JCheckBox cbDownloadGpxData;
         private final JCheckBox cbDownloadNotes;
 
-        private final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.data", true);
-        private final BooleanProperty DOWNLOAD_GPS = new BooleanProperty("download.osm.gps", false);
-        private final BooleanProperty DOWNLOAD_NOTES = new BooleanProperty("download.osm.notes", false);
+        private static final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.data", true);
+        private static final BooleanProperty DOWNLOAD_GPS = new BooleanProperty("download.osm.gps", false);
+        private static final BooleanProperty DOWNLOAD_NOTES = new BooleanProperty("download.osm.notes", false);
 
         public OSMDownloadSourcePanel(OSMDownloadSource ds) {
             super(ds);
