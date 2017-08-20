@@ -501,10 +501,8 @@ public class DownloadDialog extends JDialog {
                         .filter(it -> getDownloadSourceIndex(it) == -1)
                         .forEach(this::addNewDownloadSourceTab);
             } else {
-                Component[] comps = downloadSourcesTab.getComponents();
-
                 IntStream.range(0, downloadSourcesTab.getTabCount())
-                        .mapToObj(i -> comps[i])
+                        .mapToObj(downloadSourcesTab::getComponentAt)
                         .filter(it -> it instanceof AbstractDownloadSourcePanel)
                         .map(it -> (AbstractDownloadSourcePanel) it)
                         .filter(it -> it.getDownloadSource().onlyExpert())
@@ -545,15 +543,14 @@ public class DownloadDialog extends JDialog {
             Component panel = downloadSourcesTab.getSelectedComponent();
             if (panel instanceof AbstractDownloadSourcePanel){
                 AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) panel;
-                DownloadSettings dsettings = getDownloadSettings();
-                if (pnl.checkDownload(currentBounds, dsettings)) {
+                DownloadSettings downloadSettings = getDownloadSettings();
+                if (pnl.checkDownload(currentBounds, downloadSettings)) {
                     rememberSettings();
                     setCanceled(false);
                     setVisible(false);
-                    pnl.getDownloadSource().doDownload(currentBounds, pnl.getData(), dsettings);
+                    pnl.getDownloadSource().doDownload(currentBounds, pnl.getData(), downloadSettings);
                 }
             }
-
         }
 
         @Override
