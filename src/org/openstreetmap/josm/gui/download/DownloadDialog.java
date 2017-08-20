@@ -326,8 +326,9 @@ public class DownloadDialog extends JDialog {
      * Adds a new download source to the download dialog
      *
      * @param downloadSource The download source to be added.
+     * @param <T> The type of the download data.
      */
-    public void addDownloadSource(DownloadSource downloadSource) {
+    public <T> void addDownloadSource(DownloadSource<T> downloadSource) {
         if ((ExpertToggleAction.isExpert() && downloadSource.onlyExpert()) || !downloadSource.onlyExpert()) {
             addNewDownloadSourceTab(downloadSource);
         }
@@ -478,11 +479,12 @@ public class DownloadDialog extends JDialog {
     /**
      * Adds the download source to the download sources tab.
      * @param downloadSource The download source to be added.
+     * @param <T> The type of the download data.
      */
-    private void addNewDownloadSourceTab(DownloadSource downloadSource) {
-        AbstractDownloadSourcePanel pnl = downloadSource.createPanel();
-        downloadSourcesTab.add(pnl, downloadSource.getLabel());
-        Icon icon = pnl.getIcon();
+    private <T> void addNewDownloadSourceTab(DownloadSource<T> downloadSource) {
+        AbstractDownloadSourcePanel<T> panel = downloadSource.createPanel();
+        downloadSourcesTab.add(panel, downloadSource.getLabel());
+        Icon icon = panel.getIcon();
         if (icon != null) {
             int idx = getDownloadSourceIndex(downloadSource);
             downloadSourcesTab.setIconAt(
