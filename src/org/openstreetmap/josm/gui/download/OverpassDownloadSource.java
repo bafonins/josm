@@ -6,6 +6,7 @@ import org.openstreetmap.josm.actions.downloadtasks.DownloadOsmTask;
 import org.openstreetmap.josm.actions.downloadtasks.PostDownloadHandler;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
+import org.openstreetmap.josm.gui.ConditionalOptionPaneUtil;
 import org.openstreetmap.josm.gui.preferences.server.OverpassServerPreference;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.widgets.JosmTextArea;
@@ -201,11 +202,13 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
 
         @Override
         public boolean checkDownload(Bounds bbox, DownloadSettings settings) {
+            String query = getData().getQuery();
+
             /*
              * Absence of the selected area can be justified only if the overpass query
              * is not restricted to bbox.
              */
-            if (bbox == null && data.getQuery().contains("{{bbox}}")) {
+            if (bbox == null && query.contains("{{bbox}}")) {
                 JOptionPane.showMessageDialog(
                         this.getParent(),
                         tr("Please select a download area first."),
@@ -213,6 +216,33 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
                         JOptionPane.ERROR_MESSAGE
                 );
                 return false;
+            }
+
+            /*
+             * Check for an empty query. User might want to download everything.
+             */
+            if (query.matches("(/\\*(\\*[^/]|[^\\*/])*\\*/|\\s)*")) {
+                boolean doFix = ConditionalOptionPaneUtil.showConfirmationDialog(
+                        "download.overpass.fix.emptytoall",
+                        this,
+                        tr("You entered an empty query. Do you want to download all data in this area instead?"),
+                        tr("Download all data?"),
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        JOptionPane.YES_OPTION);
+                if (doFix) {
+                    String repairedQuery = "[out:xml]; \n"
+                            + query + "\n"
+                            + "(\n"
+                            + "    node({{bbox}});\n"
+                            + "<;\n"
+                            + ");\n"
+                            + "(._;>;);"
+                            + "out meta;";
+                    this.overpassQuery.setText(repairedQuery);
+                } else {
+                    return false;
+                }
             }
 
             return true;
