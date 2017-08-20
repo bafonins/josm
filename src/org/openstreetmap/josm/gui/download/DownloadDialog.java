@@ -97,7 +97,7 @@ public class DownloadDialog extends JDialog {
     /*
      * Keep the reference globally to avoid having it garbage collected
      */
-    protected final ExpertToggleAction.ExpertModeChangeListener expertListener =
+    protected final transient ExpertToggleAction.ExpertModeChangeListener expertListener =
             getExpertModeListenerForDownloadSources();
     protected transient Bounds currentBounds;
     protected boolean canceled;
@@ -542,19 +542,23 @@ public class DownloadDialog extends JDialog {
         }
 
         public void run() {
-            setCanceled(false);
-            setVisible(false);
+            Component panel = downloadSourcesTab.getSelectedComponent();
+            if (panel instanceof AbstractDownloadSourcePanel){
+                AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) panel;
+                DownloadSettings dsettings = getDownloadSettings();
+                if (pnl.checkDownload(currentBounds, dsettings)) {
+                    rememberSettings();
+                    setCanceled(false);
+                    setVisible(false);
+                    pnl.getDownloadSource().doDownload(currentBounds, pnl.getData(), dsettings);
+                }
+            }
+
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) downloadSourcesTab.getSelectedComponent();
-            DownloadSettings dsettings = getDownloadSettings();
-            if (pnl.checkDownload(currentBounds, pnl.getData(), dsettings)) {
-                rememberSettings();
-                run();
-                pnl.getDownloadSource().doDownload(currentBounds, pnl.getData(), dsettings);
-            }
+            run();
         }
     }
 

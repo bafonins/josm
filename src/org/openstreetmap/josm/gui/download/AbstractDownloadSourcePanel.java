@@ -56,12 +56,11 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
     /**
      * Performs the logic needed in case if the user triggered the download
      * action in {@link DownloadDialog}.
-     * @param data The data.
      * @return Returns {@code true} if the required procedure of handling the
      * download action succeeded and {@link DownloadDialog} can be closed, e.g. validation,
      * otherwise {@code false}.
      */
-    public abstract boolean checkDownload(Bounds bbox, T data, DownloadSettings settings);
+    public abstract boolean checkDownload(Bounds bbox, DownloadSettings settings);
 
     /**
      * Performs the logic needed in case if the user triggered the cancel
