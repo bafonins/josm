@@ -22,12 +22,7 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
     /**
      * The download source of this panel.
      */
-    protected DownloadSource<T> downloadSource;
-
-    /**
-     * The data for {@link DownloadSource} represented by this panel.
-     */
-    protected T data;
+    protected transient DownloadSource<T> downloadSource;
 
     /**
      * Gets the data.
