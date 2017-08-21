@@ -29,6 +29,9 @@ import java.util.concurrent.Future;
 
 import static org.openstreetmap.josm.tools.I18n.tr;
 
+/**
+ * Class defines the way data is fetched from the OSM server.
+ */
 public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDownloadData> {
 
     @Override
@@ -113,6 +116,9 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         return false;
     }
 
+    /**
+     * The GUI representation of the OSM download source.
+     */
     public static class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<OSMDownloadData> {
 
         private final JCheckBox cbDownloadOsmData;

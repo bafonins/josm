@@ -37,6 +37,9 @@ import java.util.function.Consumer;
 
 import static org.openstreetmap.josm.tools.I18n.tr;
 
+/**
+ * Class defines the way data is fetched from Overpass API.
+ */
 public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSource.OverpassDownloadData> {
 
 
@@ -75,6 +78,9 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
         return true;
     }
 
+    /**
+     * The GUI representation of the Overpass download source.
+     */
     public static class OverpassDownloadSourcePanel extends AbstractDownloadSourcePanel<OverpassDownloadData> {
 
         private JosmTextArea overpassQuery;
