@@ -18,7 +18,7 @@ public interface DownloadSource<T> {
 
     /**
      * Downloads the data.
-     * @param bbox The bounding box.
+     * @param bbox The bounding box. Can be null if no bounding box selected.
      * @param data The required data for the download source.
      * @param settings The global settings of the download dialog, see {@link DownloadDialog}.
      */

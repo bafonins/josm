@@ -246,6 +246,9 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         }
     }
 
+    /**
+     * Encapsulates data that is required to download from the OSM server.
+     */
     static class OSMDownloadData {
         private boolean downloadOSMData;
         private boolean downloadNotes;

@@ -53,7 +53,7 @@ import org.openstreetmap.josm.tools.Utils;
 import org.openstreetmap.josm.tools.WindowGeometry;
 
 /**
- * Dialog displayed to download OSM and/or GPS data from OSM server.
+ * Dialog displayed to the user to download mapping data.
  */
 public class DownloadDialog extends JDialog {
 
@@ -493,6 +493,11 @@ public class DownloadDialog extends JDialog {
         }
     }
 
+    /**
+     * Creates listener that removes/adds download sources from/to {@code downloadSourcesTab}
+     * depending on the current mode.
+     * @return The expert mode listener.
+     */
     private ExpertToggleAction.ExpertModeChangeListener getExpertModeListenerForDownloadSources() {
         return isExpert -> {
             if (isExpert) {
@@ -511,6 +516,9 @@ public class DownloadDialog extends JDialog {
         };
     }
 
+    /**
+     * Action that is executed when the cancel button is pressed.
+     */
     class CancelAction extends AbstractAction {
         CancelAction() {
             putValue(NAME, tr("Cancel"));
@@ -531,6 +539,9 @@ public class DownloadDialog extends JDialog {
         }
     }
 
+    /**
+     * Action that is executed when the download button is pressed.
+     */
     class DownloadAction extends AbstractAction {
         DownloadAction() {
             putValue(NAME, tr("Download"));

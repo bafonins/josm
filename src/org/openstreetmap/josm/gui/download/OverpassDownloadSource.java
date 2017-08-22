@@ -224,7 +224,8 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
             }
 
             /*
-             * Check for an empty query. User might want to download everything.
+             * Check for an empty query. User might want to download everything, if so validation is passed,
+             * otherwise return false.
              */
             if (query.matches("(/\\*(\\*[^/]|[^\\*/])*\\*/|\\s)*")) {
                 boolean doFix = ConditionalOptionPaneUtil.showConfirmationDialog(
@@ -353,6 +354,9 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
         }
     }
 
+    /**
+     * Encapsulates data that is required to preform download from Overpass API.
+     */
     static class OverpassDownloadData {
         private String query;
         private Consumer<Collection<Object>> errorReporter;
