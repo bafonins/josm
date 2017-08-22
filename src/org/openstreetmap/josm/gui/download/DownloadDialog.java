@@ -541,7 +541,7 @@ public class DownloadDialog extends JDialog {
 
         public void run() {
             Component panel = downloadSourcesTab.getSelectedComponent();
-            if (panel instanceof AbstractDownloadSourcePanel){
+            if (panel instanceof AbstractDownloadSourcePanel) {
                 AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) panel;
                 DownloadSettings downloadSettings = getDownloadSettings();
                 if (pnl.checkDownload(currentBounds, downloadSettings)) {

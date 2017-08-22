@@ -34,7 +34,7 @@ public interface DownloadSource<T> {
      * Add a download source to the dialog, see {@link DownloadDialog}.
      * @param dialog The download dialog.
      */
-    void addGui(final DownloadDialog dialog);
+    void addGui(DownloadDialog dialog);
 
     /**
      * Defines whether this download source should be visible only in the expert mode.
