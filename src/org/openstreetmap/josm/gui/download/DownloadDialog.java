@@ -366,10 +366,20 @@ public class DownloadDialog extends JDialog {
         cbStartup.setSelected(isAutorunEnabled());
         cbZoomToDownloadedData.setSelected(DOWNLOAD_ZOOMTODATA.get());
         dialogSplit.setDividerLocation(DIALOG_SPLIT.get());
-        int idx = Utils.clamp(DOWNLOAD_TAB.get(), 0, tpDownloadAreaSelectors.getTabCount() - 1);
-        tpDownloadAreaSelectors.setSelectedIndex(idx);
-        idx = Utils.clamp(DOWNLOAD_SOURCE_TAB.get(), 0, downloadSourcesTab.getTabCount() - 1);
-        downloadSourcesTab.setSelectedIndex(idx);
+
+        try {
+            tpDownloadAreaSelectors.setSelectedIndex(DOWNLOAD_TAB.get());
+        } catch (IndexOutOfBoundsException e) {
+            Main.trace(e);
+            tpDownloadAreaSelectors.setSelectedIndex(0);
+        }
+
+        try {
+            downloadSourcesTab.setSelectedIndex(DOWNLOAD_SOURCE_TAB.get());
+        } catch (IndexOutOfBoundsException e) {
+            Main.trace(e);
+            downloadSourcesTab.setSelectedIndex(0);
+        }
 
         if (Main.isDisplayingMapView()) {
             MapView mv = Main.map.mapView;
