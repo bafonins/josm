@@ -125,7 +125,6 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         private final JCheckBox cbDownloadOsmData;
         private final JCheckBox cbDownloadGpxData;
         private final JCheckBox cbDownloadNotes;
-        private final JLabel sizeCheck = new JLabel();
 
         private static final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.data", true);
         private static final BooleanProperty DOWNLOAD_GPS = new BooleanProperty("download.osm.gps", false);
@@ -146,13 +145,9 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
             cbDownloadNotes = new JCheckBox(tr("Notes"));
             cbDownloadNotes.setToolTipText(tr("Select to download notes in the selected download area."));
 
-            Font labelFont = sizeCheck.getFont();
-            sizeCheck.setFont(labelFont.deriveFont(Font.PLAIN, labelFont.getSize()));
-
             add(cbDownloadOsmData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadGpxData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadNotes, GBC.eol().insets(1, 5, 1, 5));
-            add(sizeCheck, GBC.eol().anchor(GBC.EAST).insets(5, 5, 5, 2));
         }
 
         @Override
