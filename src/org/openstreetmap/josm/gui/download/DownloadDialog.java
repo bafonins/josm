@@ -254,7 +254,8 @@ public class DownloadDialog extends JDialog {
 
     /**
      * Distributes a "bounding box changed" from one DownloadSelection
-     * object to the others, so they may update or clear their input fields.
+     * object to the others, so they may update or clear their input fields. Also informs
+     * download sources about the change, so they can react on it.
      * @param b new current bounds
      *
      * @param eventSource - the DownloadSelection object that fired this notification.
@@ -264,6 +265,12 @@ public class DownloadDialog extends JDialog {
         for (DownloadSelection s : downloadSelections) {
             if (s != eventSource) {
                 s.setDownloadArea(currentBounds);
+            }
+        }
+
+        for (Component ds : downloadSourcesTab.getComponents()) {
+            if (ds instanceof AbstractDownloadSourcePanel) {
+                ((AbstractDownloadSourcePanel) ds).boudingBoxChanged(b);
             }
         }
     }

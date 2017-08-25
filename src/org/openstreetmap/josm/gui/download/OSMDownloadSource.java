@@ -20,7 +20,10 @@ import javax.swing.Icon;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.event.ChangeListener;
 
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.util.ArrayList;
 import java.util.List;
@@ -124,6 +127,7 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         private final JCheckBox cbDownloadOsmData;
         private final JCheckBox cbDownloadGpxData;
         private final JCheckBox cbDownloadNotes;
+        private final JLabel sizeCheck = new JLabel();
 
         private static final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.data", true);
         private static final BooleanProperty DOWNLOAD_GPS = new BooleanProperty("download.osm.gps", false);
@@ -133,20 +137,31 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
             super(ds);
             setLayout(new GridBagLayout());
 
+            // size check depends on selected data source
+            final ChangeListener checkboxChangeListener = e ->
+                    DownloadDialog.getInstance().getSelectedDownloadArea().ifPresent(this::updateSizeCheck);
+
             // adding the download tasks
             add(new JLabel(tr("Data Sources and Types:")), GBC.std().insets(5, 5, 1, 5).anchor(GBC.CENTER));
             cbDownloadOsmData = new JCheckBox(tr("OpenStreetMap data"), true);
             cbDownloadOsmData.setToolTipText(tr("Select to download OSM data in the selected download area."));
+            cbDownloadOsmData.getModel().addChangeListener(checkboxChangeListener);
 
             cbDownloadGpxData = new JCheckBox(tr("Raw GPS data"));
             cbDownloadGpxData.setToolTipText(tr("Select to download GPS traces in the selected download area."));
+            cbDownloadGpxData.getModel().addChangeListener(checkboxChangeListener);
 
             cbDownloadNotes = new JCheckBox(tr("Notes"));
             cbDownloadNotes.setToolTipText(tr("Select to download notes in the selected download area."));
+            cbDownloadNotes.getModel().addChangeListener(checkboxChangeListener);
+
+            Font labelFont = sizeCheck.getFont();
+            sizeCheck.setFont(labelFont.deriveFont(Font.PLAIN, labelFont.getSize()));
 
             add(cbDownloadOsmData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadGpxData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadNotes, GBC.eol().insets(1, 5, 1, 5));
+            add(sizeCheck, GBC.eol().anchor(GBC.EAST).insets(5, 5, 5, 2));
         }
 
         @Override
@@ -244,6 +259,40 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         public Icon getIcon() {
             return ImageProvider.get("download");
         }
+
+        @Override
+        public void boudingBoxChanged(Bounds bbox) {
+            updateSizeCheck(bbox);
+        }
+
+        private void updateSizeCheck(Bounds bbox) {
+            boolean isAreaTooLarge = false;
+            if (bbox == null) {
+                sizeCheck.setText(tr("No area selected yet"));
+                sizeCheck.setForeground(Color.darkGray);
+            } else if (!isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
+                isAreaTooLarge = false;
+            } else if (isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
+                // see max_note_request_area in https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
+                isAreaTooLarge = bbox.getArea() > Main.pref.getDouble("osm-server.max-request-area-notes", 25);
+            } else {
+                // see max_request_area in https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
+                isAreaTooLarge = bbox.getArea() > Main.pref.getDouble("osm-server.max-request-area", 0.25);
+            }
+            
+            displaySizeCheckResult(isAreaTooLarge);
+        }
+
+        private void displaySizeCheckResult(boolean isAreaTooLarge) {
+            if (isAreaTooLarge) {
+                sizeCheck.setText(tr("Download area too large; will probably be rejected by server"));
+                sizeCheck.setForeground(Color.red);
+            } else {
+                sizeCheck.setText(tr("Download area ok, size probably acceptable to server"));
+                sizeCheck.setForeground(Color.darkGray);
+            }
+        }
+
     }
 
     /**

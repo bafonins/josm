@@ -74,4 +74,12 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
     public Icon getIcon() {
         return null;
     }
+
+    /**
+     * Updates GUI components of the panel according to the bbox changes.
+     * @param bbox The new value for the bounding box.
+     */
+    public void boudingBoxChanged(Bounds bbox) {
+        // override this if the panel must react on bbox changes
+    }
 }
