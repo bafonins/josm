@@ -279,7 +279,7 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
                 // see max_request_area in https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
                 isAreaTooLarge = bbox.getArea() > Main.pref.getDouble("osm-server.max-request-area", 0.25);
             }
-            
+
             displaySizeCheckResult(isAreaTooLarge);
         }
 
