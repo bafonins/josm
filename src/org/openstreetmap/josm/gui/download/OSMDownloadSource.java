@@ -21,7 +21,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
-import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.util.ArrayList;
 import java.util.List;
