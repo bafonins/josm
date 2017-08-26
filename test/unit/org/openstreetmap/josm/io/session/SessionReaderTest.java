@@ -11,8 +11,8 @@ import java.util.List;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.TestUtils;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.AbstractTileSourceLayer;
 import org.openstreetmap.josm.gui.layer.GpxLayer;
 import org.openstreetmap.josm.gui.layer.ImageryLayer;
@@ -139,9 +139,9 @@ public class SessionReaderTest {
      */
     @Test
     public void testReadNotes() throws IOException, IllegalDataException {
-        if (Main.isDisplayingMapView()) {
-            for (NoteLayer nl : Main.getLayerManager().getLayersOfType(NoteLayer.class)) {
-                Main.getLayerManager().removeLayer(nl);
+        if (MainApplication.isDisplayingMapView()) {
+            for (NoteLayer nl : MainApplication.getLayerManager().getLayersOfType(NoteLayer.class)) {
+                MainApplication.getLayerManager().removeLayer(nl);
             }
         }
         final List<Layer> layers = testRead("notes.joz");

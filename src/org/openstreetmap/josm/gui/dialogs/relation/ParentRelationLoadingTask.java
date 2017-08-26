@@ -22,6 +22,7 @@ import org.openstreetmap.josm.io.OsmApi;
 import org.openstreetmap.josm.io.OsmServerBackreferenceReader;
 import org.openstreetmap.josm.io.OsmTransferException;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
+import org.openstreetmap.josm.tools.Logging;
 import org.xml.sax.SAXException;
 
 /**
@@ -31,7 +32,7 @@ import org.xml.sax.SAXException;
  * <pre>
  *  final ParentRelationLoadingTask task = new ParentRelationLoadingTask(
  *                   child,   // the child relation
- *                   Main.getLayerManager().getEditLayer(), // the edit layer
+ *                   MainApplication.getLayerManager().getEditLayer(), // the edit layer
  *                   true,  // load fully
  *                   new PleaseWaitProgressMonitor()  // a progress monitor
  *   );
@@ -46,7 +47,7 @@ import org.xml.sax.SAXException;
  *   );
  *
  *   // start the task
- *   Main.worker.submit(task);
+ *   MainApplication.worker.submit(task);
  * </pre>
  *
  */
@@ -178,7 +179,7 @@ public class ParentRelationLoadingTask extends PleaseWaitRunnable {
             }
         } catch (OsmTransferException e) {
             if (canceled) {
-                Main.warn(tr("Ignoring exception because task was canceled. Exception: {0}", e.toString()));
+                Logging.warn(tr("Ignoring exception because task was canceled. Exception: {0}", e.toString()));
                 return;
             }
             lastException = e;

@@ -22,18 +22,18 @@ import java.util.TimeZone;
 
 import javax.swing.ImageIcon;
 
-import org.openstreetmap.josm.Main;
-import org.openstreetmap.josm.actions.search.SearchCompiler.Match;
 import org.openstreetmap.josm.data.Preferences.PreferenceChangeEvent;
 import org.openstreetmap.josm.data.coor.CachedLatLon;
 import org.openstreetmap.josm.data.coor.EastNorth;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.gpx.GpxConstants;
 import org.openstreetmap.josm.data.gpx.WayPoint;
+import org.openstreetmap.josm.data.osm.search.SearchCompiler.Match;
 import org.openstreetmap.josm.data.preferences.CachedProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
 import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.template_engine.ParseError;
 import org.openstreetmap.josm.tools.template_engine.TemplateEngineDataProvider;
 import org.openstreetmap.josm.tools.template_engine.TemplateEntry;
@@ -144,8 +144,8 @@ public class Marker implements TemplateEngineDataProvider {
             try {
                 return new TemplateParser(s).parse();
             } catch (ParseError e) {
-                Main.debug(e);
-                Main.warn("Unable to parse template engine pattern ''{0}'' for property {1}. Using default (''{2}'') instead",
+                Logging.debug(e);
+                Logging.warn("Unable to parse template engine pattern ''{0}'' for property {1}. Using default (''{2}'') instead",
                         s, getKey(), super.getDefaultValueAsString());
                 return getDefaultValue();
             }

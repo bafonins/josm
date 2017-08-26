@@ -25,7 +25,9 @@ import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.Notification;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Shortcut;
 import org.openstreetmap.josm.tools.UserCancelException;
 
@@ -130,12 +132,12 @@ public final class ReverseWayAction extends JosmAction {
             try {
                 revResult = reverseWay(w);
             } catch (UserCancelException ex) {
-                Main.trace(ex);
+                Logging.trace(ex);
                 return;
             }
             c.addAll(revResult.getCommands());
         }
-        Main.main.undoRedo.add(new SequenceCommand(tr("Reverse ways"), c));
+        MainApplication.undoRedo.add(new SequenceCommand(tr("Reverse ways"), c));
     }
 
     /**

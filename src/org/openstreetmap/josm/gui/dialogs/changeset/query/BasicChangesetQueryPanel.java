@@ -21,9 +21,12 @@ import javax.swing.JRadioButton;
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.gui.JosmUserIdentityManager;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.widgets.HtmlPanel;
 import org.openstreetmap.josm.gui.widgets.JMultilineLabel;
 import org.openstreetmap.josm.io.ChangesetQuery;
+import org.openstreetmap.josm.tools.Logging;
 
 /**
  * This panel presents a list of basic queries for changesets.
@@ -163,10 +166,9 @@ public class BasicChangesetQueryPanel extends JPanel {
             lbl.setText(tr("<html>Download my open changesets</html>"));
         }
 
-        // query for changesets in the current map view only if there *is* a current
-        // map view
+        // query for changesets in the current map view only if there *is* a current map view
         lbl = lblQueries.get(BasicQuery.CHANGESETS_IN_MAP_VIEW);
-        if (!Main.isDisplayingMapView()) {
+        if (!MainApplication.isDisplayingMapView()) {
             rbQueries.get(BasicQuery.CHANGESETS_IN_MAP_VIEW).setEnabled(false);
             lbl.setText(tr("<html>Download changesets in the current map view.<br><em>Disabled. " +
                     "There is currently no map view active.</em></html>"));
@@ -203,8 +205,8 @@ public class BasicChangesetQueryPanel extends JPanel {
             try {
                 q = BasicQuery.valueOf(BasicQuery.class, value);
             } catch (IllegalArgumentException e) {
-                Main.warn(e, tr("Unexpected value for preference ''{0}'', got ''{1}''. Resetting to default query.",
-                        "changeset-query.basic.query", value));
+                Logging.log(Logging.LEVEL_WARN, tr("Unexpected value for preference ''{0}'', got ''{1}''. Resetting to default query.",
+                        "changeset-query.basic.query", value), e);
                 q = BasicQuery.MOST_RECENT_CHANGESETS;
             }
         }
@@ -239,7 +241,8 @@ public class BasicChangesetQueryPanel extends JPanel {
             query = query.beingOpen(true);
             break;
         case CHANGESETS_IN_MAP_VIEW:
-            Bounds b = Main.map.mapView.getLatLonBounds(Main.map.mapView.getBounds());
+            MapView mapView = MainApplication.getMap().mapView;
+            Bounds b = mapView.getLatLonBounds(mapView.getBounds());
             query = query.inBbox(b);
             break;
         }

@@ -34,6 +34,8 @@ import org.openstreetmap.josm.data.osm.visitor.paint.relations.Multipolygon;
 import org.openstreetmap.josm.data.osm.visitor.paint.relations.MultipolygonCache;
 import org.openstreetmap.josm.data.projection.Projection;
 import org.openstreetmap.josm.data.projection.Projections;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 
 /**
@@ -100,7 +102,7 @@ public final class Geometry {
             changedWays[pos] = false;
         }
 
-        OsmDataLayer layer = Main.getLayerManager().getEditLayer();
+        OsmDataLayer layer = MainApplication.getLayerManager().getEditLayer();
         DataSet dataset = ways.get(0).getDataSet();
 
         //iterate over all way pairs and introduce the intersections
@@ -552,7 +554,8 @@ public final class Geometry {
      * @return Area for the multipolygon (LatLon coordinates)
      */
     public static Area getAreaLatLon(Relation multipolygon) {
-        final Multipolygon mp = Main.map == null || Main.map.mapView == null
+        MapFrame map = MainApplication.getMap();
+        final Multipolygon mp = map == null || map.mapView == null
                 ? new Multipolygon(multipolygon)
                 : MultipolygonCache.getInstance().get(multipolygon);
         Path2D path = new Path2D.Double();
@@ -692,7 +695,8 @@ public final class Geometry {
      */
     public static double multipolygonArea(Relation multipolygon) {
         double area = 0.0;
-        final Multipolygon mp = Main.map == null || Main.map.mapView == null
+        MapFrame map = MainApplication.getMap();
+        final Multipolygon mp = map == null || map.mapView == null
                 ? new Multipolygon(multipolygon)
                 : MultipolygonCache.getInstance().get(multipolygon);
         for (Multipolygon.PolyData pd : mp.getCombinedPolygons()) {
@@ -931,8 +935,8 @@ public final class Geometry {
         try {
             outerInner = MultipolygonBuilder.joinWays(multiPolygon);
         } catch (MultipolygonBuilder.JoinedPolygonCreationException ex) {
-            Main.trace(ex);
-            Main.debug("Invalid multipolygon " + multiPolygon);
+            Logging.trace(ex);
+            Logging.debug("Invalid multipolygon " + multiPolygon);
             return false;
         }
         // Test if object is inside an outer member

@@ -3,8 +3,8 @@ package org.openstreetmap.josm.gui.dialogs;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.osm.DataSet;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.testutils.JOSMTestRules;
 
@@ -20,14 +20,14 @@ public class MapPaintDialogTest {
      */
     @Rule
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().mainMenu().platform().projection();
+    public JOSMTestRules test = new JOSMTestRules().main().platform().projection();
 
     /**
      * Unit test of {@link MapPaintDialog.InfoAction} class.
      */
     @Test
     public void testInfoAction() {
-        Main.getLayerManager().addLayer(new OsmDataLayer(new DataSet(), "", null));
-        Main.map.mapPaintDialog.new InfoAction().actionPerformed(null);
+        MainApplication.getLayerManager().addLayer(new OsmDataLayer(new DataSet(), "", null));
+        MainApplication.getMap().mapPaintDialog.new InfoAction().actionPerformed(null);
     }
 }

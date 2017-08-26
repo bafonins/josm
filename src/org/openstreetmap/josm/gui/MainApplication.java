@@ -4,7 +4,10 @@ package org.openstreetmap.josm.gui;
 import static org.openstreetmap.josm.tools.I18n.tr;
 import static org.openstreetmap.josm.tools.I18n.trn;
 
+import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,33 +35,72 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.net.ssl.SSLSocketFactory;
+import javax.swing.Action;
+import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
+import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
 import javax.swing.RepaintManager;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import org.jdesktop.swinghelper.debug.CheckThreadViolationRepaintManager;
+import org.openstreetmap.gui.jmapviewer.FeatureAdapter;
 import org.openstreetmap.josm.Main;
+import org.openstreetmap.josm.actions.JosmAction;
+import org.openstreetmap.josm.actions.OpenFileAction;
 import org.openstreetmap.josm.actions.PreferencesAction;
 import org.openstreetmap.josm.actions.RestartAction;
-import org.openstreetmap.josm.data.AutosaveTask;
-import org.openstreetmap.josm.data.CustomConfigurator;
+import org.openstreetmap.josm.actions.downloadtasks.DownloadGpsTask;
+import org.openstreetmap.josm.actions.downloadtasks.DownloadOsmTask;
+import org.openstreetmap.josm.actions.downloadtasks.DownloadTask;
+import org.openstreetmap.josm.actions.downloadtasks.PostDownloadHandler;
+import org.openstreetmap.josm.actions.mapmode.DrawAction;
+import org.openstreetmap.josm.actions.search.SearchAction;
+import org.openstreetmap.josm.data.Bounds;
+import org.openstreetmap.josm.data.UndoRedoHandler;
 import org.openstreetmap.josm.data.Version;
+import org.openstreetmap.josm.data.osm.DataSet;
+import org.openstreetmap.josm.data.osm.OsmPrimitive;
+import org.openstreetmap.josm.data.osm.search.SearchMode;
+import org.openstreetmap.josm.data.validation.OsmValidator;
 import org.openstreetmap.josm.gui.ProgramArguments.Option;
 import org.openstreetmap.josm.gui.SplashScreen.SplashProgressMonitor;
 import org.openstreetmap.josm.gui.download.DownloadDialog;
+import org.openstreetmap.josm.gui.io.CustomConfigurator.XMLCommandProcessor;
+import org.openstreetmap.josm.gui.io.SaveLayersDialog;
+import org.openstreetmap.josm.gui.layer.AutosaveTask;
+import org.openstreetmap.josm.gui.layer.MainLayerManager;
+import org.openstreetmap.josm.gui.layer.OsmDataLayer.CommandQueueListener;
+import org.openstreetmap.josm.gui.layer.TMSLayer;
+import org.openstreetmap.josm.gui.preferences.ToolbarPreferences;
+import org.openstreetmap.josm.gui.preferences.display.LafPreference;
+import org.openstreetmap.josm.gui.preferences.imagery.ImageryPreference;
+import org.openstreetmap.josm.gui.preferences.map.MapPaintPreference;
+import org.openstreetmap.josm.gui.preferences.projection.ProjectionPreference;
 import org.openstreetmap.josm.gui.preferences.server.OAuthAccessTokenHolder;
 import org.openstreetmap.josm.gui.preferences.server.ProxyPreference;
+import org.openstreetmap.josm.gui.progress.ProgressMonitorExecutor;
+import org.openstreetmap.josm.gui.tagging.presets.TaggingPresets;
 import org.openstreetmap.josm.gui.util.GuiHelper;
+import org.openstreetmap.josm.gui.util.RedirectInputMap;
 import org.openstreetmap.josm.io.CertificateAmendment;
 import org.openstreetmap.josm.io.DefaultProxySelector;
 import org.openstreetmap.josm.io.MessageNotifier;
 import org.openstreetmap.josm.io.OnlineResource;
+import org.openstreetmap.josm.io.OsmApi;
+import org.openstreetmap.josm.io.OsmApiInitializationException;
+import org.openstreetmap.josm.io.OsmTransferCanceledException;
 import org.openstreetmap.josm.io.auth.CredentialsManager;
 import org.openstreetmap.josm.io.auth.DefaultAuthenticator;
 import org.openstreetmap.josm.io.protocols.data.Handler;
@@ -68,9 +110,15 @@ import org.openstreetmap.josm.plugins.PluginInformation;
 import org.openstreetmap.josm.tools.FontsManager;
 import org.openstreetmap.josm.tools.HttpClient;
 import org.openstreetmap.josm.tools.I18n;
+import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.Logging;
+import org.openstreetmap.josm.tools.OpenBrowser;
 import org.openstreetmap.josm.tools.OsmUrlToBounds;
+import org.openstreetmap.josm.tools.OverpassTurboQueryWizard;
 import org.openstreetmap.josm.tools.PlatformHookWindows;
+import org.openstreetmap.josm.tools.RightAndLefthandTraffic;
+import org.openstreetmap.josm.tools.Shortcut;
+import org.openstreetmap.josm.tools.Territories;
 import org.openstreetmap.josm.tools.Utils;
 import org.openstreetmap.josm.tools.WindowGeometry;
 import org.openstreetmap.josm.tools.bugreport.BugReport;
@@ -81,6 +129,7 @@ import org.openstreetmap.josm.tools.bugreport.BugReportExceptionHandler;
  *
  * @author imi
  */
+@SuppressWarnings("deprecation")
 public class MainApplication extends Main {
 
     /**
@@ -88,13 +137,66 @@ public class MainApplication extends Main {
      */
     private static final List<String> COMMAND_LINE_ARGS = new ArrayList<>();
 
+    /**
+     * The main menu bar at top of screen.
+     */
+    static MainMenu menu;
+
+    /**
+     * The main panel, required to be static for {@link MapFrameListener} handling.
+     */
+    static MainPanel mainPanel;
+
+    /**
+     * The private content pane of {@link MainFrame}, required to be static for shortcut handling.
+     */
+    static JComponent contentPanePrivate;
+
+    /**
+     * The MapFrame.
+     */
+    static MapFrame map;
+
+    /**
+     * The toolbar preference control to register new actions.
+     */
+    static volatile ToolbarPreferences toolbar;
+
     private final MainFrame mainFrame;
+
+    /**
+     * The worker thread slave. This is for executing all long and intensive
+     * calculations. The executed runnables are guaranteed to be executed separately and sequential.
+     * @since 12634 (as a replacement to {@code Main.worker})
+     */
+    public static final ExecutorService worker = new ProgressMonitorExecutor("main-worker-%d", Thread.NORM_PRIORITY);
+    static {
+        Main.worker = worker;
+    }
+
+    /**
+     * Provides access to the layers displayed in the main view.
+     */
+    private static final MainLayerManager layerManager = new MainLayerManager();
+
+    /**
+     * The commands undo/redo handler.
+     * @since 12641 (as a replacement to {@code Main.main.undoRedo})
+     */
+    public static final UndoRedoHandler undoRedo = new UndoRedoHandler(); // Must be declared after layerManager
+
+    /**
+     * Listener that sets the enabled state of undo/redo menu entries.
+     */
+    private final CommandQueueListener redoUndoListener = (queueSize, redoSize) -> {
+            menu.undo.setEnabled(queueSize > 0);
+            menu.redo.setEnabled(redoSize > 0);
+        };
 
     /**
      * Constructs a new {@code MainApplication} without a window.
      */
     public MainApplication() {
-        // Allow subclassing (see JOSM.java)
         this(null);
     }
 
@@ -108,26 +210,148 @@ public class MainApplication extends Main {
     }
 
     @Override
+    protected List<InitializationTask> beforeInitializationTasks() {
+        return Arrays.asList(
+            new InitializationTask(tr("Starting file watcher"), fileWatcher::start),
+            new InitializationTask(tr("Executing platform startup hook"), platform::startupHook),
+            new InitializationTask(tr("Building main menu"), this::initializeMainWindow),
+            new InitializationTask(tr("Updating user interface"), () -> {
+                undoRedo.addCommandQueueListener(redoUndoListener);
+                // creating toolbar
+                GuiHelper.runInEDTAndWait(() -> contentPanePrivate.add(toolbar.control, BorderLayout.NORTH));
+                // help shortcut
+                registerActionShortcut(menu.help, Shortcut.registerShortcut("system:help", tr("Help"),
+                        KeyEvent.VK_F1, Shortcut.DIRECT));
+            }),
+            // This needs to be done before RightAndLefthandTraffic::initialize is called
+            new InitializationTask(tr("Initializing internal boundaries data"), Territories::initialize)
+        );
+    }
+
+    @Override
+    protected Collection<InitializationTask> parallelInitializationTasks() {
+        return Arrays.asList(
+            new InitializationTask(tr("Initializing OSM API"), () -> {
+                    // We try to establish an API connection early, so that any API
+                    // capabilities are already known to the editor instance. However
+                    // if it goes wrong that's not critical at this stage.
+                    try {
+                        OsmApi.getOsmApi().initialize(null, true);
+                    } catch (OsmTransferCanceledException | OsmApiInitializationException e) {
+                        Logging.warn(Logging.getErrorMessage(Utils.getRootCause(e)));
+                    }
+                }),
+            new InitializationTask(tr("Initializing internal traffic data"), RightAndLefthandTraffic::initialize),
+            new InitializationTask(tr("Initializing validator"), OsmValidator::initialize),
+            new InitializationTask(tr("Initializing presets"), TaggingPresets::initialize),
+            new InitializationTask(tr("Initializing map styles"), MapPaintPreference::initialize),
+            new InitializationTask(tr("Loading imagery preferences"), ImageryPreference::initialize)
+        );
+    }
+
+    @Override
+    protected List<Callable<?>> asynchronousCallableTasks() {
+        return Arrays.asList(
+                OverpassTurboQueryWizard::getInstance
+            );
+    }
+
+    @Override
+    protected List<Runnable> asynchronousRunnableTasks() {
+        return Arrays.asList(
+                TMSLayer::getCache,
+                OsmValidator::initializeTests
+            );
+    }
+
+    @Override
+    protected List<InitializationTask> afterInitializationTasks() {
+        return Arrays.asList(
+            new InitializationTask(tr("Updating user interface"), () -> GuiHelper.runInEDTAndWait(() -> {
+                // hooks for the jmapviewer component
+                FeatureAdapter.registerBrowserAdapter(OpenBrowser::displayUrl);
+                FeatureAdapter.registerTranslationAdapter(I18n::tr);
+                FeatureAdapter.registerLoggingAdapter(name -> Logging.getLogger());
+                // UI update
+                toolbar.refreshToolbarControl();
+                toolbar.control.updateUI();
+                contentPanePrivate.updateUI();
+            }))
+        );
+    }
+
+    /**
+     * Called once at startup to initialize the main window content.
+     * Should set {@link #menu} and {@link #mainPanel}
+     */
+    @SuppressWarnings("deprecation")
     protected void initializeMainWindow() {
         if (mainFrame != null) {
-            panel = mainFrame.getPanel();
+            mainPanel = mainFrame.getPanel();
+            panel = mainPanel;
             mainFrame.initialize();
             menu = mainFrame.getMenu();
+            super.menu = menu;
         } else {
             // required for running some tests.
-            panel = new MainPanel(Main.getLayerManager());
+            mainPanel = new MainPanel(layerManager);
+            panel = mainPanel;
             menu = new MainMenu();
+            super.menu = menu;
         }
-        panel.addMapFrameListener((o, n) -> redoUndoListener.commandChanged(0, 0));
-        panel.reAddListeners();
+        mainPanel.addMapFrameListener((o, n) -> redoUndoListener.commandChanged(0, 0));
+        mainPanel.reAddListeners();
     }
 
     @Override
     protected void shutdown() {
+        if (!GraphicsEnvironment.isHeadless()) {
+            worker.shutdown();
+        }
         if (mainFrame != null) {
             mainFrame.storeState();
         }
+        if (map != null) {
+            map.rememberToggleDialogWidth();
+        }
+        // Remove all layers because somebody may rely on layerRemoved events (like AutosaveTask)
+        layerManager.resetState();
         super.shutdown();
+        if (!GraphicsEnvironment.isHeadless()) {
+            worker.shutdownNow();
+        }
+    }
+
+    @Override
+    protected Bounds getRealBounds() {
+        return isDisplayingMapView() ? map.mapView.getRealBounds() : null;
+    }
+
+    @Override
+    protected void restoreOldBounds(Bounds oldBounds) {
+        if (isDisplayingMapView()) {
+            map.mapView.zoomTo(oldBounds);
+        }
+    }
+
+    /**
+     * Replies the current selected primitives, from a end-user point of view.
+     * It is not always technically the same collection of primitives than {@link DataSet#getSelected()}.
+     * Indeed, if the user is currently in drawing mode, only the way currently being drawn is returned,
+     * see {@link DrawAction#getInProgressSelection()}.
+     *
+     * @return The current selected primitives, from a end-user point of view. Can be {@code null}.
+     * @since 6546
+     */
+    @Override
+    public Collection<OsmPrimitive> getInProgressSelection() {
+        if (map != null && map.mapMode instanceof DrawAction) {
+            return ((DrawAction) map.mapMode).getInProgressSelection();
+        } else {
+            DataSet ds = layerManager.getEditDataSet();
+            if (ds == null) return null;
+            return ds.getSelected();
+        }
     }
 
     /**
@@ -137,6 +361,211 @@ public class MainApplication extends Main {
      */
     public static List<String> getCommandLineArgs() {
         return Collections.unmodifiableList(COMMAND_LINE_ARGS);
+    }
+
+    /**
+     * Returns the main layer manager that is used by the map view.
+     * @return The layer manager. The value returned will never change.
+     * @since 12636 (as a replacement to {@code Main.getLayerManager()})
+     */
+    @SuppressWarnings("deprecation")
+    public static MainLayerManager getLayerManager() {
+        return layerManager;
+    }
+
+    /**
+     * Returns the MapFrame.
+     * <p>
+     * There should be no need to access this to access any map data. Use {@link #layerManager} instead.
+     * @return the MapFrame
+     * @see MainPanel
+     * @since 12630 (as a replacement to {@code Main.map})
+     */
+    public static MapFrame getMap() {
+        return map;
+    }
+
+    /**
+     * Returns the main panel.
+     * @return the main panel
+     * @since 12642 (as a replacement to {@code Main.main.panel})
+     */
+    public static MainPanel getMainPanel() {
+        return mainPanel;
+    }
+
+    /**
+     * Returns the main menu, at top of screen.
+     * @return the main menu
+     * @since 12643 (as a replacement to {@code MainApplication.getMenu()})
+     */
+    public static MainMenu getMenu() {
+        return menu;
+    }
+
+    /**
+     * Returns the toolbar preference control to register new actions.
+     * @return the toolbar preference control
+     * @since 12637 (as a replacement to {@code Main.toolbar})
+     */
+    public static ToolbarPreferences getToolbar() {
+        return toolbar;
+    }
+
+    /**
+     * Replies true if JOSM currently displays a map view. False, if it doesn't, i.e. if
+     * it only shows the MOTD panel.
+     * <p>
+     * You do not need this when accessing the layer manager. The layer manager will be empty if no map view is shown.
+     *
+     * @return <code>true</code> if JOSM currently displays a map view
+     * @since 12630 (as a replacement to {@code Main.isDisplayingMapView()})
+     */
+    @SuppressWarnings("deprecation")
+    public static boolean isDisplayingMapView() {
+        return map != null && map.mapView != null;
+    }
+
+    /**
+     * Closes JOSM and optionally terminates the Java Virtual Machine (JVM).
+     * If there are some unsaved data layers, asks first for user confirmation.
+     * @param exit If {@code true}, the JVM is terminated by running {@link System#exit} with a given return code.
+     * @param exitCode The return code
+     * @param reason the reason for exiting
+     * @return {@code true} if JOSM has been closed, {@code false} if the user has cancelled the operation.
+     * @since 12636 (specialized version of {@link Main#exitJosm})
+     */
+    public static boolean exitJosm(boolean exit, int exitCode, SaveLayersDialog.Reason reason) {
+        final boolean proceed = Boolean.TRUE.equals(GuiHelper.runInEDTAndWaitAndReturn(() ->
+                SaveLayersDialog.saveUnsavedModifications(layerManager.getLayers(),
+                        reason != null ? reason : SaveLayersDialog.Reason.EXIT)));
+        if (proceed) {
+            return Main.exitJosm(exit, exitCode);
+        }
+        return false;
+    }
+
+    public static void redirectToMainContentPane(JComponent source) {
+        RedirectInputMap.redirect(source, contentPanePrivate);
+    }
+
+    /**
+     * Registers a new {@code MapFrameListener} that will be notified of MapFrame changes.
+     * <p>
+     * It will fire an initial mapFrameInitialized event when the MapFrame is present.
+     * Otherwise will only fire when the MapFrame is created or destroyed.
+     * @param listener The MapFrameListener
+     * @return {@code true} if the listeners collection changed as a result of the call
+     * @see #addMapFrameListener
+     * @since 12639 (as a replacement to {@code Main.addAndFireMapFrameListener})
+     */
+    @SuppressWarnings("deprecation")
+    public static boolean addAndFireMapFrameListener(MapFrameListener listener) {
+        return mainPanel != null && mainPanel.addAndFireMapFrameListener(listener);
+    }
+
+    /**
+     * Registers a new {@code MapFrameListener} that will be notified of MapFrame changes
+     * @param listener The MapFrameListener
+     * @return {@code true} if the listeners collection changed as a result of the call
+     * @see #addAndFireMapFrameListener
+     * @since 12639 (as a replacement to {@code Main.addMapFrameListener})
+     */
+    @SuppressWarnings("deprecation")
+    public static boolean addMapFrameListener(MapFrameListener listener) {
+        return mainPanel != null && mainPanel.addMapFrameListener(listener);
+    }
+
+    /**
+     * Unregisters the given {@code MapFrameListener} from MapFrame changes
+     * @param listener The MapFrameListener
+     * @return {@code true} if the listeners collection changed as a result of the call
+     * @since 12639 (as a replacement to {@code Main.removeMapFrameListener})
+     */
+    @SuppressWarnings("deprecation")
+    public static boolean removeMapFrameListener(MapFrameListener listener) {
+        return mainPanel != null && mainPanel.removeMapFrameListener(listener);
+    }
+
+    /**
+     * Registers a {@code JosmAction} and its shortcut.
+     * @param action action defining its own shortcut
+     * @since 12639 (as a replacement to {@code Main.registerActionShortcut})
+     */
+    @SuppressWarnings("deprecation")
+    public static void registerActionShortcut(JosmAction action) {
+        registerActionShortcut(action, action.getShortcut());
+    }
+
+    /**
+     * Registers an action and its shortcut.
+     * @param action action to register
+     * @param shortcut shortcut to associate to {@code action}
+     * @since 12639 (as a replacement to {@code Main.registerActionShortcut})
+     */
+    @SuppressWarnings("deprecation")
+    public static void registerActionShortcut(Action action, Shortcut shortcut) {
+        KeyStroke keyStroke = shortcut.getKeyStroke();
+        if (keyStroke == null)
+            return;
+
+        InputMap inputMap = contentPanePrivate.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        Object existing = inputMap.get(keyStroke);
+        if (existing != null && !existing.equals(action)) {
+            Logging.info(String.format("Keystroke %s is already assigned to %s, will be overridden by %s", keyStroke, existing, action));
+        }
+        inputMap.put(keyStroke, action);
+
+        contentPanePrivate.getActionMap().put(action, action);
+    }
+
+    /**
+     * Unregisters a shortcut.
+     * @param shortcut shortcut to unregister
+     * @since 12639 (as a replacement to {@code Main.unregisterShortcut})
+     */
+    @SuppressWarnings("deprecation")
+    public static void unregisterShortcut(Shortcut shortcut) {
+        contentPanePrivate.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).remove(shortcut.getKeyStroke());
+    }
+
+    /**
+     * Unregisters a {@code JosmAction} and its shortcut.
+     * @param action action to unregister
+     * @since 12639 (as a replacement to {@code Main.unregisterActionShortcut})
+     */
+    @SuppressWarnings("deprecation")
+    public static void unregisterActionShortcut(JosmAction action) {
+        unregisterActionShortcut(action, action.getShortcut());
+    }
+
+    /**
+     * Unregisters an action and its shortcut.
+     * @param action action to unregister
+     * @param shortcut shortcut to unregister
+     * @since 12639 (as a replacement to {@code Main.unregisterActionShortcut})
+     */
+    @SuppressWarnings("deprecation")
+    public static void unregisterActionShortcut(Action action, Shortcut shortcut) {
+        unregisterShortcut(shortcut);
+        contentPanePrivate.getActionMap().remove(action);
+    }
+
+    /**
+     * Replies the registered action for the given shortcut
+     * @param shortcut The shortcut to look for
+     * @return the registered action for the given shortcut
+     * @since 12639 (as a replacement to {@code Main.getRegisteredActionShortcut})
+     */
+    @SuppressWarnings("deprecation")
+    public static Action getRegisteredActionShortcut(Shortcut shortcut) {
+        KeyStroke keyStroke = shortcut.getKeyStroke();
+        if (keyStroke == null)
+            return null;
+        Object action = contentPanePrivate.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).get(keyStroke);
+        if (action instanceof Action)
+            return (Action) action;
+        return null;
     }
 
     /**
@@ -206,6 +635,7 @@ public class MainApplication extends Main {
      * Main application Startup
      * @param argArray Command-line arguments
      */
+    @SuppressWarnings("deprecation")
     public static void main(final String[] argArray) {
         I18n.init();
 
@@ -222,7 +652,7 @@ public class MainApplication extends Main {
         Level logLevel = args.getLogLevel();
         Logging.setLogLevel(logLevel);
         if (!args.showVersion() && !args.showHelp()) {
-            Main.info(tr("Log level is at {0} ({1}, {2})", logLevel.getLocalizedName(), logLevel.getName(), logLevel.intValue()));
+            Logging.info(tr("Log level is at {0} ({1}, {2})", logLevel.getLocalizedName(), logLevel.getName(), logLevel.intValue()));
         }
 
         Optional<String> language = args.getSingle(Option.LANGUAGE);
@@ -262,13 +692,13 @@ public class MainApplication extends Main {
 
         boolean skipLoadingPlugins = args.hasOption(Option.SKIP_PLUGINS);
         if (skipLoadingPlugins) {
-            Main.info(tr("Plugin loading skipped"));
+            Logging.info(tr("Plugin loading skipped"));
         }
 
         if (Logging.isLoggingEnabled(Logging.LEVEL_TRACE)) {
             // Enable debug in OAuth signpost via system preference, but only at trace level
             Utils.updateSystemProperty("debug", "true");
-            Main.info(tr("Enabled detailed debug level (trace)"));
+            Logging.info(tr("Enabled detailed debug level (trace)"));
         }
 
         Main.pref.init(args.hasOption(Option.RESET_PREFERENCES));
@@ -288,7 +718,7 @@ public class MainApplication extends Main {
 
         FontsManager.initialize();
 
-        I18n.setupLanguageFonts();
+        GuiHelper.setupLanguageFonts();
 
         Handler.install();
 
@@ -297,15 +727,15 @@ public class MainApplication extends Main {
                 !args.hasOption(Option.NO_MAXIMIZE) && Main.pref.getBoolean("gui.maximized", false));
         final MainFrame mainFrame = new MainFrame(geometry);
         if (mainFrame.getContentPane() instanceof JComponent) {
-            Main.contentPanePrivate = (JComponent) mainFrame.getContentPane();
+            contentPanePrivate = (JComponent) mainFrame.getContentPane();
         }
-        Main.mainPanel = mainFrame.getPanel();
+        mainPanel = mainFrame.getPanel();
         Main.parent = mainFrame;
 
         if (args.hasOption(Option.LOAD_PREFERENCES)) {
-            CustomConfigurator.XMLCommandProcessor config = new CustomConfigurator.XMLCommandProcessor(Main.pref);
+            XMLCommandProcessor config = new XMLCommandProcessor(Main.pref);
             for (String i : args.get(Option.LOAD_PREFERENCES)) {
-                info("Reading preferences from " + i);
+                Logging.info("Reading preferences from " + i);
                 try (InputStream is = openStream(new URL(i))) {
                     config.openAndReadXML(is);
                 } catch (IOException ex) {
@@ -317,8 +747,8 @@ public class MainApplication extends Main {
         try {
             CertificateAmendment.addMissingCertificates();
         } catch (IOException | GeneralSecurityException ex) {
-            Main.warn(ex);
-            Main.warn(getErrorMessage(Utils.getRootCause(ex)));
+            Logging.warn(ex);
+            Logging.warn(Logging.getErrorMessage(Utils.getRootCause(ex)));
         }
         Authenticator.setDefault(DefaultAuthenticator.getInstance());
         DefaultProxySelector proxySelector = new DefaultProxySelector(ProxySelector.getDefault());
@@ -352,6 +782,11 @@ public class MainApplication extends Main {
         }
 
         monitor.indeterminateSubTask(tr("Setting defaults"));
+        setupUIManager();
+        toolbar = new ToolbarPreferences();
+        Main.toolbar = toolbar;
+        ProjectionPreference.setProjection();
+        GuiHelper.translateJavaInternalMessages();
         preConstructorInit();
 
         monitor.indeterminateSubTask(tr("Creating main GUI"));
@@ -386,7 +821,7 @@ public class MainApplication extends Main {
                 // neither startupHook (need to be called before remote control)
                 PlatformHookWindows.removeInsecureCertificates();
             } catch (NoSuchAlgorithmException | CertificateException | KeyStoreException | IOException e) {
-                error(e);
+                Logging.error(e);
             }
         }
 
@@ -401,8 +836,59 @@ public class MainApplication extends Main {
         if (Main.pref.getBoolean("debug.edt-checker.enable", Version.getInstance().isLocalBuild())) {
             // Repaint manager is registered so late for a reason - there is lots of violation during startup process
             // but they don't seem to break anything and are difficult to fix
-            info("Enabled EDT checker, wrongful access to gui from non EDT thread will be printed to console");
+            Logging.info("Enabled EDT checker, wrongful access to gui from non EDT thread will be printed to console");
             RepaintManager.setCurrentManager(new CheckThreadViolationRepaintManager());
+        }
+    }
+
+    static void setupUIManager() {
+        String defaultlaf = platform.getDefaultStyle();
+        String laf = LafPreference.LAF.get();
+        try {
+            UIManager.setLookAndFeel(laf);
+        } catch (final NoClassDefFoundError | ClassNotFoundException e) {
+            // Try to find look and feel in plugin classloaders
+            Logging.trace(e);
+            Class<?> klass = null;
+            for (ClassLoader cl : PluginHandler.getResourceClassLoaders()) {
+                try {
+                    klass = cl.loadClass(laf);
+                    break;
+                } catch (ClassNotFoundException ex) {
+                    Logging.trace(ex);
+                }
+            }
+            if (klass != null && LookAndFeel.class.isAssignableFrom(klass)) {
+                try {
+                    UIManager.setLookAndFeel((LookAndFeel) klass.getConstructor().newInstance());
+                } catch (ReflectiveOperationException ex) {
+                    Logging.log(Logging.LEVEL_WARN, "Cannot set Look and Feel: " + laf + ": "+ex.getMessage(), ex);
+                } catch (UnsupportedLookAndFeelException ex) {
+                    Logging.info("Look and Feel not supported: " + laf);
+                    LafPreference.LAF.put(defaultlaf);
+                    Logging.trace(ex);
+                }
+            } else {
+                Logging.info("Look and Feel not found: " + laf);
+                LafPreference.LAF.put(defaultlaf);
+            }
+        } catch (UnsupportedLookAndFeelException e) {
+            Logging.info("Look and Feel not supported: " + laf);
+            LafPreference.LAF.put(defaultlaf);
+            Logging.trace(e);
+        } catch (InstantiationException | IllegalAccessException e) {
+            Logging.error(e);
+        }
+
+        UIManager.put("OptionPane.okIcon", ImageProvider.get("ok"));
+        UIManager.put("OptionPane.yesIcon", UIManager.get("OptionPane.okIcon"));
+        UIManager.put("OptionPane.cancelIcon", ImageProvider.get("cancel"));
+        UIManager.put("OptionPane.noIcon", UIManager.get("OptionPane.cancelIcon"));
+        // Ensures caret color is the same than text foreground color, see #12257
+        // See http://docs.oracle.com/javase/8/docs/api/javax/swing/plaf/synth/doc-files/componentProperties.html
+        for (String p : Arrays.asList(
+                "EditorPane", "FormattedTextField", "PasswordField", "TextArea", "TextField", "TextPane")) {
+            UIManager.put(p+".caretForeground", UIManager.getColor(p+".foreground"));
         }
     }
 
@@ -442,8 +928,9 @@ public class MainApplication extends Main {
                 try {
                     Main.setOffline(OnlineResource.valueOf(s.toUpperCase(Locale.ENGLISH)));
                 } catch (IllegalArgumentException e) {
-                    Main.error(e, tr("''{0}'' is not a valid value for argument ''{1}''. Possible values are {2}, possibly delimited by commas.",
-                            s.toUpperCase(Locale.ENGLISH), Option.OFFLINE.getName(), Arrays.toString(OnlineResource.values())));
+                    Logging.log(Logging.LEVEL_ERROR,
+                            tr("''{0}'' is not a valid value for argument ''{1}''. Possible values are {2}, possibly delimited by commas.",
+                            s.toUpperCase(Locale.ENGLISH), Option.OFFLINE.getName(), Arrays.toString(OnlineResource.values())), e);
                     System.exit(1);
                     return;
                 }
@@ -451,7 +938,7 @@ public class MainApplication extends Main {
         }
         Set<OnlineResource> offline = Main.getOfflineResources();
         if (!offline.isEmpty()) {
-            Main.warn(trn("JOSM is running in offline mode. This resource will not be available: {0}",
+            Logging.warn(trn("JOSM is running in offline mode. This resource will not be available: {0}",
                     "JOSM is running in offline mode. These resources will not be available: {0}",
                     offline.size(), offline.size() == 1 ? offline.iterator().next() : Arrays.toString(offline.toArray())));
         }
@@ -479,9 +966,9 @@ public class MainApplication extends Main {
                                 SSLSocketFactory.getDefault().createSocket(a, 443).close();
                                 Utils.updateSystemProperty("java.net.preferIPv6Addresses", "true");
                                 if (!wasv6) {
-                                    Main.info(tr("Detected useable IPv6 network, prefering IPv6 over IPv4 after next restart."));
+                                    Logging.info(tr("Detected useable IPv6 network, prefering IPv6 over IPv4 after next restart."));
                                 } else {
-                                    Main.info(tr("Detected useable IPv6 network, prefering IPv6 over IPv4."));
+                                    Logging.info(tr("Detected useable IPv6 network, prefering IPv6 over IPv4."));
                                 }
                                 hasv6 = true;
                             }
@@ -489,23 +976,63 @@ public class MainApplication extends Main {
                         }
                     }
                 } catch (IOException | SecurityException e) {
-                    if (Main.isDebugEnabled()) {
-                        Main.debug("Exception while checking IPv6 connectivity: "+e);
-                    }
-                    Main.trace(e);
+                    Logging.debug("Exception while checking IPv6 connectivity: {0}", e);
+                    Logging.trace(e);
                 }
                 if (wasv6 && !hasv6) {
-                    Main.info(tr("Detected no useable IPv6 network, prefering IPv4 over IPv6 after next restart."));
+                    Logging.info(tr("Detected no useable IPv6 network, prefering IPv4 over IPv6 after next restart."));
                     Main.pref.put("validated.ipv6", hasv6); // be sure it is stored before the restart!
                     try {
                         RestartAction.restartJOSM();
                     } catch (IOException e) {
-                        Main.error(e);
+                        Logging.error(e);
                     }
                 }
                 Main.pref.put("validated.ipv6", hasv6);
             }, "IPv6-checker").start();
         }
+    }
+
+    /**
+     * Download area specified as Bounds value.
+     * @param rawGps Flag to download raw GPS tracks
+     * @param b The bounds value
+     * @return the complete download task (including post-download handler)
+     */
+    static List<Future<?>> downloadFromParamBounds(final boolean rawGps, Bounds b) {
+        DownloadTask task = rawGps ? new DownloadGpsTask() : new DownloadOsmTask();
+        // asynchronously launch the download task ...
+        Future<?> future = task.download(true, b, null);
+        // ... and the continuation when the download is finished (this will wait for the download to finish)
+        return Collections.singletonList(MainApplication.worker.submit(new PostDownloadHandler(task, future)));
+    }
+
+    /**
+     * Handle command line instructions after GUI has been initialized.
+     * @param args program arguments
+     * @return the list of submitted tasks
+     */
+    static List<Future<?>> postConstructorProcessCmdLine(ProgramArguments args) {
+        List<Future<?>> tasks = new ArrayList<>();
+        List<File> fileList = new ArrayList<>();
+        for (String s : args.get(Option.DOWNLOAD)) {
+            tasks.addAll(DownloadParamType.paramType(s).download(s, fileList));
+        }
+        if (!fileList.isEmpty()) {
+            tasks.add(OpenFileAction.openFiles(fileList, true));
+        }
+        for (String s : args.get(Option.DOWNLOADGPS)) {
+            tasks.addAll(DownloadParamType.paramType(s).downloadGps(s));
+        }
+        final Collection<String> selectionArguments = args.get(Option.SELECTION);
+        if (!selectionArguments.isEmpty()) {
+            tasks.add(MainApplication.worker.submit(() -> {
+                for (String s : selectionArguments) {
+                    SearchAction.search(s, SearchMode.add);
+                }
+            }));
+        }
+        return tasks;
     }
 
     private static class GuiFinalizationWorker implements Runnable {

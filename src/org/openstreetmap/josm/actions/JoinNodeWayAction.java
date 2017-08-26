@@ -18,7 +18,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.command.ChangeCommand;
 import org.openstreetmap.josm.command.Command;
 import org.openstreetmap.josm.command.MoveCommand;
@@ -29,6 +28,8 @@ import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.data.osm.WaySegment;
 import org.openstreetmap.josm.data.projection.Projections;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.tools.Geometry;
 import org.openstreetmap.josm.tools.MultiMap;
 import org.openstreetmap.josm.tools.Shortcut;
@@ -91,10 +92,9 @@ public class JoinNodeWayAction extends JosmAction {
                 !getLayerManager().getEditDataSet().getSelectedWays().isEmpty();
 
         // Planning phase: decide where we'll insert the nodes and put it all in "data"
+        MapView mapView = MainApplication.getMap().mapView;
         for (Node node : selectedNodes) {
-            List<WaySegment> wss = Main.map.mapView.getNearestWaySegments(
-                    Main.map.mapView.getPoint(node), OsmPrimitive::isSelectable);
-
+            List<WaySegment> wss = mapView.getNearestWaySegments(mapView.getPoint(node), OsmPrimitive::isSelectable);
             MultiMap<Way, Integer> insertPoints = new MultiMap<>();
             for (WaySegment ws : wss) {
                 // Maybe cleaner to pass a "isSelected" predicate to getNearestWaySegments, but this is less invasive.
@@ -158,7 +158,7 @@ public class JoinNodeWayAction extends JosmAction {
         }
 
         if (cmds.isEmpty()) return;
-        Main.main.undoRedo.add(new SequenceCommand(getValue(NAME).toString(), cmds));
+        MainApplication.undoRedo.add(new SequenceCommand(getValue(NAME).toString(), cmds));
     }
 
     private static SortedSet<Integer> pruneSuccs(Collection<Integer> is) {

@@ -27,18 +27,21 @@ import org.openstreetmap.josm.command.DeleteCommand;
 import org.openstreetmap.josm.command.SequenceCommand;
 import org.openstreetmap.josm.data.coor.EastNorth;
 import org.openstreetmap.josm.data.coor.LatLon;
+import org.openstreetmap.josm.data.osm.DefaultNameFormatter;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.TagCollection;
 import org.openstreetmap.josm.data.osm.Way;
-import org.openstreetmap.josm.gui.DefaultNameFormatter;
 import org.openstreetmap.josm.gui.HelpAwareOptionPane;
 import org.openstreetmap.josm.gui.HelpAwareOptionPane.ButtonSpec;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.Notification;
 import org.openstreetmap.josm.gui.conflict.tags.CombinePrimitiveResolverDialog;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Shortcut;
 import org.openstreetmap.josm.tools.UserCancelException;
 
@@ -73,8 +76,9 @@ public class MergeNodesAction extends JosmAction {
         List<Node> selectedNodes = OsmPrimitive.getFilteredList(selection, Node.class);
 
         if (selectedNodes.size() == 1) {
-            List<Node> nearestNodes = Main.map.mapView.getNearestNodes(
-                    Main.map.mapView.getPoint(selectedNodes.get(0)), selectedNodes, OsmPrimitive::isUsable);
+            MapView mapView = MainApplication.getMap().mapView;
+            List<Node> nearestNodes = mapView.getNearestNodes(
+                    mapView.getPoint(selectedNodes.get(0)), selectedNodes, OsmPrimitive::isUsable);
             if (nearestNodes.isEmpty()) {
                 new Notification(
                         tr("Please select at least two nodes to merge or one node that is close to another node."))
@@ -88,10 +92,10 @@ public class MergeNodesAction extends JosmAction {
         Node targetNode = selectTargetNode(selectedNodes);
         if (targetNode != null) {
             Node targetLocationNode = selectTargetLocationNode(selectedNodes);
-            Command cmd = mergeNodes(Main.getLayerManager().getEditLayer(), selectedNodes, targetNode, targetLocationNode);
+            Command cmd = mergeNodes(getLayerManager().getEditLayer(), selectedNodes, targetNode, targetLocationNode);
             if (cmd != null) {
-                Main.main.undoRedo.add(cmd);
-                Main.getLayerManager().getEditLayer().data.setSelected(targetNode);
+                MainApplication.undoRedo.add(cmd);
+                getLayerManager().getEditLayer().data.setSelected(targetNode);
             }
         }
     }
@@ -269,7 +273,7 @@ public class MergeNodesAction extends JosmAction {
         if (target != null) {
             Command cmd = mergeNodes(layer, nodes, target, targetLocationNode);
             if (cmd != null) {
-                Main.main.undoRedo.add(cmd);
+                MainApplication.undoRedo.add(cmd);
                 layer.data.setSelected(target);
             }
         }
@@ -345,7 +349,7 @@ public class MergeNodesAction extends JosmAction {
             return new SequenceCommand(/* for correct i18n of plural forms - see #9110 */
                     trn("Merge {0} node", "Merge {0} nodes", nodes.size(), nodes.size()), cmds);
         } catch (UserCancelException ex) {
-            Main.trace(ex);
+            Logging.trace(ex);
             return null;
         }
     }

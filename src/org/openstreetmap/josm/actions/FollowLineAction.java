@@ -10,7 +10,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.mapmode.DrawAction;
 import org.openstreetmap.josm.command.ChangeCommand;
 import org.openstreetmap.josm.command.SelectCommand;
@@ -18,6 +17,8 @@ import org.openstreetmap.josm.command.SequenceCommand;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.tools.Shortcut;
 import org.openstreetmap.josm.tools.Utils;
@@ -59,17 +60,18 @@ public class FollowLineAction extends JosmAction {
 
     @Override
     public void actionPerformed(ActionEvent evt) {
-        OsmDataLayer osmLayer = Main.getLayerManager().getEditLayer();
+        OsmDataLayer osmLayer = getLayerManager().getEditLayer();
         if (osmLayer == null)
             return;
-        if (!(Main.map.mapMode instanceof DrawAction)) return; // We are not on draw mode
+        MapFrame map = MainApplication.getMap();
+        if (!(map.mapMode instanceof DrawAction)) return; // We are not on draw mode
 
         Collection<Node> selectedPoints = osmLayer.data.getSelectedNodes();
         Collection<Way> selectedLines = osmLayer.data.getSelectedWays();
         if ((selectedPoints.size() > 1) || (selectedLines.size() != 1)) // Unsuitable selection
             return;
 
-        Node last = ((DrawAction) Main.map.mapMode).getCurrentBaseNode();
+        Node last = ((DrawAction) map.mapMode).getCurrentBaseNode();
         if (last == null)
             return;
         Way follower = selectedLines.iterator().next();
@@ -111,7 +113,7 @@ public class FollowLineAction extends JosmAction {
             } else {
                 newFollower.addNode(newPoint);
             }
-            Main.main.undoRedo.add(new SequenceCommand(tr("Follow line"),
+            MainApplication.undoRedo.add(new SequenceCommand(tr("Follow line"),
                     new ChangeCommand(follower, newFollower),
                     new SelectCommand(newFollower.isClosed() // see #10028 - unselect last node when closing a way
                             ? Arrays.<OsmPrimitive>asList(follower)
@@ -121,7 +123,7 @@ public class FollowLineAction extends JosmAction {
             // "viewport following" mode for tracing long features
             // from aerial imagery or GPS tracks.
             if (DrawAction.VIEWPORT_FOLLOWING.get()) {
-                Main.map.mapView.smoothScrollTo(newPoint.getEastNorth());
+                map.mapView.smoothScrollTo(newPoint.getEastNorth());
             }
         }
     }

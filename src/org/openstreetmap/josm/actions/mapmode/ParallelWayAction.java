@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 
 import javax.swing.JOptionPane;
 
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.SystemOfMeasurement;
 import org.openstreetmap.josm.data.coor.EastNorth;
@@ -39,6 +38,7 @@ import org.openstreetmap.josm.data.preferences.ColorProperty;
 import org.openstreetmap.josm.data.preferences.DoubleProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
 import org.openstreetmap.josm.data.preferences.StrokeProperty;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.Notification;
@@ -50,6 +50,7 @@ import org.openstreetmap.josm.gui.util.ModifierExListener;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 import org.openstreetmap.josm.tools.Geometry;
 import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Shortcut;
 
 /**
@@ -170,8 +171,8 @@ public class ParallelWayAction extends MapMode implements ModifierExListener {
         mv.addMouseMotionListener(this);
         mv.addTemporaryLayer(temporaryLayer);
 
-        //// Needed to update the mouse cursor if modifiers are changed when the mouse is motionless
-        Main.map.keyDetector.addModifierExListener(this);
+        // Needed to update the mouse cursor if modifiers are changed when the mouse is motionless
+        MainApplication.getMap().keyDetector.addModifierExListener(this);
         sourceWays = new LinkedHashSet<>(getLayerManager().getEditDataSet().getSelectedWays());
         for (Way w : sourceWays) {
             w.setHighlighted(true);
@@ -184,9 +185,10 @@ public class ParallelWayAction extends MapMode implements ModifierExListener {
         mv.removeMouseListener(this);
         mv.removeMouseMotionListener(this);
         mv.removeTemporaryLayer(temporaryLayer);
-        Main.map.statusLine.setDist(-1);
-        Main.map.statusLine.repaint();
-        Main.map.keyDetector.removeModifierExListener(this);
+        MapFrame map = MainApplication.getMap();
+        map.statusLine.setDist(-1);
+        map.statusLine.repaint();
+        map.keyDetector.removeModifierExListener(this);
         removeWayHighlighting(sourceWays);
         pWays = null;
         sourceWays = null;
@@ -215,7 +217,7 @@ public class ParallelWayAction extends MapMode implements ModifierExListener {
 
     @Override
     public void modifiersExChanged(int modifiers) {
-        if (Main.map == null || mv == null || !mv.isActiveLayerDrawable())
+        if (MainApplication.getMap() == null || mv == null || !mv.isActiveLayerDrawable())
             return;
 
         // Should only get InputEvents due to the mask in enterMode
@@ -429,8 +431,9 @@ public class ParallelWayAction extends MapMode implements ModifierExListener {
         }
         pWays.changeOffset(d);
 
-        Main.map.statusLine.setDist(Math.abs(snappedRealD));
-        Main.map.statusLine.repaint();
+        MapFrame map = MainApplication.getMap();
+        map.statusLine.setDist(Math.abs(snappedRealD));
+        map.statusLine.repaint();
         temporaryLayer.invalidate();
     }
 
@@ -521,7 +524,7 @@ public class ParallelWayAction extends MapMode implements ModifierExListener {
             getLayerManager().getEditDataSet().setSelected(pWays.getWays());
             return true;
         } catch (IllegalArgumentException e) {
-            Main.debug(e);
+            Logging.debug(e);
             new Notification(tr("ParallelWayAction\n" +
                     "The ways selected must form a simple branchless path"))
                     .setIcon(JOptionPane.INFORMATION_MESSAGE)
@@ -583,7 +586,7 @@ public class ParallelWayAction extends MapMode implements ModifierExListener {
                 if (mod.isPresent()) {
                     ret.put(mod.get(), Character.isUpperCase(c));
                 } else {
-                    Main.debug("Ignoring unknown modifier {0}", c);
+                    Logging.debug("Ignoring unknown modifier {0}", c);
                 }
             }
             return Collections.unmodifiableMap(ret);

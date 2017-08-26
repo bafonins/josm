@@ -7,7 +7,6 @@ import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.AlignInLineAction.InvalidSelection;
 import org.openstreetmap.josm.actions.AlignInLineAction.Line;
 import org.openstreetmap.josm.data.coor.EastNorth;
@@ -15,6 +14,7 @@ import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.testutils.JOSMTestRules;
 
@@ -30,7 +30,7 @@ public final class AlignInLineActionTest {
      */
     @Rule
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().mainMenu().projection();
+    public JOSMTestRules test = new JOSMTestRules().main().projection();
 
     /** Class under test. */
     private static AlignInLineAction action;
@@ -41,7 +41,7 @@ public final class AlignInLineActionTest {
     @Before
     public void setUp() {
         // Enable "Align in line" feature.
-        action = Main.main.menu.alignInLine;
+        action = MainApplication.getMenu().alignInLine;
         action.setEnabled(true);
     }
 
@@ -67,7 +67,7 @@ public final class AlignInLineActionTest {
         Node point3 = new Node(new EastNorth(1, 1));
 
         try {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
 
             // Create an open way.
             createWay(dataSet, point1, point2, point3);
@@ -78,7 +78,7 @@ public final class AlignInLineActionTest {
             action.buildCommand().executeCommand();
         } finally {
             // Ensure we clean the place before leaving, even if test fails.
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
 
         // Points 1 and 3 are the extremities and must not have moved. Only point 2 must have moved.
@@ -108,7 +108,7 @@ public final class AlignInLineActionTest {
         Node point4 = new Node(new EastNorth(0, 2));
 
         try {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
 
             // Create a closed way.
             createWay(dataSet, point1, point2, point3, point4, point1);
@@ -118,7 +118,7 @@ public final class AlignInLineActionTest {
             action.buildCommand().executeCommand();
         } finally {
             // Ensure we clean the place before leaving, even if test fails.
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
 
         // Only point 1 must have moved.
@@ -149,7 +149,7 @@ public final class AlignInLineActionTest {
         Node point4 = new Node(new EastNorth(2, 0));
 
         try {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
 
             // Create 2 ways.
             createWay(dataSet, point1, point2);
@@ -162,7 +162,7 @@ public final class AlignInLineActionTest {
             action.buildCommand().executeCommand();
         } finally {
             // Ensure we clean the place before leaving, even if test fails.
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
 
         assertCoordEq(point1, 0, 2);

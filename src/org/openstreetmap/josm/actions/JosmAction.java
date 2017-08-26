@@ -17,6 +17,7 @@ import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.event.DatasetEventManager.FireMode;
 import org.openstreetmap.josm.data.osm.event.SelectionEventManager;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerAddEvent;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerChangeListener;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerOrderChangeEvent;
@@ -27,6 +28,7 @@ import org.openstreetmap.josm.gui.layer.MainLayerManager.ActiveLayerChangeListen
 import org.openstreetmap.josm.gui.progress.PleaseWaitProgressMonitor;
 import org.openstreetmap.josm.tools.Destroyable;
 import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Shortcut;
 
 /**
@@ -76,14 +78,14 @@ public abstract class JosmAction extends AbstractAction implements Destroyable {
         setHelpId();
         sc = shortcut;
         if (sc != null && !sc.isAutomatic()) {
-            Main.registerActionShortcut(this, sc);
+            MainApplication.registerActionShortcut(this, sc);
         }
         setTooltip(tooltip);
         if (getValue("toolbar") == null) {
             putValue("toolbar", toolbarId);
         }
-        if (registerInToolbar && Main.toolbar != null) {
-            Main.toolbar.register(this);
+        if (registerInToolbar && MainApplication.getToolbar() != null) {
+            MainApplication.getToolbar().register(this);
         }
         if (installAdapters) {
             installAdapters();
@@ -215,7 +217,7 @@ public abstract class JosmAction extends AbstractAction implements Destroyable {
     @Override
     public void destroy() {
         if (sc != null && !sc.isAutomatic()) {
-            Main.unregisterActionShortcut(this);
+            MainApplication.unregisterActionShortcut(this);
         }
         if (layerChangeAdapter != null) {
             getLayerManager().removeLayerChangeListener(layerChangeAdapter);
@@ -267,15 +269,15 @@ public abstract class JosmAction extends AbstractAction implements Destroyable {
      * @since 10353
      */
     public MainLayerManager getLayerManager() {
-        return Main.getLayerManager();
+        return MainApplication.getLayerManager();
     }
 
     protected static void waitFuture(final Future<?> future, final PleaseWaitProgressMonitor monitor) {
-        Main.worker.submit(() -> {
+        MainApplication.worker.submit(() -> {
                         try {
                             future.get();
                         } catch (InterruptedException | ExecutionException | CancellationException e) {
-                            Main.error(e);
+                            Logging.error(e);
                             return;
                         }
                         monitor.close();

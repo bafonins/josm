@@ -52,12 +52,13 @@ import org.openstreetmap.josm.actions.ExpertToggleAction;
 import org.openstreetmap.josm.actions.JosmAction;
 import org.openstreetmap.josm.command.ChangeCommand;
 import org.openstreetmap.josm.command.Command;
+import org.openstreetmap.josm.data.osm.DefaultNameFormatter;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.RelationMember;
 import org.openstreetmap.josm.data.osm.Tag;
 import org.openstreetmap.josm.gui.ConditionalOptionPaneUtil;
-import org.openstreetmap.josm.gui.DefaultNameFormatter;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MainMenu;
 import org.openstreetmap.josm.gui.ScrollViewport;
 import org.openstreetmap.josm.gui.datatransfer.ClipboardUtils;
@@ -97,6 +98,7 @@ import org.openstreetmap.josm.gui.tagging.presets.TaggingPresetHandler;
 import org.openstreetmap.josm.gui.tagging.presets.TaggingPresetType;
 import org.openstreetmap.josm.gui.tagging.presets.TaggingPresets;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Shortcut;
 import org.openstreetmap.josm.tools.Utils;
 import org.openstreetmap.josm.tools.WindowGeometry;
@@ -766,7 +768,7 @@ public class GenericRelationEditor extends RelationEditor {
             memberTableModel.unregister();
             memberTable.unregisterListeners();
             if (windowMenuItem != null) {
-                Main.main.menu.windowMenu.remove(windowMenuItem);
+                MainApplication.getMenu().windowMenu.remove(windowMenuItem);
                 windowMenuItem = null;
             }
             for (FlavorListener listener : clipboardListeners) {
@@ -796,7 +798,7 @@ public class GenericRelationEditor extends RelationEditor {
             }
         };
         focusAction.putValue("relationEditor", re);
-        return MainMenu.add(Main.main.menu.windowMenu, focusAction, MainMenu.WINDOW_MENU_GROUP.VOLATILE);
+        return MainMenu.add(MainApplication.getMenu().windowMenu, focusAction, MainMenu.WINDOW_MENU_GROUP.VOLATILE);
     }
 
     /**
@@ -840,7 +842,7 @@ public class GenericRelationEditor extends RelationEditor {
         int mods = shortcut.getModifiers();
         int code = shortcut.getKeyCode();
         if (code != KeyEvent.VK_INSERT && (mods == 0 || mods == InputEvent.SHIFT_DOWN_MASK)) {
-            Main.info(tr("Sorry, shortcut \"{0}\" can not be enabled in Relation editor dialog"), shortcut);
+            Logging.info(tr("Sorry, shortcut \"{0}\" can not be enabled in Relation editor dialog"), shortcut);
             return;
         }
         rootPane.getActionMap().put(actionName, action);
@@ -946,7 +948,7 @@ public class GenericRelationEditor extends RelationEditor {
             }
             return modified ? new ChangeCommand(orig, relation) : null;
         } catch (AddAbortException ign) {
-            Main.trace(ign);
+            Logging.trace(ign);
             return null;
         }
     }

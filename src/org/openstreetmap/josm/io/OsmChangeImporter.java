@@ -13,9 +13,11 @@ import javax.swing.JOptionPane;
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.ExtensionFileFilter;
 import org.openstreetmap.josm.data.osm.DataSet;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
 import org.openstreetmap.josm.gui.util.GuiHelper;
+import org.openstreetmap.josm.tools.Logging;
 
 /**
  * File importer that reads OSM change files (*.osc).
@@ -42,7 +44,7 @@ public class OsmChangeImporter extends FileImporter {
         try {
             importData(Compression.getUncompressedFileInputStream(file), file, progressMonitor);
         } catch (FileNotFoundException e) {
-            Main.error(e);
+            Logging.error(e);
             throw new IOException(tr("File ''{0}'' does not exist.", file.getName()), e);
         }
     }
@@ -64,7 +66,7 @@ public class OsmChangeImporter extends FileImporter {
                         tr("Open OsmChange file"),
                         JOptionPane.INFORMATION_MESSAGE);
             }
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
             layer.onPostLoadFromFile();
         });
     }

@@ -27,6 +27,7 @@ import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.gpx.GpxConstants;
 import org.openstreetmap.josm.data.gpx.GpxData;
 import org.openstreetmap.josm.gui.ExtendedDialog;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.GpxLayer;
 import org.openstreetmap.josm.gui.layer.Layer;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
@@ -34,6 +35,7 @@ import org.openstreetmap.josm.gui.widgets.JosmTextArea;
 import org.openstreetmap.josm.gui.widgets.JosmTextField;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 import org.openstreetmap.josm.tools.GBC;
+import org.openstreetmap.josm.tools.Logging;
 
 /**
  * Exports data to a .gpx file. Data may be native GPX or OSM data which will be converted.
@@ -170,7 +172,7 @@ public class GpxExporter extends FileExporter implements GpxConstants {
         } else if (layer instanceof GpxLayer) {
             gpxData = ((GpxLayer) layer).data;
         } else {
-            gpxData = OsmDataLayer.toGpxData(Main.getLayerManager().getEditDataSet(), file);
+            gpxData = OsmDataLayer.toGpxData(MainApplication.getLayerManager().getEditDataSet(), file);
         }
 
         // add author and copyright details to the gpx data
@@ -204,7 +206,7 @@ public class GpxExporter extends FileExporter implements GpxConstants {
             new GpxWriter(fo).write(gpxData);
             fo.flush();
         } catch (IOException ex) {
-            Main.error(ex);
+            Logging.error(ex);
             JOptionPane.showMessageDialog(Main.parent, tr("Error while exporting {0}:\n{1}", fn, ex.getMessage()),
                     tr("Error"), JOptionPane.ERROR_MESSAGE);
         }

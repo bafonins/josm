@@ -5,9 +5,9 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.imagery.ImageryInfo;
 import org.openstreetmap.josm.data.imagery.ImageryInfo.ImageryType;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.testutils.JOSMTestRules;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -22,7 +22,7 @@ public class TMSLayerTest {
      */
     @Rule
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().mainMenu().platform().projection();
+    public JOSMTestRules test = new JOSMTestRules().main().platform().projection();
 
     /**
      * Creates a new TMS layer.
@@ -50,11 +50,11 @@ public class TMSLayerTest {
 
     private static void test(ImageryType expected, TMSLayer layer) {
         try {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
             assertEquals(expected, layer.getInfo().getImageryType());
         } finally {
             // Ensure we clean the place before leaving, even if test fails.
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
     }
 

@@ -39,6 +39,7 @@ import org.openstreetmap.josm.data.osm.WaySegment;
 import org.openstreetmap.josm.data.osm.visitor.AllNodesVisitor;
 import org.openstreetmap.josm.data.osm.visitor.paint.WireframeMapRenderer;
 import org.openstreetmap.josm.gui.ExtendedDialog;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.MapViewState.MapViewPoint;
@@ -50,6 +51,7 @@ import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.util.KeyPressReleaseListener;
 import org.openstreetmap.josm.gui.util.ModifierExListener;
 import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Pair;
 import org.openstreetmap.josm.tools.Shortcut;
 import org.openstreetmap.josm.tools.Utils;
@@ -207,8 +209,9 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
         cycleManager.init();
         virtualManager.init();
         // This is required to update the cursors when ctrl/shift/alt is pressed
-        Main.map.keyDetector.addModifierExListener(this);
-        Main.map.keyDetector.addKeyListener(this);
+        MapFrame map = MainApplication.getMap();
+        map.keyDetector.addModifierExListener(this);
+        map.keyDetector.addKeyListener(this);
     }
 
     @Override
@@ -218,14 +221,15 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
         mv.removeMouseListener(this);
         mv.removeMouseMotionListener(this);
         mv.setVirtualNodesEnabled(false);
-        Main.map.keyDetector.removeModifierExListener(this);
-        Main.map.keyDetector.removeKeyListener(this);
+        MapFrame map = MainApplication.getMap();
+        map.keyDetector.removeModifierExListener(this);
+        map.keyDetector.removeKeyListener(this);
         removeHighlighting();
     }
 
     @Override
     public void modifiersExChanged(int modifiers) {
-        if (!Main.isDisplayingMapView() || oldEvent == null) return;
+        if (!MainApplication.isDisplayingMapView() || oldEvent == null) return;
         if (giveUserFeedback(oldEvent, modifiers)) {
             mv.repaint();
         }
@@ -566,6 +570,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
 
         startingDraggingPos = null;
         mouseReleaseTime = System.currentTimeMillis();
+        MapFrame map = MainApplication.getMap();
 
         if (mode == Mode.SELECT) {
             if (e.getButton() != MouseEvent.BUTTON1) {
@@ -576,7 +581,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
 
             // Select Draw Tool if no selection has been made
             if (!cancelDrawMode && getLayerManager().getEditDataSet().selectionEmpty()) {
-                Main.map.selectDrawTool(true);
+                map.selectDrawTool(true);
                 updateStatusLine();
                 return;
             }
@@ -597,7 +602,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
                     if (e.getClickCount() >= 2 && c.size() == 1 && c.iterator().next() instanceof Node) {
                         // We need to do it like this as otherwise drawAction will see a double
                         // click and switch back to SelectMode
-                        Main.worker.execute(() -> Main.map.selectDrawTool(true));
+                        MainApplication.worker.execute(() -> map.selectDrawTool(true));
                         return;
                     }
                 }
@@ -628,16 +633,17 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
 
     @Override
     public void doKeyPressed(KeyEvent e) {
-        if (!repeatedKeySwitchLassoOption || !Main.isDisplayingMapView() || !getShortcut().isEvent(e))
+        if (!repeatedKeySwitchLassoOption || !MainApplication.isDisplayingMapView() || !getShortcut().isEvent(e))
             return;
-        if (Main.isDebugEnabled()) {
-            Main.debug(getClass().getName()+" consuming event "+e);
+        if (Logging.isDebugEnabled()) {
+            Logging.debug("{0} consuming event {1}", getClass().getName(), e);
         }
         e.consume();
+        MapFrame map = MainApplication.getMap();
         if (!lassoMode) {
-            Main.map.selectMapMode(Main.map.mapModeSelectLasso);
+            map.selectMapMode(map.mapModeSelectLasso);
         } else {
-            Main.map.selectMapMode(Main.map.mapModeSelect);
+            map.selectMapMode(map.mapModeSelect);
         }
     }
 
@@ -704,7 +710,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
                     ((MoveCommand) c).applyVectorTo(currentEN);
                 } else {
                     c = new MoveCommand(selection, startEN, currentEN);
-                    Main.main.undoRedo.add(c);
+                    MainApplication.undoRedo.add(c);
                 }
                 for (Node n : affectedNodes) {
                     LatLon ll = n.getCoor();
@@ -737,19 +743,19 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
                     if (c instanceof RotateCommand && affectedNodes.equals(((RotateCommand) c).getTransformedNodes())) {
                         ((RotateCommand) c).handleEvent(currentEN);
                     } else {
-                        Main.main.undoRedo.add(new RotateCommand(selection, currentEN));
+                        MainApplication.undoRedo.add(new RotateCommand(selection, currentEN));
                     }
                 } else if (mode == Mode.SCALE) {
                     if (c instanceof ScaleCommand && affectedNodes.equals(((ScaleCommand) c).getTransformedNodes())) {
                         ((ScaleCommand) c).handleEvent(currentEN);
                     } else {
-                        Main.main.undoRedo.add(new ScaleCommand(selection, currentEN));
+                        MainApplication.undoRedo.add(new ScaleCommand(selection, currentEN));
                     }
                 }
 
                 Collection<Way> ways = ds.getSelectedWays();
                 if (doesImpactStatusLine(affectedNodes, ways)) {
-                    Main.map.statusLine.setDist(ways);
+                    MainApplication.getMap().statusLine.setDist(ways);
                 }
             } finally {
                 ds.endUpdate();
@@ -792,7 +798,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
      * @return last command
      */
     private static Command getLastCommandInDataset(DataSet ds) {
-        Command lastCommand = Main.main.undoRedo.getLastCommand();
+        Command lastCommand = MainApplication.undoRedo.getLastCommand();
         if (lastCommand instanceof SequenceCommand) {
             lastCommand = ((SequenceCommand) lastCommand).getLastCommand();
         }
@@ -818,7 +824,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
             ed.toggleEnable("movedHiddenElements");
             ed.showDialog();
             if (ed.getValue() != 1) {
-                Main.main.undoRedo.undo();
+                MainApplication.undoRedo.undo();
             }
         }
         int max = Main.pref.getInteger("warn.move.maxelements", 20), limit = max;
@@ -841,7 +847,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
             ed.showDialog();
 
             if (ed.getValue() != 1) {
-                Main.main.undoRedo.undo();
+                MainApplication.undoRedo.undo();
             }
         } else {
             // if small number of elements were moved,
@@ -913,7 +919,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
 
         Collection<Node> nodesToMerge = new LinkedList<>(selNodes);
         nodesToMerge.add(target);
-        mergeNodes(Main.getLayerManager().getEditLayer(), nodesToMerge, target);
+        mergeNodes(MainApplication.getLayerManager().getEditLayer(), nodesToMerge, target);
     }
 
     /**
@@ -1240,7 +1246,7 @@ public class SelectAction extends MapMode implements ModifierExListener, KeyPres
             String text = trn("Add and move a virtual new node to way",
                     "Add and move a virtual new node to {0} ways", virtualWays.size(),
                     virtualWays.size());
-            Main.main.undoRedo.add(new SequenceCommand(text, virtualCmds));
+            MainApplication.undoRedo.add(new SequenceCommand(text, virtualCmds));
             getLayerManager().getEditDataSet().setSelected(Collections.singleton((OsmPrimitive) virtualNode));
             clear();
         }

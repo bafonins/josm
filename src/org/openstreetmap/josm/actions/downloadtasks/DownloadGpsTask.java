@@ -17,6 +17,8 @@ import org.openstreetmap.josm.data.Bounds.ParseMethod;
 import org.openstreetmap.josm.data.ProjectionBounds;
 import org.openstreetmap.josm.data.ViewportData;
 import org.openstreetmap.josm.data.gpx.GpxData;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.PleaseWaitRunnable;
 import org.openstreetmap.josm.gui.layer.GpxLayer;
 import org.openstreetmap.josm.gui.layer.Layer;
@@ -72,7 +74,7 @@ public class DownloadGpsTask extends AbstractDownloadTask<GpxData> {
                 new BoundingBoxDownloader(downloadArea), progressMonitor);
         // We need submit instead of execute so we can wait for it to finish and get the error
         // message if necessary. If no one calls getErrorMessage() it just behaves like execute.
-        return Main.worker.submit(downloadTask);
+        return MainApplication.worker.submit(downloadTask);
     }
 
     @Override
@@ -96,7 +98,7 @@ public class DownloadGpsTask extends AbstractDownloadTask<GpxData> {
             newLayerName = matcher.matches() ? matcher.group(1) : null;
             // We need submit instead of execute so we can wait for it to finish and get the error
             // message if necessary. If no one calls getErrorMessage() it just behaves like execute.
-            return Main.worker.submit(downloadTask);
+            return MainApplication.worker.submit(downloadTask);
 
         } else if (url.matches(PATTERN_TRACKPOINTS_BBOX)) {
             String[] table = url.split("\\?|=|&");
@@ -164,13 +166,14 @@ public class DownloadGpsTask extends AbstractDownloadTask<GpxData> {
         private <L extends Layer> L addOrMergeLayer(L layer, L mergeLayer) {
             if (layer == null) return null;
             if (newLayer || mergeLayer == null) {
-                Main.getLayerManager().addLayer(layer, zoomAfterDownload);
+                MainApplication.getLayerManager().addLayer(layer, zoomAfterDownload);
                 return layer;
             } else {
                 mergeLayer.mergeFrom(layer);
                 mergeLayer.invalidate();
-                if (Main.map != null && zoomAfterDownload && layer instanceof GpxLayer) {
-                    Main.map.mapView.scheduleZoomTo(new ViewportData(layer.getViewProjectionBounds()));
+                MapFrame map = MainApplication.getMap();
+                if (map != null && zoomAfterDownload && layer instanceof GpxLayer) {
+                    map.mapView.scheduleZoomTo(new ViewportData(layer.getViewProjectionBounds()));
                 }
                 return mergeLayer;
             }
@@ -178,10 +181,10 @@ public class DownloadGpsTask extends AbstractDownloadTask<GpxData> {
 
         private GpxLayer findGpxMergeLayer() {
             boolean merge = Main.pref.getBoolean("download.gps.mergeWithLocal", false);
-            Layer active = Main.getLayerManager().getActiveLayer();
+            Layer active = MainApplication.getLayerManager().getActiveLayer();
             if (active instanceof GpxLayer && (merge || ((GpxLayer) active).data.fromServer))
                 return (GpxLayer) active;
-            for (GpxLayer l : Main.getLayerManager().getLayersOfType(GpxLayer.class)) {
+            for (GpxLayer l : MainApplication.getLayerManager().getLayersOfType(GpxLayer.class)) {
                 if (merge || l.data.fromServer)
                     return l;
             }
@@ -189,7 +192,7 @@ public class DownloadGpsTask extends AbstractDownloadTask<GpxData> {
         }
 
         private MarkerLayer findMarkerMergeLayer(GpxLayer fromLayer) {
-            for (MarkerLayer l : Main.getLayerManager().getLayersOfType(MarkerLayer.class)) {
+            for (MarkerLayer l : MainApplication.getLayerManager().getLayersOfType(MarkerLayer.class)) {
                 if (fromLayer != null && l.fromLayer == fromLayer)
                     return l;
             }

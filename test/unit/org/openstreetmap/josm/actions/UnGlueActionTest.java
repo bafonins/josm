@@ -7,11 +7,11 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.testutils.JOSMTestRules;
 
@@ -30,7 +30,7 @@ public final class UnGlueActionTest {
      */
     @Rule
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().mainMenu();
+    public JOSMTestRules test = new JOSMTestRules().main();
 
     /**
      * Setup test.
@@ -38,7 +38,7 @@ public final class UnGlueActionTest {
     @Before
     public void setUp() {
         if (action == null) {
-            action = Main.main.menu.unglueNodes;
+            action = MainApplication.getMenu().unglueNodes;
             action.setEnabled(true);
         }
     }
@@ -51,13 +51,13 @@ public final class UnGlueActionTest {
         DataSet ds = new DataSet();
         OsmDataLayer layer = new OsmDataLayer(ds, "", null);
         try {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
             assertTrue(ds.getSelected().isEmpty());
             assertTrue(ds.allPrimitives().isEmpty());
             action.actionPerformed(null);
             assertTrue(ds.allPrimitives().isEmpty());
         } finally {
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
     }
 
@@ -72,13 +72,13 @@ public final class UnGlueActionTest {
         OsmDataLayer layer = new OsmDataLayer(ds, "", null);
         ds.setSelected(n);
         try {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
             assertEquals(1, ds.getSelected().size());
             assertEquals(1, ds.allPrimitives().size());
             action.actionPerformed(null);
             assertEquals(1, ds.allPrimitives().size());
         } finally {
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
     }
 
@@ -99,13 +99,13 @@ public final class UnGlueActionTest {
         OsmDataLayer layer = new OsmDataLayer(ds, "", null);
         ds.setSelected(n1);
         try {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
             assertEquals(1, ds.getSelected().size());
             assertEquals(3, ds.allPrimitives().size());
             action.actionPerformed(null);
             assertEquals(3, ds.allPrimitives().size());
         } finally {
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
     }
 
@@ -132,13 +132,13 @@ public final class UnGlueActionTest {
         OsmDataLayer layer = new OsmDataLayer(ds, "", null);
         ds.setSelected(n1);
         try {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
             assertEquals(1, ds.getSelected().size());
             assertEquals(5, ds.allPrimitives().size());
             action.actionPerformed(null);
             assertEquals(6, ds.allPrimitives().size());
         } finally {
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
     }
 }

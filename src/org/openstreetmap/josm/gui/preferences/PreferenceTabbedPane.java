@@ -34,6 +34,7 @@ import org.openstreetmap.josm.actions.ExpertToggleAction.ExpertModeChangeListene
 import org.openstreetmap.josm.actions.RestartAction;
 import org.openstreetmap.josm.gui.HelpAwareOptionPane;
 import org.openstreetmap.josm.gui.HelpAwareOptionPane.ButtonSpec;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.preferences.advanced.AdvancedPreference;
 import org.openstreetmap.josm.gui.preferences.audio.AudioPreference;
 import org.openstreetmap.josm.gui.preferences.display.ColorPreference;
@@ -63,6 +64,7 @@ import org.openstreetmap.josm.plugins.PluginInformation;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.bugreport.BugReportExceptionHandler;
 
 /**
@@ -124,7 +126,7 @@ public final class PreferenceTabbedPane extends JTabbedPane implements MouseWhee
                         options[0],
                         null /* no special help */
                         )) {
-                    Main.main.menu.restart.actionPerformed(null);
+                    MainApplication.getMenu().restart.actionPerformed(null);
                 }
             } else if (task != null && !task.isCanceled()) {
                 JOptionPane.showMessageDialog(
@@ -416,8 +418,8 @@ public final class PreferenceTabbedPane extends JTabbedPane implements MouseWhee
             if (task != null) {
                 // if we have to launch a plugin download task we do it asynchronously, followed
                 // by the remaining "save preferences" activites run on the Swing EDT.
-                Main.worker.submit(task);
-                Main.worker.submit(() -> SwingUtilities.invokeLater(continuation));
+                MainApplication.worker.submit(task);
+                MainApplication.worker.submit(() -> SwingUtilities.invokeLater(continuation));
             } else {
                 // no need for asynchronous activities. Simply run the remaining "save preference"
                 // activities on this thread (we are already on the Swing EDT
@@ -498,7 +500,7 @@ public final class PreferenceTabbedPane extends JTabbedPane implements MouseWhee
                     }
                 }
             } else if (!(setting instanceof SubPreferenceSetting)) {
-                Main.warn("Ignoring preferences "+setting);
+                Logging.warn("Ignoring preferences "+setting);
             }
         }
         try {
@@ -506,7 +508,7 @@ public final class PreferenceTabbedPane extends JTabbedPane implements MouseWhee
                 setSelectedComponent(sel);
             }
         } catch (IllegalArgumentException e) {
-            Main.warn(e);
+            Logging.warn(e);
         }
     }
 
@@ -545,7 +547,7 @@ public final class PreferenceTabbedPane extends JTabbedPane implements MouseWhee
         SETTINGS_FACTORIES.add(new TaggingPresetPreference.Factory());
         SETTINGS_FACTORIES.add(new BackupPreference.Factory());
         SETTINGS_FACTORIES.add(new PluginPreference.Factory());
-        SETTINGS_FACTORIES.add(Main.toolbar);
+        SETTINGS_FACTORIES.add(MainApplication.getToolbar());
         SETTINGS_FACTORIES.add(new AudioPreference.Factory());
         SETTINGS_FACTORIES.add(new ShortcutPreference.Factory());
         SETTINGS_FACTORIES.add(new ValidatorPreference.Factory());
@@ -599,7 +601,7 @@ public final class PreferenceTabbedPane extends JTabbedPane implements MouseWhee
                         setSelectedIndex(index);
                     }
                 } catch (SecurityException ex) {
-                    Main.error(ex);
+                    Logging.error(ex);
                 } catch (RuntimeException ex) { // NOPMD
                     // allow to change most settings even if e.g. a plugin fails
                     BugReportExceptionHandler.handleException(ex);
@@ -616,7 +618,7 @@ public final class PreferenceTabbedPane extends JTabbedPane implements MouseWhee
             try {
                 sps.addGui(this);
             } catch (SecurityException ex) {
-                Main.error(ex);
+                Logging.error(ex);
             } catch (RuntimeException ex) { // NOPMD
                 BugReportExceptionHandler.handleException(ex);
             } finally {
