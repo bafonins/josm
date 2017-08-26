@@ -33,6 +33,7 @@ import org.openstreetmap.josm.command.AddCommand;
 import org.openstreetmap.josm.command.ChangeCommand;
 import org.openstreetmap.josm.command.Command;
 import org.openstreetmap.josm.command.SequenceCommand;
+import org.openstreetmap.josm.data.osm.DefaultNameFormatter;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.PrimitiveId;
@@ -40,8 +41,9 @@ import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.RelationMember;
 import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.data.osm.WaySegment;
-import org.openstreetmap.josm.gui.DefaultNameFormatter;
 import org.openstreetmap.josm.gui.ExtendedDialog;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.Notification;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
@@ -212,7 +214,7 @@ public class SplitWayAction extends JosmAction {
             }
             if (wayToKeep != null) {
                 final SplitWayResult result = doSplitWay(getLayerManager().getEditLayer(), selectedWay, wayToKeep, newWays, sel);
-                Main.main.undoRedo.add(result.getCommand());
+                MainApplication.undoRedo.add(result.getCommand());
                 if (!result.getNewSelection().isEmpty()) {
                     getLayerManager().getEditDataSet().setSelected(result.getNewSelection());
                 }
@@ -254,7 +256,7 @@ public class SplitWayAction extends JosmAction {
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             list.addListSelectionListener(e -> {
                 final Way selected = list.getSelectedValue();
-                if (selected != null && Main.isDisplayingMapView() && selected.getNodesCount() > 1) {
+                if (selected != null && MainApplication.isDisplayingMapView() && selected.getNodesCount() > 1) {
                     final Collection<WaySegment> segments = new ArrayList<>(selected.getNodesCount() - 1);
                     final Iterator<Node> it = selected.getNodes().iterator();
                     Node previousNode = it.next();
@@ -271,7 +273,7 @@ public class SplitWayAction extends JosmAction {
 
         protected void setHighlightedWaySegments(Collection<WaySegment> segments) {
             selectedWay.getDataSet().setHighlightedWaySegments(segments);
-            Main.map.mapView.repaint();
+            MainApplication.getMap().mapView.repaint();
         }
 
         @Override
@@ -291,11 +293,11 @@ public class SplitWayAction extends JosmAction {
             super.buttonAction(buttonIndex, evt);
             toggleSaveState(); // necessary since #showDialog() does not handle it due to the non-modal dialog
             if (getValue() == 1) {
-                SplitWayResult result = doSplitWay(Main.getLayerManager().getEditLayer(),
+                SplitWayResult result = doSplitWay(MainApplication.getLayerManager().getEditLayer(),
                         selectedWay, list.getSelectedValue(), newWays, selection);
-                Main.main.undoRedo.add(result.getCommand());
+                MainApplication.undoRedo.add(result.getCommand());
                 if (!result.getNewSelection().isEmpty()) {
-                    Main.getLayerManager().getEditDataSet().setSelected(result.getNewSelection());
+                    MainApplication.getLayerManager().getEditDataSet().setSelected(result.getNewSelection());
                 }
             }
         }
@@ -541,7 +543,8 @@ public class SplitWayAction extends JosmAction {
         Collection<String> nowarnroles = Main.pref.getCollection("way.split.roles.nowarn",
                 Arrays.asList("outer", "inner", "forward", "backward", "north", "south", "east", "west"));
 
-        final boolean isMapModeDraw = Main.map != null && Main.map.mapMode == Main.map.mapModeDraw;
+        final MapFrame map = MainApplication.getMap();
+        final boolean isMapModeDraw = map != null && map.mapMode == map.mapModeDraw;
 
         // Change the original way
         final Way changedWay = new Way(way);

@@ -1,17 +1,18 @@
 // License: GPL. For details, see LICENSE file.
-package org.openstreetmap.josm.gui.preferences;
+package org.openstreetmap.josm.data.preferences.sources;
 
 import java.io.File;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.openstreetmap.josm.Main;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Utils;
 
 /**
  * A source entry primarily used to save the user's selection of mappaint styles,
  * but also for preset sources or validator rules.
+ * @since 12649 (moved from gui.preferences package)
  * @since 3796
  */
 public class SourceEntry {
@@ -152,7 +153,7 @@ public class SourceEntry {
         if (m.find()) {
             return m.group(1);
         } else {
-            Main.warn("Unexpected URL format: "+url);
+            Logging.warn("Unexpected URL format: "+url);
             return url;
         }
     }

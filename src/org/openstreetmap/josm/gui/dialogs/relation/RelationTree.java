@@ -14,17 +14,18 @@ import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.DataSetMerger;
 import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
 import org.openstreetmap.josm.data.osm.Relation;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.PleaseWaitRunnable;
 import org.openstreetmap.josm.gui.progress.PleaseWaitProgressMonitor;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
 import org.openstreetmap.josm.io.OsmApi;
 import org.openstreetmap.josm.io.OsmServerObjectReader;
 import org.openstreetmap.josm.io.OsmTransferException;
+import org.openstreetmap.josm.tools.Logging;
 import org.xml.sax.SAXException;
 
 /**
@@ -93,7 +94,7 @@ public class RelationTree extends JTree {
                 // we don't load complete  or new relations
                 return;
             // launch the download task
-            Main.worker.submit(new RelationLoader(getParentDialog(), parent, path));
+            MainApplication.worker.submit(new RelationLoader(getParentDialog(), parent, path));
         }
     }
 
@@ -131,13 +132,13 @@ public class RelationTree extends JTree {
             if (canceled)
                 return;
             if (lastException != null) {
-                Main.error(lastException);
+                Logging.error(lastException);
                 return;
             }
-            DataSetMerger visitor = new DataSetMerger(Main.getLayerManager().getEditLayer().data, ds);
+            DataSetMerger visitor = new DataSetMerger(MainApplication.getLayerManager().getEditLayer().data, ds);
             visitor.merge();
             if (!visitor.getConflicts().isEmpty()) {
-                Main.getLayerManager().getEditLayer().getConflicts().add(visitor.getConflicts());
+                MainApplication.getLayerManager().getEditLayer().getConflicts().add(visitor.getConflicts());
             }
             final RelationTreeModel model = (RelationTreeModel) getModel();
             SwingUtilities.invokeLater(() -> model.refreshNode(path));
@@ -151,7 +152,7 @@ public class RelationTree extends JTree {
                         .createSubTaskMonitor(ProgressMonitor.ALL_TICKS, false));
             } catch (OsmTransferException e) {
                 if (canceled) {
-                    Main.warn(tr("Ignoring exception because task was canceled. Exception: {0}", e.toString()));
+                    Logging.warn(tr("Ignoring exception because task was canceled. Exception: {0}", e.toString()));
                     return;
                 }
                 this.lastException = e;

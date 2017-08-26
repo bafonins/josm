@@ -1,6 +1,22 @@
 // License: GPL. For details, see LICENSE file.
 package org.openstreetmap.josm.gui.download;
 
+import static org.openstreetmap.josm.tools.I18n.tr;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.GridBagLayout;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import javax.swing.Icon;
+import javax.swing.JCheckBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.event.ChangeListener;
+
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.downloadtasks.AbstractDownloadTask;
 import org.openstreetmap.josm.actions.downloadtasks.DownloadGpsTask;
@@ -11,29 +27,17 @@ import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.ProjectionBounds;
 import org.openstreetmap.josm.data.ViewportData;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Pair;
-
-import javax.swing.Icon;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.event.ChangeListener;
-
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.GridBagLayout;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
-import static org.openstreetmap.josm.tools.I18n.tr;
 
 /**
  * Class defines the way data is fetched from the OSM server.
+ * @since 12652
  */
 public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDownloadData> {
 
@@ -43,7 +47,9 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
     }
 
     @Override
-    public void doDownload(Bounds bbox, OSMDownloadData data, DownloadSettings settings) {
+    public void doDownload(OSMDownloadData data, DownloadSettings settings) {
+        Bounds bbox = settings.getDownloadBounds()
+                .orElseThrow(() -> new IllegalArgumentException("OSM downloads requires bounds"));
         boolean zoom = settings.zoomToData();
         boolean newLayer = settings.asNewLayer();
         List<Pair<AbstractDownloadTask<?>, Future<?>>> tasks = new ArrayList<>();
@@ -52,7 +58,7 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
             DownloadOsmTask task = new DownloadOsmTask();
             task.setZoomAfterDownload(zoom && !data.isDownloadGPX() && !data.isDownloadNotes());
             Future<?> future = task.download(newLayer, bbox, null);
-            Main.worker.submit(new PostDownloadHandler(task, future));
+            MainApplication.worker.submit(new PostDownloadHandler(task, future));
             if (zoom) {
                 tasks.add(new Pair<>(task, future));
             }
@@ -62,7 +68,7 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
             DownloadGpsTask task = new DownloadGpsTask();
             task.setZoomAfterDownload(zoom && !data.isDownloadOSMData() && !data.isDownloadNotes());
             Future<?> future = task.download(newLayer, bbox, null);
-            Main.worker.submit(new PostDownloadHandler(task, future));
+            MainApplication.worker.submit(new PostDownloadHandler(task, future));
             if (zoom) {
                 tasks.add(new Pair<>(task, future));
             }
@@ -72,14 +78,14 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
             DownloadNotesTask task = new DownloadNotesTask();
             task.setZoomAfterDownload(zoom && !data.isDownloadOSMData() && !data.isDownloadGPX());
             Future<?> future = task.download(false, bbox, null);
-            Main.worker.submit(new PostDownloadHandler(task, future));
+            MainApplication.worker.submit(new PostDownloadHandler(task, future));
             if (zoom) {
                 tasks.add(new Pair<>(task, future));
             }
         }
 
         if (zoom && tasks.size() > 1) {
-            Main.worker.submit(() -> {
+            MainApplication.worker.submit(() -> {
                 ProjectionBounds bounds = null;
                 // Wait for completion of download jobs
                 for (Pair<AbstractDownloadTask<?>, Future<?>> p : tasks) {
@@ -92,13 +98,14 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
                             bounds.extend(b);
                         }
                     } catch (InterruptedException | ExecutionException ex) {
-                        Main.warn(ex);
+                        Logging.warn(ex);
                     }
                 }
+                MapFrame map = MainApplication.getMap();
                 // Zoom to the larger download bounds
-                if (Main.map != null && bounds != null) {
+                if (map != null && bounds != null) {
                     final ProjectionBounds pb = bounds;
-                    GuiHelper.runInEDTAndWait(() -> Main.map.mapView.zoomTo(new ViewportData(pb)));
+                    GuiHelper.runInEDTAndWait(() -> map.mapView.zoomTo(new ViewportData(pb)));
                 }
             });
         }
@@ -121,6 +128,7 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
 
     /**
      * The GUI representation of the OSM download source.
+     * @since 12652
      */
     public static class OSMDownloadSourcePanel extends AbstractDownloadSourcePanel<OSMDownloadData> {
 
@@ -133,6 +141,10 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         private static final BooleanProperty DOWNLOAD_GPS = new BooleanProperty("download.osm.gps", false);
         private static final BooleanProperty DOWNLOAD_NOTES = new BooleanProperty("download.osm.notes", false);
 
+        /**
+         * Creates a new {@link OSMDownloadSourcePanel}.
+         * @param ds The osm download source the panel is for.
+         */
         public OSMDownloadSourcePanel(OSMDownloadSource ds) {
             super(ds);
             setLayout(new GridBagLayout());
@@ -187,11 +199,11 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         }
 
         @Override
-        public boolean checkDownload(Bounds bbox, DownloadSettings settings) {
+        public boolean checkDownload(DownloadSettings settings) {
             /*
              * It is mandatory to specify the area to download from OSM.
              */
-            if (bbox == null) {
+            if (!settings.getDownloadBounds().isPresent()) {
                 JOptionPane.showMessageDialog(
                         this.getParent(),
                         tr("Please select a download area first."),
@@ -299,9 +311,9 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
      * Encapsulates data that is required to download from the OSM server.
      */
     static class OSMDownloadData {
-        private boolean downloadOSMData;
-        private boolean downloadNotes;
-        private boolean downloadGPX;
+        private final boolean downloadOSMData;
+        private final boolean downloadNotes;
+        private final boolean downloadGPX;
 
         OSMDownloadData(boolean downloadOSMData, boolean downloadNotes, boolean downloadGPX) {
             this.downloadOSMData = downloadOSMData;

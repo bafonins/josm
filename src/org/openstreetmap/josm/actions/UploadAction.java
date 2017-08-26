@@ -21,6 +21,7 @@ import org.openstreetmap.josm.actions.upload.ValidateUploadHook;
 import org.openstreetmap.josm.data.APIDataSet;
 import org.openstreetmap.josm.data.conflict.ConflictCollection;
 import org.openstreetmap.josm.gui.HelpAwareOptionPane;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.io.UploadDialog;
 import org.openstreetmap.josm.gui.io.UploadPrimitivesTask;
 import org.openstreetmap.josm.gui.layer.AbstractModifiableLayer;
@@ -244,7 +245,7 @@ public class UploadAction extends JosmAction {
                 return;
         }
 
-        Main.worker.execute(
+        MainApplication.worker.execute(
                 new UploadPrimitivesTask(
                         UploadDialog.getUploadDialog().getUploadStrategySpecification(),
                         layer,
@@ -258,7 +259,7 @@ public class UploadAction extends JosmAction {
     public void actionPerformed(ActionEvent e) {
         if (!isEnabled())
             return;
-        if (Main.map == null) {
+        if (MainApplication.getMap() == null) {
             JOptionPane.showMessageDialog(
                     Main.parent,
                     tr("Nothing to upload. Get some data first."),
@@ -267,7 +268,7 @@ public class UploadAction extends JosmAction {
             );
             return;
         }
-        APIDataSet apiData = new APIDataSet(Main.getLayerManager().getEditDataSet());
-        uploadData(Main.getLayerManager().getEditLayer(), apiData);
+        APIDataSet apiData = new APIDataSet(getLayerManager().getEditDataSet());
+        uploadData(getLayerManager().getEditLayer(), apiData);
     }
 }

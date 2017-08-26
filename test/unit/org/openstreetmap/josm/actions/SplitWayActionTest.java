@@ -13,7 +13,6 @@ import java.util.Iterator;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.SplitWayAction.Strategy;
 import org.openstreetmap.josm.data.coor.EastNorth;
 import org.openstreetmap.josm.data.coor.LatLon;
@@ -23,6 +22,7 @@ import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.RelationMember;
 import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.testutils.JOSMTestRules;
 
@@ -41,7 +41,7 @@ public final class SplitWayActionTest {
      */
     @Rule
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().mainMenu().projection();
+    public JOSMTestRules test = new JOSMTestRules().main().projection();
 
     /**
      * Setup test.
@@ -49,7 +49,7 @@ public final class SplitWayActionTest {
     @Before
     public void setUp() {
         if (action == null) {
-            action = Main.main.menu.splitWay;
+            action = MainApplication.getMenu().splitWay;
             action.setEnabled(true);
         }
     }
@@ -90,11 +90,11 @@ public final class SplitWayActionTest {
         dataSet.addSelected(w2);
 
         try {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
             action.actionPerformed(null);
         } finally {
             // Ensure we clean the place before leaving, even if test fails.
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
 
         // Ensures 3 ways.
@@ -197,7 +197,7 @@ public final class SplitWayActionTest {
             };
         final SplitWayAction.SplitWayResult result = SplitWayAction.splitWay(
                 layer, w2, SplitWayAction.buildSplitChunks(w2, Arrays.asList(n3, n4, n5)), new ArrayList<OsmPrimitive>(), strategy);
-        Main.main.undoRedo.add(result.getCommand());
+        MainApplication.undoRedo.add(result.getCommand());
 
         assertEquals(6, route.getMembersCount());
         assertEquals(w1, route.getMemberPrimitivesList().get(0));

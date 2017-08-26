@@ -3,7 +3,6 @@ package org.openstreetmap.josm.actions.search;
 
 import static org.openstreetmap.josm.gui.help.HelpUtil.ht;
 import static org.openstreetmap.josm.tools.I18n.tr;
-import static org.openstreetmap.josm.tools.I18n.trc;
 import static org.openstreetmap.josm.tools.I18n.trn;
 
 import java.awt.Cursor;
@@ -24,7 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -45,11 +43,19 @@ import org.openstreetmap.josm.actions.ActionParameter;
 import org.openstreetmap.josm.actions.ExpertToggleAction;
 import org.openstreetmap.josm.actions.JosmAction;
 import org.openstreetmap.josm.actions.ParameterizedAction;
-import org.openstreetmap.josm.actions.search.SearchCompiler.ParseError;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.Filter;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
+import org.openstreetmap.josm.data.osm.search.PushbackTokenizer;
+import org.openstreetmap.josm.data.osm.search.SearchCompiler;
+import org.openstreetmap.josm.data.osm.search.SearchCompiler.Match;
+import org.openstreetmap.josm.data.osm.search.SearchCompiler.SimpleMatchFactory;
+import org.openstreetmap.josm.data.osm.search.SearchMode;
+import org.openstreetmap.josm.data.osm.search.SearchParseError;
+import org.openstreetmap.josm.data.osm.search.SearchSetting;
 import org.openstreetmap.josm.gui.ExtendedDialog;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.PleaseWaitRunnable;
 import org.openstreetmap.josm.gui.mappaint.mapcss.MapCSSException;
 import org.openstreetmap.josm.gui.preferences.ToolbarPreferences;
@@ -61,6 +67,7 @@ import org.openstreetmap.josm.gui.widgets.AbstractTextComponentValidator;
 import org.openstreetmap.josm.gui.widgets.HistoryComboBox;
 import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.JosmRuntimeException;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Shortcut;
 import org.openstreetmap.josm.tools.Utils;
 
@@ -82,49 +89,27 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
 
     private static final String SEARCH_EXPRESSION = "searchExpression";
 
-    /**
-     * Search mode.
-     */
-    public enum SearchMode {
-        /** replace selection */
-        replace('R'),
-        /** add to selection */
-        add('A'),
-        /** remove from selection */
-        remove('D'),
-        /** find in selection */
-        in_selection('S');
-
-        private final char code;
-
-        SearchMode(char code) {
-            this.code = code;
-        }
-
-        /**
-         * Returns the unique character code of this mode.
-         * @return the unique character code of this mode
-         */
-        public char getCode() {
-            return code;
-        }
-
-        /**
-         * Returns the search mode matching the given character code.
-         * @param code character code
-         * @return search mode matching the given character code
-         */
-        public static SearchMode fromCode(char code) {
-            for (SearchMode mode: values()) {
-                if (mode.getCode() == code)
-                    return mode;
-            }
-            return null;
-        }
-    }
-
     private static final LinkedList<SearchSetting> searchHistory = new LinkedList<>();
     static {
+        SearchCompiler.addMatchFactory(new SimpleMatchFactory() {
+            @Override
+            public Collection<String> getKeywords() {
+                return Arrays.asList("inview", "allinview");
+            }
+
+            @Override
+            public Match get(String keyword, boolean caseSensitive, boolean regexSearch, PushbackTokenizer tokenizer) throws SearchParseError {
+                switch(keyword) {
+                case "inview":
+                    return new InView(false);
+                case "allinview":
+                    return new InView(true);
+                default:
+                    throw new IllegalStateException("Not expecting keyword " + keyword);
+                }
+            }
+        });
+
         for (String s: Main.pref.getCollection("search.history", Collections.<String>emptyList())) {
             SearchSetting ss = SearchSetting.readFromString(s);
             if (ss != null) {
@@ -376,7 +361,7 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
                     ss.mapCSSSearch = mapCSSSearch.isSelected();
                     SearchCompiler.compile(ss);
                     return true;
-                } catch (ParseError | MapCSSException e) {
+                } catch (SearchParseError | MapCSSException e) {
                     return false;
                 }
             }
@@ -414,8 +399,8 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
                         ss.mapCSSSearch = mapCSSSearch.isSelected();
                         SearchCompiler.compile(ss);
                         super.buttonAction(buttonIndex, evt);
-                    } catch (ParseError e) {
-                        Main.debug(e);
+                    } catch (SearchParseError e) {
+                        Logging.debug(e);
                         JOptionPane.showMessageDialog(
                                 Main.parent,
                                 tr("Search expression is not valid: \n\n {0}", e.getMessage()),
@@ -441,18 +426,18 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
         initialValues.mapCSSSearch = mapCSSSearch.isSelected();
 
         if (inSelection.isSelected()) {
-            initialValues.mode = SearchAction.SearchMode.in_selection;
+            initialValues.mode = SearchMode.in_selection;
         } else if (replace.isSelected()) {
-            initialValues.mode = SearchAction.SearchMode.replace;
+            initialValues.mode = SearchMode.replace;
         } else if (add.isSelected()) {
-            initialValues.mode = SearchAction.SearchMode.add;
+            initialValues.mode = SearchMode.add;
         } else {
-            initialValues.mode = SearchAction.SearchMode.remove;
+            initialValues.mode = SearchMode.remove;
         }
 
         if (addOnToolbar.isSelected()) {
             ToolbarPreferences.ActionDefinition aDef =
-                    new ToolbarPreferences.ActionDefinition(Main.main.menu.search);
+                    new ToolbarPreferences.ActionDefinition(MainApplication.getMenu().search);
             aDef.getParameters().put(SEARCH_EXPRESSION, initialValues);
             // Display search expression as tooltip instead of generic one
             aDef.setName(Utils.shortenString(initialValues.text, MAX_LENGTH_SEARCH_EXPRESSION_DISPLAY));
@@ -461,7 +446,7 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
             String res = actionParser.saveAction(aDef);
 
             // add custom search button to toolbar preferences
-            Main.toolbar.addCustomButton(res, -1, false);
+            MainApplication.getToolbar().addCustomButton(res, -1, false);
         }
 
         return initialValues;
@@ -694,6 +679,7 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
         @Override
         public void receiveSearchResult(DataSet ds, Collection<OsmPrimitive> result, int foundMatches, SearchSetting setting) {
             ds.setSelected(result);
+            MapFrame map = MainApplication.getMap();
             if (foundMatches == 0) {
                 final String msg;
                 final String text = Utils.shortenString(setting.text, MAX_LENGTH_SEARCH_EXPRESSION_DISPLAY);
@@ -708,8 +694,8 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
                 } else {
                     msg = null;
                 }
-                if (Main.map != null) {
-                    Main.map.statusLine.setHelpText(msg);
+                if (map != null) {
+                    map.statusLine.setHelpText(msg);
                 }
                 if (!GraphicsEnvironment.isHeadless()) {
                     JOptionPane.showMessageDialog(
@@ -720,7 +706,7 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
                     );
                 }
             } else {
-                Main.map.statusLine.setHelpText(tr("Found {0} matches", foundMatches));
+                map.statusLine.setHelpText(tr("Found {0} matches", foundMatches));
             }
         }
     }
@@ -759,7 +745,7 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
         }
 
         static SearchTask newSearchTask(SearchSetting setting, SearchReceiver resultReceiver) {
-            final DataSet ds = Main.getLayerManager().getEditDataSet();
+            final DataSet ds = MainApplication.getLayerManager().getEditDataSet();
             return newSearchTask(setting, ds, resultReceiver);
         }
 
@@ -823,8 +809,8 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
                     subMonitor.worked(1);
                 }
                 subMonitor.finishTask();
-            } catch (ParseError e) {
-                Main.debug(e);
+            } catch (SearchParseError e) {
+                Logging.debug(e);
                 JOptionPane.showMessageDialog(
                         Main.parent,
                         e.getMessage(),
@@ -840,159 +826,6 @@ public class SearchAction extends JosmAction implements ParameterizedAction {
                 return;
             }
             resultReceiver.receiveSearchResult(ds, selection, foundMatches, setting);
-        }
-    }
-
-    /**
-     * This class defines a set of parameters that is used to
-     * perform search within the search dialog.
-     */
-    public static class SearchSetting {
-        public String text;
-        public SearchMode mode;
-        public boolean caseSensitive;
-        public boolean regexSearch;
-        public boolean mapCSSSearch;
-        public boolean allElements;
-
-        /**
-         * Constructs a new {@code SearchSetting}.
-         */
-        public SearchSetting() {
-            text = "";
-            mode = SearchMode.replace;
-        }
-
-        /**
-         * Constructs a new {@code SearchSetting} from an existing one.
-         * @param original original search settings
-         */
-        public SearchSetting(SearchSetting original) {
-            text = original.text;
-            mode = original.mode;
-            caseSensitive = original.caseSensitive;
-            regexSearch = original.regexSearch;
-            mapCSSSearch = original.mapCSSSearch;
-            allElements = original.allElements;
-        }
-
-        @Override
-        public String toString() {
-            String cs = caseSensitive ?
-                    /*case sensitive*/  trc("search", "CS") :
-                        /*case insensitive*/  trc("search", "CI");
-            String rx = regexSearch ? ", " +
-                            /*regex search*/ trc("search", "RX") : "";
-            String css = mapCSSSearch ? ", " +
-                            /*MapCSS search*/ trc("search", "CSS") : "";
-            String all = allElements ? ", " +
-                            /*all elements*/ trc("search", "A") : "";
-            return '"' + text + "\" (" + cs + rx + css + all + ", " + mode + ')';
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) return true;
-            if (other == null || getClass() != other.getClass()) return false;
-            SearchSetting that = (SearchSetting) other;
-            return caseSensitive == that.caseSensitive &&
-                    regexSearch == that.regexSearch &&
-                    mapCSSSearch == that.mapCSSSearch &&
-                    allElements == that.allElements &&
-                    mode == that.mode &&
-                    Objects.equals(text, that.text);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(text, mode, caseSensitive, regexSearch, mapCSSSearch, allElements);
-        }
-
-        /**
-         * <p>Transforms a string following a certain format, namely "[R | A | D | S][C?,R?,A?,M?] [a-zA-Z]"
-         * where the first part defines the mode of the search, see {@link SearchMode}, the second defines
-         * a set of attributes within the {@code SearchSetting} class and the second is the search query.
-         * <p>
-         * Attributes are as follows:
-         * <ul>
-         *     <li>C - if search is case sensitive
-         *     <li>R - if the regex syntax is used
-         *     <li>A - if all objects are considered
-         *     <li>M - if the mapCSS syntax is used
-         * </ul>
-         * <p>For example, "RC type:node" is a valid string representation of an object that replaces the
-         * current selection, is case sensitive and searches for all objects of type node.
-         * @param s A string representation of a {@code SearchSetting} object
-         *          from which the object must be built.
-         * @return A {@code SearchSetting} defined by the input string.
-         */
-        public static SearchSetting readFromString(String s) {
-            if (s.isEmpty())
-                return null;
-
-            SearchSetting result = new SearchSetting();
-
-            int index = 1;
-
-            result.mode = SearchMode.fromCode(s.charAt(0));
-            if (result.mode == null) {
-                result.mode = SearchMode.replace;
-                index = 0;
-            }
-
-            while (index < s.length()) {
-                if (s.charAt(index) == 'C') {
-                    result.caseSensitive = true;
-                } else if (s.charAt(index) == 'R') {
-                    result.regexSearch = true;
-                } else if (s.charAt(index) == 'A') {
-                    result.allElements = true;
-                } else if (s.charAt(index) == 'M') {
-                    result.mapCSSSearch = true;
-                } else if (s.charAt(index) == ' ') {
-                    break;
-                } else {
-                    Main.warn("Unknown char in SearchSettings: " + s);
-                    break;
-                }
-                index++;
-            }
-
-            if (index < s.length() && s.charAt(index) == ' ') {
-                index++;
-            }
-
-            result.text = s.substring(index);
-
-            return result;
-        }
-
-        /**
-         * Builds a string representation of the {@code SearchSetting} object,
-         * see {@link #readFromString(String)} for more details.
-         * @return A string representation of the {@code SearchSetting} object.
-         */
-        public String writeToString() {
-            if (text == null || text.isEmpty())
-                return "";
-
-            StringBuilder result = new StringBuilder();
-            result.append(mode.getCode());
-            if (caseSensitive) {
-                result.append('C');
-            }
-            if (regexSearch) {
-                result.append('R');
-            }
-            if (mapCSSSearch) {
-                result.append('M');
-            }
-            if (allElements) {
-                result.append('A');
-            }
-            result.append(' ')
-                  .append(text);
-            return result.toString();
         }
     }
 

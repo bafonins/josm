@@ -12,10 +12,12 @@ import javax.swing.JOptionPane;
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.ExtensionFileFilter;
 import org.openstreetmap.josm.data.gpx.GpxData;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.GpxLayer;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
 import org.openstreetmap.josm.gui.util.GuiHelper;
+import org.openstreetmap.josm.tools.Logging;
 import org.xml.sax.SAXException;
 
 /**
@@ -104,7 +106,7 @@ public class GpxImporter extends FileImporter {
             r.getGpxData().storageFile = file;
             addLayers(loadLayers(r.getGpxData(), parsedProperly, fileName, tr("Markers from {0}", fileName)));
         } catch (SAXException e) {
-            Main.error(e);
+            Logging.error(e);
             throw new IOException(tr("Parsing data for layer ''{0}'' failed", fileName), e);
         }
     }
@@ -118,10 +120,10 @@ public class GpxImporter extends FileImporter {
         // FIXME: remove UI stuff from the IO subsystem
         GuiHelper.runInEDT(() -> {
             if (data.markerLayer != null) {
-                Main.getLayerManager().addLayer(data.markerLayer);
+                MainApplication.getLayerManager().addLayer(data.markerLayer);
             }
             if (data.gpxLayer != null) {
-                Main.getLayerManager().addLayer(data.gpxLayer);
+                MainApplication.getLayerManager().addLayer(data.gpxLayer);
             }
             data.postLayerTask.run();
         });
@@ -183,7 +185,7 @@ public class GpxImporter extends FileImporter {
             r.getGpxData().storageFile = associatedFile;
             return loadLayers(r.getGpxData(), parsedProperly, gpxLayerName, markerLayerName);
         } catch (SAXException e) {
-            Main.error(e);
+            Logging.error(e);
             throw new IOException(tr("Parsing data for layer ''{0}'' failed", gpxLayerName), e);
         }
     }

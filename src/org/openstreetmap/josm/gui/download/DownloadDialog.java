@@ -38,6 +38,7 @@ import org.openstreetmap.josm.actions.ExpertToggleAction;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.datatransfer.ClipboardUtils;
 import org.openstreetmap.josm.gui.help.ContextSensitiveHelpAction;
@@ -48,6 +49,7 @@ import org.openstreetmap.josm.plugins.PluginHandler;
 import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.InputMapUtils;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.OsmUrlToBounds;
 import org.openstreetmap.josm.tools.WindowGeometry;
 
@@ -81,7 +83,7 @@ public class DownloadDialog extends JDialog {
         return instance;
     }
 
-    protected final transient List<DownloadSource> downloadSources = new ArrayList<>();
+    protected final transient List<DownloadSource<?>> downloadSources = new ArrayList<>();
     protected final transient List<DownloadSelection> downloadSelections = new ArrayList<>();
     protected final JTabbedPane tpDownloadAreaSelectors = new JTabbedPane();
     protected final JTabbedPane downloadSourcesTab = new JTabbedPane();
@@ -134,8 +136,8 @@ public class DownloadDialog extends JDialog {
         PluginHandler.addDownloadSelection(downloadSelections);
 
         // register all default download selections
-        for (int i = 0; i < downloadSelections.size(); i++) {
-            downloadSelections.get(i).addGui(this);
+        for (DownloadSelection s : downloadSelections) {
+            s.addGui(this);
         }
 
         // allow to collapse the panes completely
@@ -270,7 +272,7 @@ public class DownloadDialog extends JDialog {
 
         for (Component ds : downloadSourcesTab.getComponents()) {
             if (ds instanceof AbstractDownloadSourcePanel) {
-                ((AbstractDownloadSourcePanel) ds).boudingBoxChanged(b);
+                ((AbstractDownloadSourcePanel<?>) ds).boudingBoxChanged(b);
             }
         }
     }
@@ -376,19 +378,19 @@ public class DownloadDialog extends JDialog {
         try {
             tpDownloadAreaSelectors.setSelectedIndex(DOWNLOAD_TAB.get());
         } catch (IndexOutOfBoundsException e) {
-            Main.trace(e);
+            Logging.trace(e);
             tpDownloadAreaSelectors.setSelectedIndex(0);
         }
 
         try {
             downloadSourcesTab.setSelectedIndex(DOWNLOAD_SOURCE_TAB.get());
         } catch (IndexOutOfBoundsException e) {
-            Main.trace(e);
+            Logging.trace(e);
             downloadSourcesTab.setSelectedIndex(0);
         }
 
-        if (Main.isDisplayingMapView()) {
-            MapView mv = Main.map.mapView;
+        if (MainApplication.isDisplayingMapView()) {
+            MapView mv = MainApplication.getMap().mapView;
             currentBounds = new Bounds(
                     mv.getLatLon(0, mv.getHeight()),
                     mv.getLatLon(mv.getWidth(), 0)
@@ -414,7 +416,7 @@ public class DownloadDialog extends JDialog {
             try {
                 return new Bounds(value, ";");
             } catch (IllegalArgumentException e) {
-                Main.warn(e);
+                Logging.warn(e);
             }
         }
         return null;
@@ -426,7 +428,7 @@ public class DownloadDialog extends JDialog {
      */
     public static void autostartIfNeeded() {
         if (isAutorunEnabled()) {
-            Main.main.menu.download.actionPerformed(null);
+            MainApplication.getMenu().download.actionPerformed(null);
         }
     }
 
@@ -470,7 +472,7 @@ public class DownloadDialog extends JDialog {
      * the download dialog.
      */
     public DownloadSettings getDownloadSettings() {
-        return new DownloadSettings(isNewLayerRequired(), isZoomToDownloadedDataRequired());
+        return new DownloadSettings(currentBounds, isNewLayerRequired(), isZoomToDownloadedDataRequired());
     }
 
     protected void setCanceled(boolean canceled) {
@@ -482,10 +484,10 @@ public class DownloadDialog extends JDialog {
      * @param downloadSource The download source.
      * @return The index of the download source, or -1 if it not in the pane.
      */
-    protected int getDownloadSourceIndex(DownloadSource downloadSource) {
+    protected int getDownloadSourceIndex(DownloadSource<?> downloadSource) {
         return Arrays.stream(downloadSourcesTab.getComponents())
                 .filter(it -> it instanceof AbstractDownloadSourcePanel)
-                .map(it -> (AbstractDownloadSourcePanel) it)
+                .map(it -> (AbstractDownloadSourcePanel<?>) it)
                 .filter(it -> it.getDownloadSource().equals(downloadSource))
                 .findAny()
                 .map(downloadSourcesTab::indexOfComponent)
@@ -525,7 +527,7 @@ public class DownloadDialog extends JDialog {
                 IntStream.range(0, downloadSourcesTab.getTabCount())
                         .mapToObj(downloadSourcesTab::getComponentAt)
                         .filter(it -> it instanceof AbstractDownloadSourcePanel)
-                        .map(it -> (AbstractDownloadSourcePanel) it)
+                        .map(it -> (AbstractDownloadSourcePanel<?>) it)
                         .filter(it -> it.getDownloadSource().onlyExpert())
                         .forEach(downloadSourcesTab::remove);
             }
@@ -542,6 +544,9 @@ public class DownloadDialog extends JDialog {
             putValue(SHORT_DESCRIPTION, tr("Click to close the dialog and to abort downloading"));
         }
 
+        /**
+         * Cancels the download
+         */
         public void run() {
             setCanceled(true);
             setVisible(false);
@@ -549,7 +554,7 @@ public class DownloadDialog extends JDialog {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) downloadSourcesTab.getSelectedComponent();
+            AbstractDownloadSourcePanel<?> pnl = (AbstractDownloadSourcePanel<?>) downloadSourcesTab.getSelectedComponent();
             run();
             pnl.checkCancel();
         }
@@ -566,16 +571,19 @@ public class DownloadDialog extends JDialog {
             setEnabled(!Main.isOffline(OnlineResource.OSM_API));
         }
 
+        /**
+         * Starts the download, if possible
+         */
         public void run() {
             Component panel = downloadSourcesTab.getSelectedComponent();
             if (panel instanceof AbstractDownloadSourcePanel) {
-                AbstractDownloadSourcePanel pnl = (AbstractDownloadSourcePanel) panel;
+                AbstractDownloadSourcePanel<?> pnl = (AbstractDownloadSourcePanel<?>) panel;
                 DownloadSettings downloadSettings = getDownloadSettings();
-                if (pnl.checkDownload(currentBounds, downloadSettings)) {
+                if (pnl.checkDownload(downloadSettings)) {
                     rememberSettings();
                     setCanceled(false);
                     setVisible(false);
-                    pnl.getDownloadSource().doDownload(currentBounds, pnl.getData(), downloadSettings);
+                    pnl.triggerDownload(downloadSettings);
                 }
             }
         }

@@ -44,6 +44,7 @@ import javax.swing.text.html.StyleSheet;
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.JosmAction;
 import org.openstreetmap.josm.gui.HelpAwareOptionPane;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MainMenu;
 import org.openstreetmap.josm.gui.widgets.JosmEditorPane;
 import org.openstreetmap.josm.gui.widgets.JosmHTMLEditorKit;
@@ -51,6 +52,7 @@ import org.openstreetmap.josm.io.CachedFile;
 import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.InputMapUtils;
 import org.openstreetmap.josm.tools.LanguageInfo.LocaleType;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.OpenBrowser;
 import org.openstreetmap.josm.tools.WindowGeometry;
 
@@ -141,8 +143,8 @@ public class HelpBrowser extends JFrame implements IHelpBrowser {
         try (CachedFile cf = new CachedFile("resource://data/help-browser.css")) {
             css = new String(cf.getByteContent(), StandardCharsets.ISO_8859_1);
         } catch (IOException e) {
-            Main.error(tr("Failed to read CSS file ''help-browser.css''. Exception is: {0}", e.toString()));
-            Main.error(e);
+            Logging.error(tr("Failed to read CSS file ''help-browser.css''. Exception is: {0}", e.toString()));
+            Logging.error(e);
             return ss;
         }
         ss.addRule(css);
@@ -214,13 +216,14 @@ public class HelpBrowser extends JFrame implements IHelpBrowser {
         } else if (isShowing()) { // Avoid IllegalComponentStateException like in #8775
             new WindowGeometry(this).remember(getClass().getName() + ".geometry");
         }
-        if (Main.main != null && Main.main.menu != null && Main.main.menu.windowMenu != null) {
+        MainMenu menu = MainApplication.getMenu();
+        if (menu != null && menu.windowMenu != null) {
             if (windowMenuItem != null && !visible) {
-                Main.main.menu.windowMenu.remove(windowMenuItem);
+                menu.windowMenu.remove(windowMenuItem);
                 windowMenuItem = null;
             }
             if (windowMenuItem == null && visible) {
-                windowMenuItem = MainMenu.add(Main.main.menu.windowMenu, FOCUS_ACTION, MainMenu.WINDOW_MENU_GROUP.VOLATILE);
+                windowMenuItem = MainMenu.add(menu.windowMenu, FOCUS_ACTION, MainMenu.WINDOW_MENU_GROUP.VOLATILE);
             }
         }
         super.setVisible(visible);
@@ -235,7 +238,7 @@ public class HelpBrowser extends JFrame implements IHelpBrowser {
         try {
             help.getEditorKit().read(new StringReader(content), document, 0);
         } catch (IOException | BadLocationException e) {
-            Main.error(e);
+            Logging.error(e);
         }
         help.setDocument(document);
     }
@@ -299,32 +302,32 @@ public class HelpBrowser extends JFrame implements IHelpBrowser {
         try {
             content = reader.fetchHelpTopicContent(url, true);
         } catch (MissingHelpContentException e) {
-            Main.trace(e);
+            Logging.trace(e);
             url = getHelpTopicUrl(buildAbsoluteHelpTopic(relativeHelpTopic, LocaleType.BASELANGUAGE));
             try {
                 content = reader.fetchHelpTopicContent(url, true);
             } catch (MissingHelpContentException e1) {
-                Main.trace(e1);
+                Logging.trace(e1);
                 url = getHelpTopicUrl(buildAbsoluteHelpTopic(relativeHelpTopic, LocaleType.ENGLISH));
                 try {
                     content = reader.fetchHelpTopicContent(url, true);
                 } catch (MissingHelpContentException e2) {
-                    Main.debug(e2);
+                    Logging.debug(e2);
                     this.url = url;
                     handleMissingHelpContent(relativeHelpTopic);
                     return;
                 } catch (HelpContentReaderException e2) {
-                    Main.error(e2);
+                    Logging.error(e2);
                     handleHelpContentReaderException(relativeHelpTopic, e2);
                     return;
                 }
             } catch (HelpContentReaderException e1) {
-                Main.error(e1);
+                Logging.error(e1);
                 handleHelpContentReaderException(relativeHelpTopic, e1);
                 return;
             }
         } catch (HelpContentReaderException e) {
-            Main.error(e);
+            Logging.error(e);
             handleHelpContentReaderException(relativeHelpTopic, e);
             return;
         }
@@ -345,12 +348,12 @@ public class HelpBrowser extends JFrame implements IHelpBrowser {
         try {
             content = reader.fetchHelpTopicContent(url, true);
         } catch (MissingHelpContentException e) {
-            Main.debug(e);
+            Logging.debug(e);
             this.url = url;
             handleMissingHelpContent(absoluteHelpTopic);
             return;
         } catch (HelpContentReaderException e) {
-            Main.error(e);
+            Logging.error(e);
             handleHelpContentReaderException(absoluteHelpTopic, e);
             return;
         }
@@ -376,7 +379,7 @@ public class HelpBrowser extends JFrame implements IHelpBrowser {
                 history.setCurrentUrl(url);
                 this.url = url;
             } catch (HelpContentReaderException e) {
-                Main.warn(e);
+                Logging.warn(e);
                 HelpAwareOptionPane.showOptionDialog(
                         Main.parent,
                         tr(
@@ -586,8 +589,8 @@ public class HelpBrowser extends JFrame implements IHelpBrowser {
                         return true;
                     }
                 } catch (BadLocationException e) {
-                    Main.warn(tr("Bad location in HTML document. Exception was: {0}", e.toString()));
-                    Main.error(e);
+                    Logging.warn(tr("Bad location in HTML document. Exception was: {0}", e.toString()));
+                    Logging.error(e);
                 }
             }
             return false;

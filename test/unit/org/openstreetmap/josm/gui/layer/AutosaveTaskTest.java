@@ -1,5 +1,5 @@
 // License: GPL. For details, see LICENSE file.
-package org.openstreetmap.josm.data;
+package org.openstreetmap.josm.gui.layer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -21,12 +21,11 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.openstreetmap.josm.Main;
-import org.openstreetmap.josm.data.AutosaveTask.AutosaveLayerInfo;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.Node;
-import org.openstreetmap.josm.gui.layer.OsmDataLayer;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.layer.AutosaveTask.AutosaveLayerInfo;
 import org.openstreetmap.josm.testutils.JOSMTestRules;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -130,7 +129,7 @@ public class AutosaveTaskTest {
     @Test
     public void testAutosaveIgnoresUnmodifiedLayer() {
         OsmDataLayer layer = new OsmDataLayer(new DataSet(), "OsmData", null);
-        Main.getLayerManager().addLayer(layer);
+        MainApplication.getLayerManager().addLayer(layer);
         try {
             task.schedule();
             assertEquals(0, countFiles());
@@ -166,7 +165,7 @@ public class AutosaveTaskTest {
     private void runAutosaveTaskSeveralTimes(int times) {
         DataSet data = new DataSet();
         OsmDataLayer layer = new OsmDataLayer(data, "OsmData", null);
-        Main.getLayerManager().addLayer(layer);
+        MainApplication.getLayerManager().addLayer(layer);
         try {
             task.schedule();
             assertEquals(0, countFiles());
@@ -206,7 +205,7 @@ public class AutosaveTaskTest {
     public void testAutosaveHandlesDupplicateNames() {
         DataSet data1 = new DataSet();
         OsmDataLayer layer1 = new OsmDataLayer(data1, "OsmData", null);
-        Main.getLayerManager().addLayer(layer1);
+        MainApplication.getLayerManager().addLayer(layer1);
 
         DataSet data2 = new DataSet();
         OsmDataLayer layer2 = new OsmDataLayer(data2, "OsmData", null);
@@ -215,7 +214,7 @@ public class AutosaveTaskTest {
             task.schedule();
             assertEquals(0, countFiles());
             // also test adding layer later
-            Main.getLayerManager().addLayer(layer2);
+            MainApplication.getLayerManager().addLayer(layer2);
 
             data1.addPrimitive(new Node(new LatLon(10, 10)));
             data2.addPrimitive(new Node(new LatLon(10, 10)));

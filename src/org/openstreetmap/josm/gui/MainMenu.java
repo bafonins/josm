@@ -673,9 +673,9 @@ public class MainMenu extends JMenuBar {
         add(fileMenu, exit);
 
         add(editMenu, undo);
-        Main.main.undoRedo.addCommandQueueListener(undo);
+        MainApplication.undoRedo.addCommandQueueListener(undo);
         add(editMenu, redo);
-        Main.main.undoRedo.addCommandQueueListener(redo);
+        MainApplication.undoRedo.addCommandQueueListener(redo);
         editMenu.addSeparator();
         add(editMenu, copy);
         add(editMenu, copyCoordinates, true);
@@ -888,7 +888,7 @@ public class MainMenu extends JMenuBar {
 
         PresetsMenuEnabler(JMenu presetsMenu) {
             this.presetsMenu = presetsMenu;
-            Main.getLayerManager().addAndFireActiveLayerChangeListener(this);
+            MainApplication.getLayerManager().addAndFireActiveLayerChangeListener(this);
         }
 
         @Override

@@ -10,12 +10,12 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.util.Map;
 
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.ExtensionFileFilter;
 import org.openstreetmap.josm.data.Preferences;
 import org.openstreetmap.josm.data.coor.EastNorth;
 import org.openstreetmap.josm.data.imagery.ImageryInfo;
 import org.openstreetmap.josm.data.imagery.ImageryInfo.ImageryPreferenceEntry;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.layer.ImageryLayer;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
 import org.openstreetmap.josm.gui.util.GuiHelper;
@@ -85,9 +85,9 @@ public class WMSLayerImporter extends FileImporter {
 
         // FIXME: remove UI stuff from IO subsystem
         GuiHelper.runInEDT(() -> {
-            Main.getLayerManager().addLayer(layer);
+            MainApplication.getLayerManager().addLayer(layer);
             if (zoomTo != null) {
-                Main.map.mapView.zoomTo(zoomTo);
+                MainApplication.getMap().mapView.zoomTo(zoomTo);
             }
         });
     }

@@ -21,6 +21,7 @@ import org.openstreetmap.josm.data.coor.EastNorth;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.Way;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.layer.MainLayerManager;
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
@@ -58,7 +59,7 @@ public class SelectActionTest {
      */
     @Rule
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().platform().projection().mainMenu();
+    public JOSMTestRules test = new JOSMTestRules().platform().projection().main();
 
     /**
      * Test case: Move a two nodes way near a third node.
@@ -87,16 +88,17 @@ public class SelectActionTest {
         dataSet.addSelected(w);
 
         Main.pref.put("edit.initial-move-delay", "0");
-        Main.getLayerManager().addLayer(layer);
+        MainApplication.getLayerManager().addLayer(layer);
         try {
-            SelectAction action = new SelectActionMock(Main.map, dataSet, layer);
+            MapFrame map = MainApplication.getMap();
+            SelectAction action = new SelectActionMock(map, dataSet, layer);
             nodesMerged = false;
 
             action.setEnabled(true);
             action.putValue("active", true);
 
             MouseEvent event;
-            event = new MouseEvent(Main.map,
+            event = new MouseEvent(map,
                                    MouseEvent.MOUSE_PRESSED,
                                    0,
                                    InputEvent.BUTTON1_DOWN_MASK | InputEvent.CTRL_DOWN_MASK,
@@ -104,7 +106,7 @@ public class SelectActionTest {
                                    1,
                                    false, MouseEvent.BUTTON1);
             action.mousePressed(event);
-            event = new MouseEvent(Main.map,
+            event = new MouseEvent(map,
                                    MouseEvent.MOUSE_DRAGGED,
                                    1000,
                                    InputEvent.BUTTON1_DOWN_MASK | InputEvent.CTRL_DOWN_MASK,
@@ -112,7 +114,7 @@ public class SelectActionTest {
                                    1,
                                    false, MouseEvent.BUTTON1);
             action.mouseDragged(event);
-            event = new MouseEvent(Main.map,
+            event = new MouseEvent(map,
                                    MouseEvent.MOUSE_RELEASED,
                                    2000,
                                    InputEvent.BUTTON1_DOWN_MASK | InputEvent.CTRL_DOWN_MASK,
@@ -142,7 +144,7 @@ public class SelectActionTest {
                        Double.compare(r2.getEastNorth().east(), 100), 0);
         } finally {
             // Ensure we clean the place before leaving, even if test fails.
-            Main.getLayerManager().removeLayer(layer);
+            MainApplication.getLayerManager().removeLayer(layer);
         }
     }
 

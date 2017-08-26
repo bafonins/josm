@@ -16,11 +16,13 @@ import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 import javax.swing.UIManager;
 
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.OpenFileAction.OpenFileTask;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.io.OsmTransferException;
 import org.xml.sax.SAXException;
 
@@ -74,7 +76,7 @@ public class PlatformHookOsx implements PlatformHook, InvocationHandler {
             enableOSXFullscreen((Window) Main.parent);
         } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException ex) {
             // We'll just ignore this for now. The user will still be able to close JOSM by closing all its windows.
-            Main.warn("Failed to register with OSX: " + ex);
+            Logging.warn("Failed to register with OSX: " + ex);
         }
         checkExpiredJava();
     }
@@ -112,7 +114,7 @@ public class PlatformHookOsx implements PlatformHook, InvocationHandler {
             // Java 8 handlers
             return Class.forName("com.apple.eawt."+className);
         } catch (ClassNotFoundException e) {
-            Main.trace(e);
+            Logging.trace(e);
             // Java 9 handlers
             return Class.forName("java.awt.desktop."+className);
         }
@@ -131,15 +133,15 @@ public class PlatformHookOsx implements PlatformHook, InvocationHandler {
             eawtFullScreenUtilities.getDeclaredMethod("setWindowCanFullScreen",
                     Window.class, boolean.class).invoke(eawtFullScreenUtilities, window, Boolean.TRUE);
         } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException e) {
-            Main.warn("Failed to register with OSX: " + e);
+            Logging.warn("Failed to register with OSX: " + e);
         }
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        if (Main.isDebugEnabled()) {
-            Main.debug("OSX handler: "+method.getName()+" - "+Arrays.toString(args));
+        if (Logging.isDebugEnabled()) {
+            Logging.debug("OSX handler: {0} - {1}", method.getName(), Arrays.toString(args));
         }
         switch (method.getName()) {
         case "openFiles":
@@ -147,7 +149,8 @@ public class PlatformHookOsx implements PlatformHook, InvocationHandler {
                 try {
                     Object oFiles = args[0].getClass().getMethod("getFiles").invoke(args[0]);
                     if (oFiles instanceof List) {
-                        Main.worker.submit(new OpenFileTask((List<File>) oFiles, null) {
+                        Executors.newSingleThreadExecutor(Utils.newThreadFactory("openFiles-%d", Thread.NORM_PRIORITY)).submit(
+                                new OpenFileTask((List<File>) oFiles, null) {
                             @Override
                             protected void realRun() throws SAXException, IOException, OsmTransferException {
                                 // Wait for JOSM startup is advanced enough to load a file
@@ -155,7 +158,7 @@ public class PlatformHookOsx implements PlatformHook, InvocationHandler {
                                     try {
                                         Thread.sleep(25);
                                     } catch (InterruptedException e) {
-                                        Main.warn(e);
+                                        Logging.warn(e);
                                         Thread.currentThread().interrupt();
                                     }
                                 }
@@ -164,30 +167,30 @@ public class PlatformHookOsx implements PlatformHook, InvocationHandler {
                         });
                     }
                 } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException ex) {
-                    Main.warn("Failed to access open files event: " + ex);
+                    Logging.warn("Failed to access open files event: " + ex);
                 }
             }
             break;
         case "handleQuitRequestWith":
-            boolean closed = Main.exitJosm(false, 0, null);
+            boolean closed = MainApplication.exitJosm(false, 0, null);
             if (args[1] != null) {
                 try {
                     args[1].getClass().getDeclaredMethod(closed ? "performQuit" : "cancelQuit").invoke(args[1]);
                 } catch (IllegalAccessException e) {
-                    Main.debug(e);
+                    Logging.debug(e);
                     // with Java 9, module java.desktop does not export com.apple.eawt, use new Desktop API instead
                     Class.forName("java.awt.desktop.QuitResponse").getMethod(closed ? "performQuit" : "cancelQuit").invoke(args[1]);
                 }
             }
             break;
         case "handleAbout":
-            Main.main.menu.about.actionPerformed(null);
+            MainApplication.getMenu().about.actionPerformed(null);
             break;
         case "handlePreferences":
-            Main.main.menu.preferences.actionPerformed(null);
+            MainApplication.getMenu().preferences.actionPerformed(null);
             break;
         default:
-            Main.warn("OSX unsupported method: "+method.getName());
+            Logging.warn("OSX unsupported method: "+method.getName());
         }
         return null;
     }
@@ -398,7 +401,7 @@ public class PlatformHookOsx implements PlatformHook, InvocationHandler {
               .append(exec("sw_vers", "-buildVersion"))
               .append(')');
         } catch (IOException e) {
-            Main.error(e);
+            Logging.error(e);
         }
         return sb.toString();
     }

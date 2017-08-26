@@ -32,6 +32,7 @@ import org.openstreetmap.josm.data.preferences.IntegerProperty;
 import org.openstreetmap.josm.data.projection.Projection;
 import org.openstreetmap.josm.data.projection.Projections;
 import org.openstreetmap.josm.gui.JosmUserIdentityManager;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapViewState;
 import org.openstreetmap.josm.gui.dialogs.changeset.ChangesetCacheManager;
 import org.openstreetmap.josm.gui.mappaint.mapcss.Selector;
@@ -39,6 +40,7 @@ import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.io.ChangesetQuery;
 import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.ImageProvider.ImageSizes;
+import org.openstreetmap.josm.tools.Logging;
 
 /**
  * List class that read and save its content from the bookmark file.
@@ -254,8 +256,8 @@ public class BookmarkList extends JList<BookmarkList.Bookmark> {
             try {
                 model.addElement(new HomeLocationBookmark());
             } catch (IllegalStateException e) {
-                Main.info(e.getMessage());
-                Main.trace(e);
+                Logging.info(e.getMessage());
+                Logging.trace(e);
             }
         }
         // Then add manual bookmarks previously saved in local preferences
@@ -266,7 +268,7 @@ public class BookmarkList extends JList<BookmarkList.Bookmark> {
                 try {
                     bookmarks.add(new Bookmark(entry));
                 } catch (IllegalArgumentException e) {
-                    Main.error(e, tr("Error reading bookmark entry: %s", e.getMessage()));
+                    Logging.log(Logging.LEVEL_ERROR, tr("Error reading bookmark entry: %s", e.getMessage()), e);
                 }
             }
             Collections.sort(bookmarks);
@@ -332,7 +334,7 @@ public class BookmarkList extends JList<BookmarkList.Bookmark> {
             if (!GraphicsEnvironment.isHeadless()) {
                 final ChangesetQueryTask task = new ChangesetQueryTask(this, query);
                 ChangesetCacheManager.getInstance().runDownloadTask(task);
-                Main.worker.submit(() -> {
+                MainApplication.worker.submit(() -> {
                     if (task.isCanceled() || task.isFailed())
                         return;
                     GuiHelper.runInEDT(() -> task.getDownloadedData().stream()

@@ -62,6 +62,7 @@ import org.openstreetmap.josm.data.SystemOfMeasurement.SoMChangeListener;
 import org.openstreetmap.josm.data.coor.CoordinateFormat;
 import org.openstreetmap.josm.data.coor.LatLon;
 import org.openstreetmap.josm.data.osm.DataSet;
+import org.openstreetmap.josm.data.osm.DefaultNameFormatter;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Way;
 import org.openstreetmap.josm.data.preferences.AbstractProperty;
@@ -78,6 +79,7 @@ import org.openstreetmap.josm.gui.widgets.JosmTextField;
 import org.openstreetmap.josm.tools.Destroyable;
 import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.ImageProvider;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Utils;
 
 /**
@@ -137,7 +139,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
     static final class ShowMonitorDialogMouseAdapter extends MouseAdapter {
         @Override
         public void mouseClicked(MouseEvent e) {
-            PleaseWaitProgressMonitor monitor = Main.currentProgressMonitor;
+            PleaseWaitProgressMonitor monitor = PleaseWaitProgressMonitor.getCurrent();
             if (monitor != null) {
                 monitor.showForegroundDialog();
             }
@@ -148,7 +150,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
         @Override
         public void mouseClicked(MouseEvent e) {
             if (e.getButton() != MouseEvent.BUTTON3) {
-                Main.main.menu.jumpToAct.showJumpToDialog();
+                MainApplication.getMenu().jumpToAct.showJumpToDialog();
             }
         }
     }
@@ -202,7 +204,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
         @Override
         public void appendLogMessage(String message) {
             if (message != null && !message.isEmpty()) {
-                Main.info("appendLogMessage not implemented for background tasks. Message was: " + message);
+                Logging.info("appendLogMessage not implemented for background tasks. Message was: " + message);
             }
         }
 
@@ -356,7 +358,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
 
                     oldMousePos = ms.mousePos;
                 } catch (ConcurrentModificationException ex) {
-                    Main.warn(ex);
+                    Logging.warn(ex);
                 } finally {
                     if (ds != null) {
                         if (isAtOldPosition && middleMouseDown) {
@@ -404,7 +406,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
                 for (;;) {
                     try {
                         final MouseState ms = incomingMouseState.take();
-                        if (parent != Main.map)
+                        if (parent != MainApplication.getMap())
                             return; // exit, if new parent.
 
                         // Do nothing, if required data is missing
@@ -414,12 +416,12 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
 
                         EventQueue.invokeAndWait(new CollectorWorker(ms));
                     } catch (InvocationTargetException e) {
-                        Main.warn(e);
+                        Logging.warn(e);
                     }
                 }
             } catch (InterruptedException e) {
                 // Occurs frequently during JOSM shutdown, log set to trace only
-                Main.trace("InterruptedException in "+MapStatus.class.getSimpleName());
+                Logging.trace("InterruptedException in "+MapStatus.class.getSimpleName());
                 Thread.currentThread().interrupt();
             } finally {
                 unregisterListeners();
@@ -484,7 +486,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
          * @param mods modifiers (i.e. control keys)
          */
         private void popupCycleSelection(Collection<OsmPrimitive> osms, int mods) {
-            DataSet ds = Main.getLayerManager().getEditDataSet();
+            DataSet ds = MainApplication.getLayerManager().getEditDataSet();
             // Find some items that are required for cycling through
             OsmPrimitive firstItem = null;
             OsmPrimitive firstSelected = null;
@@ -575,7 +577,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
          * @param osm The primitive to derive the colors from
          */
         private void popupSetLabelColors(JLabel lbl, OsmPrimitive osm) {
-            DataSet ds = Main.getLayerManager().getEditDataSet();
+            DataSet ds = MainApplication.getLayerManager().getEditDataSet();
             if (ds.isSelected(osm)) {
                 lbl.setBackground(SystemColor.textHighlight);
                 lbl.setForeground(SystemColor.textHighlightText);
@@ -648,7 +650,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
 
                 @Override
                 public void mouseClicked(MouseEvent e) {
-                    DataSet ds = Main.getLayerManager().getEditDataSet();
+                    DataSet ds = MainApplication.getLayerManager().getEditDataSet();
                     // Let the user toggle the selection
                     ds.toggleSelected(osm);
                     l.validate();
@@ -685,7 +687,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
             // remove mouse states that are in the queue. Our mouse state is newer.
             incomingMouseState.clear();
             if (!incomingMouseState.offer(ms)) {
-                Main.warn("Unable to handle new MouseState: " + ms);
+                Logging.warn("Unable to handle new MouseState: " + ms);
             }
         }
     }
@@ -738,7 +740,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
             Toolkit.getDefaultToolkit().addAWTEventListener(awtListener,
                     AWTEvent.KEY_EVENT_MASK | AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK);
         } catch (SecurityException ex) {
-            Main.trace(ex);
+            Logging.trace(ex);
             mv.addMouseMotionListener(mouseMotionListener);
             mv.addKeyListener(keyAdapter);
         }
@@ -749,7 +751,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
             Toolkit.getDefaultToolkit().removeAWTEventListener(awtListener);
         } catch (SecurityException e) {
             // Don't care, awtListener probably wasn't registered anyway
-            Main.trace(e);
+            Logging.trace(e);
         }
         mv.removeMouseMotionListener(mouseMotionListener);
         mv.removeKeyListener(keyAdapter);
@@ -757,7 +759,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
 
     private class MapStatusPopupMenu extends JPopupMenu {
 
-        private final JMenuItem jumpButton = add(Main.main.menu.jumpToAct);
+        private final JMenuItem jumpButton = add(MainApplication.getMenu().jumpToAct);
 
         /** Icons for selecting {@link SystemOfMeasurement} */
         private final Collection<JCheckBoxMenuItem> somItems = new ArrayList<>();
@@ -1110,7 +1112,7 @@ public final class MapStatus extends JPanel implements Helpful, Destroyable, Pre
             try {
                 thread.interrupt();
             } catch (SecurityException e) {
-                Main.error(e);
+                Logging.error(e);
             }
         }
     }

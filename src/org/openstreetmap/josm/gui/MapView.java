@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.AbstractButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.mapmode.MapMode;
@@ -69,6 +70,8 @@ import org.openstreetmap.josm.gui.layer.MapViewPaintable.PaintableInvalidationLi
 import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.gui.layer.geoimage.GeoImageLayer;
 import org.openstreetmap.josm.gui.layer.markerlayer.PlayHeadMarker;
+import org.openstreetmap.josm.gui.mappaint.MapPaintStyles;
+import org.openstreetmap.josm.gui.mappaint.MapPaintStyles.MapPaintSylesUpdateListener;
 import org.openstreetmap.josm.io.audio.AudioPlayer;
 import org.openstreetmap.josm.tools.JosmRuntimeException;
 import org.openstreetmap.josm.tools.Logging;
@@ -91,6 +94,26 @@ import org.openstreetmap.josm.tools.bugreport.BugReport;
 public class MapView extends NavigatableComponent
 implements PropertyChangeListener, PreferenceChangedListener,
 LayerManager.LayerChangeListener, MainLayerManager.ActiveLayerChangeListener {
+
+    static {
+        MapPaintStyles.addMapPaintSylesUpdateListener(new MapPaintSylesUpdateListener() {
+            @Override
+            public void mapPaintStylesUpdated() {
+                SwingUtilities.invokeLater(() -> {
+                    // Trigger a repaint of all data layers
+                    MainApplication.getLayerManager().getLayers()
+                        .stream()
+                        .filter(layer -> layer instanceof OsmDataLayer)
+                        .forEach(Layer::invalidate);
+                });
+            }
+
+            @Override
+            public void mapPaintStyleEntryUpdated(int index) {
+                mapPaintStylesUpdated();
+            }
+        });
+    }
 
     /**
      * An invalidation listener that simply calls repaint() for now.
@@ -173,7 +196,7 @@ LayerManager.LayerChangeListener, MainLayerManager.ActiveLayerChangeListener {
         @Override
         public void paint(MapViewGraphics graphics) {
             if (!warningPrinted) {
-                Main.debug("A layer triggered a repaint while being added: " + layer);
+                Logging.debug("A layer triggered a repaint while being added: " + layer);
                 warningPrinted = true;
             }
         }
@@ -336,7 +359,7 @@ LayerManager.LayerChangeListener, MainLayerManager.ActiveLayerChangeListener {
             LayerPainter painter = layer.attachToMapView(new MapViewEvent(this, false));
             if (!registeredLayers.containsKey(layer)) {
                 // The layer may have removed itself during attachToMapView()
-                Main.warn("Layer was removed during attachToMapView()");
+                Logging.warn("Layer was removed during attachToMapView()");
             } else {
                 registeredLayers.put(layer, painter);
 
@@ -384,7 +407,7 @@ LayerManager.LayerChangeListener, MainLayerManager.ActiveLayerChangeListener {
 
         LayerPainter painter = registeredLayers.remove(layer);
         if (painter == null) {
-            Main.error("The painter for layer " + layer + " was not registered.");
+            Logging.error("The painter for layer " + layer + " was not registered.");
             return;
         }
         painter.detachFromMapView(new MapViewEvent(this, false));
@@ -413,7 +436,7 @@ LayerManager.LayerChangeListener, MainLayerManager.ActiveLayerChangeListener {
     /**
      * Checks if virtual nodes should be drawn. Default is <code>false</code>
      * @return The virtual nodes property.
-     * @see Rendering#render(DataSet, boolean, Bounds)
+     * @see Rendering#render
      */
     public boolean isVirtualNodesEnabled() {
         return virtualNodesEnabled;
@@ -561,10 +584,11 @@ LayerManager.LayerChangeListener, MainLayerManager.ActiveLayerChangeListener {
             BugReport.intercept(e).put("bounds", () -> getProjection().getWorldBoundsLatLon()).warn();
         }
 
+        MapFrame map = MainApplication.getMap();
         if (AutoFilterManager.getInstance().getCurrentAutoFilter() != null) {
             AutoFilterManager.getInstance().drawOSDText(tempG);
-        } else if (Main.isDisplayingMapView() && Main.map.filterDialog != null) {
-            Main.map.filterDialog.drawOSDText(tempG);
+        } else if (MainApplication.isDisplayingMapView() && map.filterDialog != null) {
+            map.filterDialog.drawOSDText(tempG);
         }
 
         if (playHeadMarker != null) {
@@ -597,7 +621,7 @@ LayerManager.LayerChangeListener, MainLayerManager.ActiveLayerChangeListener {
             // - addition/removal of a secondary monitor
             //
             // But the application seems to work fine after, so let's just log the error
-            Main.error(e);
+            Logging.error(e);
         }
     }
 
@@ -659,19 +683,20 @@ LayerManager.LayerChangeListener, MainLayerManager.ActiveLayerChangeListener {
 
     @Override
     public void activeOrEditLayerChanged(ActiveLayerChangeEvent e) {
-        if (Main.map != null) {
+        MapFrame map = MainApplication.getMap();
+        if (map != null) {
             /* This only makes the buttons look disabled. Disabling the actions as well requires
              * the user to re-select the tool after i.e. moving a layer. While testing I found
              * that I switch layers and actions at the same time and it was annoying to mind the
              * order. This way it works as visual clue for new users */
             // FIXME: This does not belong here.
-            for (final AbstractButton b: Main.map.allMapModeButtons) {
+            for (final AbstractButton b: map.allMapModeButtons) {
                 MapMode mode = (MapMode) b.getAction();
                 final boolean activeLayerSupported = mode.layerIsSupported(layerManager.getActiveLayer());
                 if (activeLayerSupported) {
-                    Main.registerActionShortcut(mode, mode.getShortcut()); //fix #6876
+                    MainApplication.registerActionShortcut(mode, mode.getShortcut()); //fix #6876
                 } else {
-                    Main.unregisterShortcut(mode.getShortcut());
+                    MainApplication.unregisterShortcut(mode.getShortcut());
                 }
                 b.setEnabled(activeLayerSupported);
             }
@@ -842,7 +867,7 @@ LayerManager.LayerChangeListener, MainLayerManager.ActiveLayerChangeListener {
 
     @Override
     public void repaint() {
-        if (Main.isTraceEnabled()) {
+        if (Logging.isTraceEnabled()) {
             invalidatedListener.traceRandomRepaint();
         }
         super.repaint();

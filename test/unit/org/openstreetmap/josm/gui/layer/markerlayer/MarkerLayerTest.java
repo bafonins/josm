@@ -17,6 +17,7 @@ import org.openstreetmap.josm.data.gpx.GpxConstants;
 import org.openstreetmap.josm.data.gpx.GpxData;
 import org.openstreetmap.josm.data.gpx.GpxLink;
 import org.openstreetmap.josm.data.gpx.WayPoint;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.testutils.JOSMTestRules;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -31,7 +32,7 @@ public class MarkerLayerTest {
      */
     @Rule
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().mainMenu().platform().preferences().projection();
+    public JOSMTestRules test = new JOSMTestRules().main().platform().preferences().projection();
 
     /**
      * Setup tests
@@ -48,7 +49,7 @@ public class MarkerLayerTest {
     public void testMarkerLayer() {
         assertEquals(Color.magenta, MarkerLayer.getGenericColor());
         MarkerLayer layer = new MarkerLayer(new GpxData(), "foo", null, null);
-        Main.getLayerManager().addLayer(layer);
+        MainApplication.getLayerManager().addLayer(layer);
 
         assertEquals("foo", layer.getName());
         assertEquals(Color.magenta, layer.getColorProperty().get());

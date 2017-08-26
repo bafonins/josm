@@ -6,9 +6,10 @@ import static org.junit.Assert.assertNull;
 
 import org.junit.Rule;
 import org.junit.Test;
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.data.gpx.GpxData;
 import org.openstreetmap.josm.data.osm.DataSet;
+import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.MapFrame;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
 import org.openstreetmap.josm.testutils.JOSMTestRules;
 
@@ -24,7 +25,7 @@ public class MarkerLayerTest {
      */
     @Rule
     @SuppressFBWarnings(value = "URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
-    public JOSMTestRules test = new JOSMTestRules().mainMenu().platform().projection();
+    public JOSMTestRules test = new JOSMTestRules().main().projection();
 
     /**
      * Unit test of {@code Main.map.mapView.playHeadMarker}.
@@ -32,14 +33,17 @@ public class MarkerLayerTest {
     @Test
     public void testPlayHeadMarker() {
         try {
-            Main.getLayerManager().addLayer(new OsmDataLayer(new DataSet(), "", null));
+            MainApplication.getLayerManager().addLayer(new OsmDataLayer(new DataSet(), "", null));
+            MapFrame map = MainApplication.getMap();
             MarkerLayer layer = new MarkerLayer(new GpxData(), null, null, null);
-            assertNull(Main.map.mapView.playHeadMarker);
-            Main.getLayerManager().addLayer(layer);
-            assertNotNull(Main.map.mapView.playHeadMarker);
-            Main.getLayerManager().removeLayer(layer);
+            assertNull(map.mapView.playHeadMarker);
+            MainApplication.getLayerManager().addLayer(layer);
+            assertNotNull(map.mapView.playHeadMarker);
+            MainApplication.getLayerManager().removeLayer(layer);
         } finally {
-            Main.map.mapView.playHeadMarker = null;
+            if (MainApplication.isDisplayingMapView()) {
+                MainApplication.getMap().mapView.playHeadMarker = null;
+            }
         }
     }
 }

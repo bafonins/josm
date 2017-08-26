@@ -40,8 +40,8 @@ import org.openstreetmap.josm.actions.relation.EditRelationAction;
 import org.openstreetmap.josm.actions.relation.RecentRelationsAction;
 import org.openstreetmap.josm.actions.relation.SelectMembersAction;
 import org.openstreetmap.josm.actions.relation.SelectRelationAction;
-import org.openstreetmap.josm.actions.search.SearchCompiler;
 import org.openstreetmap.josm.data.osm.DataSet;
+import org.openstreetmap.josm.data.osm.DefaultNameFormatter;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.data.osm.event.AbstractDatasetChangedEvent;
@@ -49,13 +49,14 @@ import org.openstreetmap.josm.data.osm.event.DataChangedEvent;
 import org.openstreetmap.josm.data.osm.event.DataSetListener;
 import org.openstreetmap.josm.data.osm.event.DatasetEventManager;
 import org.openstreetmap.josm.data.osm.event.DatasetEventManager.FireMode;
+import org.openstreetmap.josm.data.osm.search.SearchCompiler;
 import org.openstreetmap.josm.data.osm.event.NodeMovedEvent;
 import org.openstreetmap.josm.data.osm.event.PrimitivesAddedEvent;
 import org.openstreetmap.josm.data.osm.event.PrimitivesRemovedEvent;
 import org.openstreetmap.josm.data.osm.event.RelationMembersChangedEvent;
 import org.openstreetmap.josm.data.osm.event.TagsChangedEvent;
 import org.openstreetmap.josm.data.osm.event.WayNodesChangedEvent;
-import org.openstreetmap.josm.gui.DefaultNameFormatter;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapView;
 import org.openstreetmap.josm.gui.NavigatableComponent;
 import org.openstreetmap.josm.gui.OsmPrimitivRenderer;
@@ -180,7 +181,7 @@ public class RelationListDialog extends ToggleDialog
         displaylist.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, KeyEvent.CTRL_DOWN_MASK), "edit");
 
         // Do not hide copy action because of default JList override (fix #9815)
-        displaylist.getActionMap().put("copy", Main.main.menu.copy);
+        displaylist.getActionMap().put("copy", MainApplication.getMenu().copy);
         displaylist.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_C, GuiHelper.getMenuShortcutKeyMaskEx()), "copy");
 
         updateActionsRelationLists();
@@ -208,15 +209,15 @@ public class RelationListDialog extends ToggleDialog
         Component focused = FocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
 
         //update highlights
-        if (highlightEnabled && focused == displaylist && Main.isDisplayingMapView() && highlightHelper.highlightOnly(sel)) {
-            Main.map.mapView.repaint();
+        if (highlightEnabled && focused == displaylist && MainApplication.isDisplayingMapView() && highlightHelper.highlightOnly(sel)) {
+            MainApplication.getMap().mapView.repaint();
         }
     }
 
     @Override
     public void showNotify() {
-        Main.getLayerManager().addLayerChangeListener(newAction);
-        Main.getLayerManager().addActiveLayerChangeListener(newAction);
+        MainApplication.getLayerManager().addLayerChangeListener(newAction);
+        MainApplication.getLayerManager().addActiveLayerChangeListener(newAction);
         MapView.addZoomChangeListener(this);
         newAction.updateEnabledState();
         DatasetEventManager.getInstance().addDatasetListener(this, FireMode.IN_EDT);
@@ -228,8 +229,8 @@ public class RelationListDialog extends ToggleDialog
 
     @Override
     public void hideNotify() {
-        Main.getLayerManager().removeActiveLayerChangeListener(newAction);
-        Main.getLayerManager().removeLayerChangeListener(newAction);
+        MainApplication.getLayerManager().removeActiveLayerChangeListener(newAction);
+        MainApplication.getLayerManager().removeLayerChangeListener(newAction);
         MapView.removeZoomChangeListener(this);
         DatasetEventManager.getInstance().removeDatasetListener(this);
         DataSet.removeSelectionListener(addSelectionToRelations);
@@ -324,7 +325,7 @@ public class RelationListDialog extends ToggleDialog
         }
 
         protected void setCurrentRelationAsSelection() {
-            Main.getLayerManager().getEditDataSet().setSelected(displaylist.getSelectedValue());
+            MainApplication.getLayerManager().getEditDataSet().setSelected(displaylist.getSelectedValue());
         }
 
         protected void editCurrentRelation() {
@@ -333,7 +334,7 @@ public class RelationListDialog extends ToggleDialog
 
         @Override
         public void mouseClicked(MouseEvent e) {
-            if (Main.getLayerManager().getEditLayer() == null) return;
+            if (MainApplication.getLayerManager().getEditLayer() == null) return;
             if (isDoubleClick(e)) {
                 if (e.isControlDown()) {
                     editCurrentRelation();
@@ -356,7 +357,7 @@ public class RelationListDialog extends ToggleDialog
         }
 
         public void run() {
-            RelationEditor.getEditor(Main.getLayerManager().getEditLayer(), null, null).setVisible(true);
+            RelationEditor.getEditor(MainApplication.getLayerManager().getEditLayer(), null, null).setVisible(true);
         }
 
         @Override
@@ -365,7 +366,7 @@ public class RelationListDialog extends ToggleDialog
         }
 
         protected void updateEnabledState() {
-            setEnabled(Main.getLayerManager().getEditLayer() != null);
+            setEnabled(MainApplication.getLayerManager().getEditLayer() != null);
         }
 
         @Override
@@ -694,7 +695,7 @@ public class RelationListDialog extends ToggleDialog
 
     @Override
     public void dataChanged(DataChangedEvent event) {
-        initFromLayer(Main.getLayerManager().getEditLayer());
+        initFromLayer(MainApplication.getLayerManager().getEditLayer());
     }
 
     @Override

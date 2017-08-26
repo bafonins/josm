@@ -17,10 +17,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.command.ChangeCommand;
 import org.openstreetmap.josm.command.Command;
 import org.openstreetmap.josm.data.coor.EastNorth;
+import org.openstreetmap.josm.data.osm.DefaultNameFormatter;
 import org.openstreetmap.josm.data.osm.Node;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.Relation;
@@ -33,13 +33,13 @@ import org.openstreetmap.josm.data.validation.OsmValidator;
 import org.openstreetmap.josm.data.validation.Severity;
 import org.openstreetmap.josm.data.validation.Test;
 import org.openstreetmap.josm.data.validation.TestError;
-import org.openstreetmap.josm.gui.DefaultNameFormatter;
 import org.openstreetmap.josm.gui.mappaint.ElemStyles;
 import org.openstreetmap.josm.gui.mappaint.MapPaintStyles;
 import org.openstreetmap.josm.gui.mappaint.styleelement.AreaElement;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
 import org.openstreetmap.josm.tools.Geometry;
 import org.openstreetmap.josm.tools.Geometry.PolygonIntersection;
+import org.openstreetmap.josm.tools.Logging;
 
 /**
  * Checks if multipolygons are valid
@@ -590,7 +590,7 @@ public class MultipolygonTest extends Test {
             final EastNorth en1 = es1.getFirstNode().getEastNorth();
             final EastNorth en2 = es1.getSecondNode().getEastNorth();
             if (en1 == null || en2 == null) {
-                Main.warn("Crossing ways test (MP) skipped " + es1);
+                Logging.warn("Crossing ways test (MP) skipped " + es1);
                 continue;
             }
             for (List<WaySegment> segments : CrossingWays.getSegments(cellSegments, en1, en2)) {

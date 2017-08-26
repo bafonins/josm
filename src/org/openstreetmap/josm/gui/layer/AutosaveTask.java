@@ -1,5 +1,5 @@
 // License: GPL. For details, see LICENSE file.
-package org.openstreetmap.josm.data;
+package org.openstreetmap.josm.gui.layer;
 
 import static org.openstreetmap.josm.tools.I18n.marktr;
 import static org.openstreetmap.josm.tools.I18n.tr;
@@ -36,15 +36,16 @@ import org.openstreetmap.josm.data.osm.event.DataSetListenerAdapter;
 import org.openstreetmap.josm.data.osm.event.DataSetListenerAdapter.Listener;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
 import org.openstreetmap.josm.data.preferences.IntegerProperty;
+import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.Notification;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerAddEvent;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerChangeListener;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerOrderChangeEvent;
 import org.openstreetmap.josm.gui.layer.LayerManager.LayerRemoveEvent;
-import org.openstreetmap.josm.gui.layer.OsmDataLayer;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.io.OsmExporter;
 import org.openstreetmap.josm.io.OsmImporter;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.Utils;
 
 /**
@@ -133,11 +134,11 @@ public class AutosaveTask extends TimerTask implements LayerChangeListener, List
         if (PROP_INTERVAL.get() > 0) {
 
             if (!autosaveDir.exists() && !autosaveDir.mkdirs()) {
-                Main.warn(tr("Unable to create directory {0}, autosave will be disabled", autosaveDir.getAbsolutePath()));
+                Logging.warn(tr("Unable to create directory {0}, autosave will be disabled", autosaveDir.getAbsolutePath()));
                 return;
             }
             if (!deletedLayersDir.exists() && !deletedLayersDir.mkdirs()) {
-                Main.warn(tr("Unable to create directory {0}, autosave will be disabled", deletedLayersDir.getAbsolutePath()));
+                Logging.warn(tr("Unable to create directory {0}, autosave will be disabled", deletedLayersDir.getAbsolutePath()));
                 return;
             }
 
@@ -149,7 +150,7 @@ public class AutosaveTask extends TimerTask implements LayerChangeListener, List
             }
 
             new Timer(true).schedule(this, TimeUnit.SECONDS.toMillis(1), TimeUnit.SECONDS.toMillis(PROP_INTERVAL.get()));
-            Main.getLayerManager().addAndFireLayerChangeListener(this);
+            MainApplication.getLayerManager().addAndFireLayerChangeListener(this);
         }
     }
 
@@ -199,10 +200,10 @@ public class AutosaveTask extends TimerTask implements LayerChangeListener, List
                     createNewPidFile(autosaveDir, filename);
                     return result;
                 } else {
-                    Main.warn(tr("Unable to create file {0}, other filename will be used", result.getAbsolutePath()));
+                    Logging.warn(tr("Unable to create file {0}, other filename will be used", result.getAbsolutePath()));
                 }
             } catch (IOException e) {
-                Main.error(e, tr("IOError while creating file, autosave will be skipped: {0}", e.getMessage()));
+                Logging.log(Logging.LEVEL_ERROR, tr("IOError while creating file, autosave will be skipped: {0}", e.getMessage()), e);
                 return null;
             }
             index++;
@@ -214,7 +215,7 @@ public class AutosaveTask extends TimerTask implements LayerChangeListener, List
         try (PrintStream ps = new PrintStream(pidFile, "UTF-8")) {
             ps.println(ManagementFactory.getRuntimeMXBean().getName());
         } catch (IOException | SecurityException t) {
-            Main.error(t);
+            Logging.error(t);
         }
     }
 
@@ -251,8 +252,8 @@ public class AutosaveTask extends TimerTask implements LayerChangeListener, List
                 }
             } catch (RuntimeException t) { // NOPMD
                 // Don't let exception stop time thread
-                Main.error("Autosave failed:");
-                Main.error(t);
+                Logging.error("Autosave failed:");
+                Logging.error(t);
             }
         }
     }
@@ -342,7 +343,7 @@ public class AutosaveTask extends TimerTask implements LayerChangeListener, List
                             skipFile = jvmPerfDataFileExists(pid);
                         }
                     } catch (IOException | SecurityException t) {
-                        Main.error(t);
+                        Logging.error(t);
                     }
                 }
                 if (!skipFile) {
@@ -369,8 +370,8 @@ public class AutosaveTask extends TimerTask implements LayerChangeListener, List
     public Future<?> recoverUnsavedLayers() {
         List<File> files = getUnsavedLayersFiles();
         final OpenFileTask openFileTsk = new OpenFileTask(files, null, tr("Restoring files"));
-        final Future<?> openFilesFuture = Main.worker.submit(openFileTsk);
-        return Main.worker.submit(() -> {
+        final Future<?> openFilesFuture = MainApplication.worker.submit(openFileTsk);
+        return MainApplication.worker.submit(() -> {
             try {
                 // Wait for opened tasks to be generated.
                 openFilesFuture.get();
@@ -378,7 +379,7 @@ public class AutosaveTask extends TimerTask implements LayerChangeListener, List
                     moveToDeletedLayersFolder(f);
                 }
             } catch (InterruptedException | ExecutionException e) {
-                Main.error(e);
+                Logging.error(e);
             }
         });
     }
@@ -403,7 +404,7 @@ public class AutosaveTask extends TimerTask implements LayerChangeListener, List
             deletedLayers.add(backupFile);
             Utils.deleteFile(pidFile);
         } else {
-            Main.warn(String.format("Could not move autosaved file %s to %s folder", f.getName(), deletedLayersDir.getName()));
+            Logging.warn(String.format("Could not move autosaved file %s to %s folder", f.getName(), deletedLayersDir.getName()));
             // we cannot move to deleted folder, so just try to delete it directly
             if (Utils.deleteFile(f, marktr("Unable to delete backup file {0}"))) {
                 Utils.deleteFile(pidFile, marktr("Unable to delete PID file {0}"));

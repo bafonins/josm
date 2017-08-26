@@ -24,6 +24,7 @@ import org.openstreetmap.josm.gui.ExtendedDialog;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.widgets.HistoryComboBox;
 import org.openstreetmap.josm.tools.GBC;
+import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.OpenBrowser;
 import org.openstreetmap.josm.tools.OverpassTurboQueryWizard;
 import org.openstreetmap.josm.tools.UncheckedParseException;
@@ -32,6 +33,7 @@ import org.openstreetmap.josm.tools.Utils;
 /**
  * This dialog provides an easy and fast way to create an overpass query.
  * @since 12576
+ * @since 12652: Moved here
  */
 public final class OverpassQueryWizardDialog extends ExtendedDialog {
 
@@ -138,7 +140,7 @@ public final class OverpassQueryWizardDialog extends ExtendedDialog {
 
             return Optional.of(query);
         } catch (UncheckedParseException ex) {
-            Main.error(ex);
+            Logging.error(ex);
             JOptionPane.showMessageDialog(
                     dsPanel.getParent(),
                     "<html>" +
