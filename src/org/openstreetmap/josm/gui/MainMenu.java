@@ -605,7 +605,9 @@ public class MainMenu extends JMenuBar {
      * @return the newly created menu
      */
     public JMenu addMenu(String name, String translatedName, int mnemonicKey, int position, String relativeHelpTopic) {
-        final JMenu menu = new JMenu(translatedName);
+        final JosmMenu menu = new JosmMenu(translatedName);
+        menu.addPopupContainerListener();
+
         if (!GraphicsEnvironment.isHeadless()) {
             MenuScroller.setScrollerFor(menu);
         }
