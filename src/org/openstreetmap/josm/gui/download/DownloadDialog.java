@@ -314,36 +314,47 @@ public class DownloadDialog extends JDialog {
 
     /**
      * Determines if the dialog autorun is enabled in preferences.
-     * @return {@code true} if the download dialog must be open at startup, {@code false} otherwise
+     * @return {@code true} if the download dialog must be open at startup, {@code false} otherwise.
      */
     public static boolean isAutorunEnabled() {
         return DOWNLOAD_AUTORUN.get();
     }
 
     /**
-     * Adds a new download area selector to the download dialog
+     * Adds a new download area selector to the download dialog.
      *
-     * @param selector the download are selector
-     * @param displayName the display name of the selector
+     * @param selector the download are selector.
+     * @param displayName the display name of the selector.
      */
     public void addDownloadAreaSelector(JPanel selector, String displayName) {
         tpDownloadAreaSelectors.add(displayName, selector);
     }
 
     /**
-     * Adds a new download source to the download dialog
+     * Adds a new download source to the download dialog if no download sources share the same label from those
+     * that already exist.
      *
      * @param downloadSource The download source to be added.
+     * @throws IllegalArgumentException If a download source with the same label already exist, this check is case
+     * insensitive.
      * @param <T> The type of the download data.
      */
     public <T> void addDownloadSource(DownloadSource<T> downloadSource) {
+        downloadSources.stream()
+                .map(DownloadSource::getLabel)
+                .filter(l -> l.equalsIgnoreCase(downloadSource.getLabel()))
+                .findAny()
+                .ifPresent(l -> { throw new IllegalArgumentException(
+                        "Download source with label '" + l + "' already exist."); });
+
+        downloadSources.add(downloadSource);
         if ((ExpertToggleAction.isExpert() && downloadSource.onlyExpert()) || !downloadSource.onlyExpert()) {
             addNewDownloadSourceTab(downloadSource);
         }
     }
 
     /**
-     * Refreshes the tile sources
+     * Refreshes the tile sources.
      * @since 6364
      */
     public final void refreshTileSources() {
@@ -407,7 +418,7 @@ public class DownloadDialog extends JDialog {
 
     /**
      * Returns the previously saved bounding box from preferences.
-     * @return The bounding box saved in preferences if any, {@code null} otherwise
+     * @return The bounding box saved in preferences if any, {@code null} otherwise.
      * @since 6509
      */
     public static Bounds getSavedDownloadBounds() {
