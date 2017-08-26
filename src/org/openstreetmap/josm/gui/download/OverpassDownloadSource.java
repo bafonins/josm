@@ -70,11 +70,6 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
     }
 
     @Override
-    public void addGui(DownloadDialog dialog) {
-        dialog.addDownloadSource(this);
-    }
-
-    @Override
     public boolean onlyExpert() {
         return true;
     }

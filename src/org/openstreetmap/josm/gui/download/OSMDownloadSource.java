@@ -118,11 +118,6 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
     }
 
     @Override
-    public void addGui(DownloadDialog dialog) {
-        dialog.addDownloadSource(this);
-    }
-
-    @Override
     public boolean onlyExpert() {
         return false;
     }
