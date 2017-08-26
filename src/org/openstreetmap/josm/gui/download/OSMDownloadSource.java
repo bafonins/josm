@@ -282,11 +282,14 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         }
 
         private void updateSizeCheck(Bounds bbox) {
-            boolean isAreaTooLarge = false;
             if (bbox == null) {
                 sizeCheck.setText(tr("No area selected yet"));
                 sizeCheck.setForeground(Color.darkGray);
-            } else if (!isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
+                return;
+            }
+
+            boolean isAreaTooLarge = false;
+            if (!isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
                 isAreaTooLarge = false;
             } else if (isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
                 // see max_note_request_area in https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml

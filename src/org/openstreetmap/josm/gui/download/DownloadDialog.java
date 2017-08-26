@@ -257,6 +257,11 @@ public class DownloadDialog extends JDialog {
         addWindowListener(new WindowEventHandler());
         ExpertToggleAction.addExpertModeChangeListener(expertListener);
         restoreSettings();
+
+        // if no bounding box is selected make sure it is still propagated.
+        if (currentBounds == null) {
+            boundingBoxChanged(null, null);
+        }
     }
 
     /**
