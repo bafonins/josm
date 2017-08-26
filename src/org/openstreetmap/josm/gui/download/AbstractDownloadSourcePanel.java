@@ -97,4 +97,17 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
     public void triggerDownload(DownloadSettings downloadSettings) {
         getDownloadSource().doDownload(getData(), downloadSettings);
     }
+
+    /**
+     * Returns lowercase string without whitespaces made out of the label of the download sources.
+     * This string can be used as a convenient way to store any GUI related preferences for this panel.
+     * For example, 'Download from OSM' will convert to 'downloadfromosm'.
+     * @return A simple name of this panel made out of the label of the related download source.
+     */
+    public String getSimpleName() {
+        return getDownloadSource()
+                .getLabel()
+                .replaceAll("\\s+","")
+                .toLowerCase();
+    }
 }
