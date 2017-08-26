@@ -15,6 +15,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.openstreetmap.josm.Main;
@@ -139,10 +141,8 @@ public class DownloadDialog extends JDialog {
             s.addGui(this);
         }
 
-        downloadSourcesTab.addChangeListener(getDownloadSourceTabChangeListener());
-
-        // allow to collapse the panes completely
-        downloadSourcesTab.setMinimumSize(new Dimension(0, 0));
+        // allow to collapse the panes, but reserve some space for tabs
+        downloadSourcesTab.setMinimumSize(new Dimension(0, 25));
         tpDownloadAreaSelectors.setMinimumSize(new Dimension(0, 0));
 
         dialogSplit = new JSplitPane(
@@ -150,6 +150,10 @@ public class DownloadDialog extends JDialog {
                 downloadSourcesTab,
                 tpDownloadAreaSelectors);
         dialogSplit.addPropertyChangeListener(getDividerChangedListener());
+
+        ChangeListener tabChangedListener = getDownloadSourceTabChangeListener();
+        tabChangedListener.stateChanged(new ChangeEvent(downloadSourcesTab));
+        downloadSourcesTab.addChangeListener(tabChangedListener);
 
         mainPanel.add(dialogSplit, GBC.eol().fill());
 
