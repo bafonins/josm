@@ -15,6 +15,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +33,7 @@ import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
+import javax.swing.event.ChangeListener;
 
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.ExpertToggleAction;
@@ -49,6 +51,7 @@ import org.openstreetmap.josm.plugins.PluginHandler;
 import org.openstreetmap.josm.tools.GBC;
 import org.openstreetmap.josm.tools.ImageProvider;
 import org.openstreetmap.josm.tools.InputMapUtils;
+import org.openstreetmap.josm.tools.JosmRuntimeException;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.OsmUrlToBounds;
 import org.openstreetmap.josm.tools.WindowGeometry;
@@ -61,9 +64,9 @@ public class DownloadDialog extends JDialog {
     /**
      * Preference properties
      */
+    private static final String TAB_SPLIT_NAMESPACE = "download.tabsplit.";
     private static final IntegerProperty DOWNLOAD_TAB = new IntegerProperty("download.tab", 0);
     private static final IntegerProperty DOWNLOAD_SOURCE_TAB = new IntegerProperty("download-source.tab", 0);
-    private static final IntegerProperty DIALOG_SPLIT = new IntegerProperty("download.split", 200);
     private static final BooleanProperty DOWNLOAD_AUTORUN = new BooleanProperty("download.autorun", false);
     private static final BooleanProperty DOWNLOAD_NEWLAYER = new BooleanProperty("download.newlayer", false);
     private static final BooleanProperty DOWNLOAD_ZOOMTODATA = new BooleanProperty("download.zoomtodata", true);
@@ -114,13 +117,9 @@ public class DownloadDialog extends JDialog {
     protected final JPanel buildMainPanel() {
         mainPanel = new JPanel(new GridBagLayout());
 
-        downloadSources.add(new OSMDownloadSource());
-        downloadSources.add(new OverpassDownloadSource());
-
-        // register all default download sources
-        for (int i = 0; i < downloadSources.size(); i++) {
-            downloadSources.get(i).addGui(this);
-        }
+        // add default download sources
+        addDownloadSource(new OSMDownloadSource());
+        addDownloadSource(new OverpassDownloadSource());
 
         // must be created before hook
         slippyMapChooser = new SlippyMapChooser();
@@ -140,6 +139,8 @@ public class DownloadDialog extends JDialog {
             s.addGui(this);
         }
 
+        downloadSourcesTab.addChangeListener(getDownloadSourceTabChangeListener());
+
         // allow to collapse the panes completely
         downloadSourcesTab.setMinimumSize(new Dimension(0, 0));
         tpDownloadAreaSelectors.setMinimumSize(new Dimension(0, 0));
@@ -148,6 +149,7 @@ public class DownloadDialog extends JDialog {
                 JSplitPane.VERTICAL_SPLIT,
                 downloadSourcesTab,
                 tpDownloadAreaSelectors);
+        dialogSplit.addPropertyChangeListener(getDividerChangedListener());
 
         mainPanel.add(dialogSplit, GBC.eol().fill());
 
@@ -331,21 +333,17 @@ public class DownloadDialog extends JDialog {
     }
 
     /**
-     * Adds a new download source to the download dialog if no download sources share the same label from those
-     * that already exist.
+     * Adds a new download source to the download dialog if it is not added.
      *
      * @param downloadSource The download source to be added.
-     * @throws IllegalArgumentException If a download source with the same label already exist, this check is case
-     * insensitive.
      * @param <T> The type of the download data.
+     * @throws JosmRuntimeException If the download source is already added. Note, download sources are
+     * compared by their reference.
      */
     public <T> void addDownloadSource(DownloadSource<T> downloadSource) {
-        downloadSources.stream()
-                .map(DownloadSource::getLabel)
-                .filter(l -> l.equalsIgnoreCase(downloadSource.getLabel()))
-                .findAny()
-                .ifPresent(l -> { throw new IllegalArgumentException(
-                        "Download source with label '" + l + "' already exist."); });
+        if (downloadSources.contains(downloadSource)) {
+            throw new JosmRuntimeException("The download source you are trying to add already exists.");
+        }
 
         downloadSources.add(downloadSource);
         if ((ExpertToggleAction.isExpert() && downloadSource.onlyExpert()) || !downloadSource.onlyExpert()) {
@@ -369,7 +367,6 @@ public class DownloadDialog extends JDialog {
     public void rememberSettings() {
         DOWNLOAD_TAB.put(tpDownloadAreaSelectors.getSelectedIndex());
         DOWNLOAD_SOURCE_TAB.put(downloadSourcesTab.getSelectedIndex());
-        DIALOG_SPLIT.put(dialogSplit.getDividerLocation());
         DOWNLOAD_NEWLAYER.put(cbNewLayer.isSelected());
         DOWNLOAD_ZOOMTODATA.put(cbZoomToDownloadedData.isSelected());
         if (currentBounds != null) {
@@ -384,7 +381,6 @@ public class DownloadDialog extends JDialog {
         cbNewLayer.setSelected(DOWNLOAD_NEWLAYER.get());
         cbStartup.setSelected(isAutorunEnabled());
         cbZoomToDownloadedData.setSelected(DOWNLOAD_ZOOMTODATA.get());
-        dialogSplit.setDividerLocation(DIALOG_SPLIT.get());
 
         try {
             tpDownloadAreaSelectors.setSelectedIndex(DOWNLOAD_TAB.get());
@@ -541,6 +537,44 @@ public class DownloadDialog extends JDialog {
                         .map(it -> (AbstractDownloadSourcePanel<?>) it)
                         .filter(it -> it.getDownloadSource().onlyExpert())
                         .forEach(downloadSourcesTab::remove);
+            }
+        };
+    }
+
+    /**
+     * Creates a listener that reacts on tab switches for {@code downloadSourcesTab} in order
+     * to adjust proper division of the dialog according to user saved preferences or minimal size
+     * of the panel.
+     * @return A listener to adjust dialog division.
+     */
+    private ChangeListener getDownloadSourceTabChangeListener() {
+        return ec -> {
+            JTabbedPane tabbedPane = (JTabbedPane) ec.getSource();
+            Component selectedComponent = tabbedPane.getSelectedComponent();
+            if (selectedComponent instanceof AbstractDownloadSourcePanel) {
+                AbstractDownloadSourcePanel<?> panel = (AbstractDownloadSourcePanel<?>) selectedComponent;
+                dialogSplit.setDividerLocation(Main.pref.getInteger(
+                        TAB_SPLIT_NAMESPACE + panel.getSimpleName(),
+                        panel.getMinimumSize().height));
+            }
+        };
+    }
+
+    /**
+     * Creates a listener that react on dialog splitters movements to save users preferences.
+     * @return A listener to save user preferred split of the dialog.
+     */
+    private PropertyChangeListener getDividerChangedListener() {
+        return evt -> {
+            if (evt.getPropertyName().equalsIgnoreCase(JSplitPane.DIVIDER_LOCATION_PROPERTY)) {
+                Component selectedComponent = downloadSourcesTab.getSelectedComponent();
+                if (selectedComponent instanceof AbstractDownloadSourcePanel) {
+                    AbstractDownloadSourcePanel<?> panel = (AbstractDownloadSourcePanel<?>) selectedComponent;
+                    Main.pref.put(
+                            TAB_SPLIT_NAMESPACE + panel.getSimpleName(),
+                            String.valueOf(dialogSplit.getDividerLocation())
+                    );
+                }
             }
         };
     }
