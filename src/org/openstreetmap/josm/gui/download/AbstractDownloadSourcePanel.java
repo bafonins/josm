@@ -99,15 +99,11 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
     }
 
     /**
-     * Returns lowercase string without whitespaces made out of the label of the download sources.
-     * This string can be used as a convenient way to store any GUI related preferences for this panel.
-     * For example, 'Download from OSM' will convert to 'downloadfromosm'.
-     * @return A simple name of this panel made out of the label of the related download source.
+     * Returns a simple name describing this panel. This string can be used from other GUI parts
+     * of JOSM to save the user preferences related to the GUI settings. For example, the panel for downloading
+     * the OSM data can be named 'downloadosmpanel'. Note, choose the name such that it is unique to avoid
+     * collisions with other names.
+     * @return A simple name describing this panel.
      */
-    public String getSimpleName() {
-        return getDownloadSource()
-                .getLabel()
-                .replaceAll("\\s+","")
-                .toLowerCase();
-    }
+    public abstract String getSimpleName();
 }

@@ -4,6 +4,7 @@ package org.openstreetmap.josm.gui.download;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.util.ArrayList;
@@ -137,6 +138,7 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         private final JCheckBox cbDownloadNotes;
         private final JLabel sizeCheck = new JLabel();
 
+        private static final String SIMPLE_NAME = "osmdownloadpanel";
         private static final BooleanProperty DOWNLOAD_OSM = new BooleanProperty("download.osm.data", true);
         private static final BooleanProperty DOWNLOAD_GPS = new BooleanProperty("download.osm.gps", false);
         private static final BooleanProperty DOWNLOAD_NOTES = new BooleanProperty("download.osm.notes", false);
@@ -174,6 +176,8 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
             add(cbDownloadGpxData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadNotes, GBC.eol().insets(1, 5, 1, 5));
             add(sizeCheck, GBC.eol().anchor(GBC.EAST).insets(5, 5, 5, 2));
+
+            setMinimumSize(new Dimension(450, 115));
         }
 
         @Override
@@ -275,6 +279,11 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         @Override
         public void boudingBoxChanged(Bounds bbox) {
             updateSizeCheck(bbox);
+        }
+
+        @Override
+        public String getSimpleName() {
+            return SIMPLE_NAME;
         }
 
         private void updateSizeCheck(Bounds bbox) {
