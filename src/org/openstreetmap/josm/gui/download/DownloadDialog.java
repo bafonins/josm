@@ -499,7 +499,7 @@ public class DownloadDialog extends JDialog {
      * @param downloadSource The download source to be added.
      * @param <T> The type of the download data.
      */
-    private <T> void addNewDownloadSourceTab(DownloadSource<T> downloadSource) {
+    protected <T> void addNewDownloadSourceTab(DownloadSource<T> downloadSource) {
         AbstractDownloadSourcePanel<T> panel = downloadSource.createPanel();
         downloadSourcesTab.add(panel, downloadSource.getLabel());
         Icon icon = panel.getIcon();
