@@ -554,9 +554,14 @@ public class DownloadDialog extends JDialog {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            AbstractDownloadSourcePanel<?> pnl = (AbstractDownloadSourcePanel<?>) downloadSourcesTab.getSelectedComponent();
-            run();
-            pnl.checkCancel();
+            Component panel = downloadSourcesTab.getSelectedComponent();
+            if (panel instanceof AbstractDownloadSourcePanel) {
+                AbstractDownloadSourcePanel<?> pnl = (AbstractDownloadSourcePanel<?>) panel;
+                run();
+                pnl.checkCancel();
+            } else {
+                run();
+            }
         }
     }
 
@@ -572,7 +577,8 @@ public class DownloadDialog extends JDialog {
         }
 
         /**
-         * Starts the download, if possible
+         * Starts the download and closes the dialog, if all requirements for the current download source are met.
+         * Otherwise the download is not started and the dialog remains visible.
          */
         public void run() {
             Component panel = downloadSourcesTab.getSelectedComponent();
