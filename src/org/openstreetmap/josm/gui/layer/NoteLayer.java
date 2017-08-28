@@ -38,8 +38,8 @@ import org.openstreetmap.josm.gui.dialogs.LayerListDialog;
 import org.openstreetmap.josm.gui.dialogs.LayerListPopup;
 import org.openstreetmap.josm.gui.io.AbstractIOTask;
 import org.openstreetmap.josm.gui.io.UploadNoteLayerTask;
+import org.openstreetmap.josm.gui.io.importexport.NoteExporter;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
-import org.openstreetmap.josm.io.NoteExporter;
 import org.openstreetmap.josm.io.OsmApi;
 import org.openstreetmap.josm.io.XmlWriter;
 import org.openstreetmap.josm.tools.ColorHelper;
@@ -274,7 +274,7 @@ public class NoteLayer extends AbstractModifiableLayer implements MouseListener,
 
     @Override
     public File createAndOpenSaveFileChooser() {
-        return SaveActionBase.createAndOpenSaveFileChooser(tr("Save GPX file"), NoteExporter.FILE_FILTER);
+        return SaveActionBase.createAndOpenSaveFileChooser(tr("Save Note file"), NoteExporter.FILE_FILTER);
     }
 
     @Override
