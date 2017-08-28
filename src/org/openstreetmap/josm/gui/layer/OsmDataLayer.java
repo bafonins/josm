@@ -96,13 +96,13 @@ import org.openstreetmap.josm.gui.io.AbstractIOTask;
 import org.openstreetmap.josm.gui.io.AbstractUploadDialog;
 import org.openstreetmap.josm.gui.io.UploadDialog;
 import org.openstreetmap.josm.gui.io.UploadLayerTask;
+import org.openstreetmap.josm.gui.io.importexport.OsmImporter;
 import org.openstreetmap.josm.gui.layer.markerlayer.MarkerLayer;
-import org.openstreetmap.josm.gui.progress.PleaseWaitProgressMonitor;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
+import org.openstreetmap.josm.gui.progress.swing.PleaseWaitProgressMonitor;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.widgets.FileChooserManager;
 import org.openstreetmap.josm.gui.widgets.JosmTextArea;
-import org.openstreetmap.josm.io.OsmImporter;
 import org.openstreetmap.josm.tools.AlphanumComparator;
 import org.openstreetmap.josm.tools.CheckParameterUtil;
 import org.openstreetmap.josm.tools.GBC;
@@ -350,11 +350,6 @@ public class OsmDataLayer extends AbstractModifiableLayer implements Listener, D
     public final DataSet data;
 
     /**
-     * the collection of conflicts detected in this layer
-     */
-    private final ConflictCollection conflicts;
-
-    /**
      * a texture for non-downloaded area
      */
     private static volatile BufferedImage hatched;
@@ -406,7 +401,6 @@ public class OsmDataLayer extends AbstractModifiableLayer implements Listener, D
         CheckParameterUtil.ensureParameterNotNull(data, "data");
         this.data = data;
         this.setAssociatedFile(associatedFile);
-        conflicts = new ConflictCollection();
         data.addDataSetListener(new DataSetListenerAdapter(this));
         data.addDataSetListener(MultipolygonCache.getInstance());
         data.addHighlightUpdateListener(this);
@@ -566,9 +560,9 @@ public class OsmDataLayer extends AbstractModifiableLayer implements Listener, D
 
         int numNewConflicts = 0;
         for (Conflict<?> c : visitor.getConflicts()) {
-            if (!conflicts.hasConflict(c)) {
+            if (!data.getConflicts().hasConflict(c)) {
                 numNewConflicts++;
-                conflicts.add(c);
+                data.getConflicts().add(c);
             }
         }
         // repaint to make sure new data is displayed properly.
@@ -923,7 +917,7 @@ public class OsmDataLayer extends AbstractModifiableLayer implements Listener, D
      * @return the set of conflicts currently managed in this layer
      */
     public ConflictCollection getConflicts() {
-        return conflicts;
+        return data.getConflicts();
     }
 
     @Override

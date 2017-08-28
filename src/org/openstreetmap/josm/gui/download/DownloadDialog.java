@@ -47,6 +47,7 @@ import org.openstreetmap.josm.gui.datatransfer.ClipboardUtils;
 import org.openstreetmap.josm.gui.help.ContextSensitiveHelpAction;
 import org.openstreetmap.josm.gui.help.HelpUtil;
 import org.openstreetmap.josm.gui.util.GuiHelper;
+import org.openstreetmap.josm.gui.util.WindowGeometry;
 import org.openstreetmap.josm.io.OnlineResource;
 import org.openstreetmap.josm.plugins.PluginHandler;
 import org.openstreetmap.josm.tools.GBC;
@@ -55,7 +56,6 @@ import org.openstreetmap.josm.tools.InputMapUtils;
 import org.openstreetmap.josm.tools.JosmRuntimeException;
 import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.OsmUrlToBounds;
-import org.openstreetmap.josm.tools.WindowGeometry;
 
 /**
  * Dialog displayed to the user to download mapping data.
@@ -183,13 +183,6 @@ public class DownloadDialog extends JDialog {
         ExpertToggleAction.addExpertModeChangeListener(isExpert -> infoLabel.setVisible(!isExpert), true);
 
         return mainPanel;
-    }
-
-    /* This should not be necessary, but if not here, repaint is not always correct in SlippyMap! */
-    @Override
-    public void paint(Graphics g) {
-        tpDownloadAreaSelectors.getSelectedComponent().paint(g);
-        super.paint(g);
     }
 
     /**
