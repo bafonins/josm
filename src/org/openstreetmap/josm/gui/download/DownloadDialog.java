@@ -175,11 +175,13 @@ public class DownloadDialog extends JDialog {
 
         ExpertToggleAction.addVisibilitySwitcher(cbZoomToDownloadedData);
 
-        if (!ExpertToggleAction.isExpert()) {
-            JLabel infoLabel = new JLabel(
-                    tr("Use left click&drag to select area, arrows or right mouse button to scroll map, wheel or +/- to zoom."));
-            mainPanel.add(infoLabel, GBC.eol().anchor(GBC.SOUTH).insets(0, 0, 0, 0));
-        }
+        mainPanel.add(new JLabel(), GBC.eol()); // place info label at a new line
+        JLabel infoLabel = new JLabel(
+                tr("Use left click&drag to select area, arrows or right mouse button to scroll map, wheel or +/- to zoom."));
+        mainPanel.add(infoLabel, GBC.eol().anchor(GBC.CENTER).insets(0, 0, 0, 0));
+
+        ExpertToggleAction.addExpertModeChangeListener(isExpert -> infoLabel.setVisible(!isExpert), true);
+
         return mainPanel;
     }
 
