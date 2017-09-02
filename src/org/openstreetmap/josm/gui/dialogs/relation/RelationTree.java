@@ -20,8 +20,8 @@ import org.openstreetmap.josm.data.osm.OsmPrimitiveType;
 import org.openstreetmap.josm.data.osm.Relation;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.PleaseWaitRunnable;
-import org.openstreetmap.josm.gui.progress.PleaseWaitProgressMonitor;
 import org.openstreetmap.josm.gui.progress.ProgressMonitor;
+import org.openstreetmap.josm.gui.progress.swing.PleaseWaitProgressMonitor;
 import org.openstreetmap.josm.io.OsmApi;
 import org.openstreetmap.josm.io.OsmServerObjectReader;
 import org.openstreetmap.josm.io.OsmTransferException;
@@ -135,10 +135,11 @@ public class RelationTree extends JTree {
                 Logging.error(lastException);
                 return;
             }
-            DataSetMerger visitor = new DataSetMerger(MainApplication.getLayerManager().getEditLayer().data, ds);
+            DataSet editData = MainApplication.getLayerManager().getEditDataSet();
+            DataSetMerger visitor = new DataSetMerger(editData, ds);
             visitor.merge();
             if (!visitor.getConflicts().isEmpty()) {
-                MainApplication.getLayerManager().getEditLayer().getConflicts().add(visitor.getConflicts());
+                editData.getConflicts().add(visitor.getConflicts());
             }
             final RelationTreeModel model = (RelationTreeModel) getModel();
             SwingUtilities.invokeLater(() -> model.refreshNode(path));

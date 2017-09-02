@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -59,6 +60,7 @@ import org.openstreetmap.gui.jmapviewer.FeatureAdapter;
 import org.openstreetmap.josm.Main;
 import org.openstreetmap.josm.actions.JosmAction;
 import org.openstreetmap.josm.actions.OpenFileAction;
+import org.openstreetmap.josm.actions.OpenFileAction.OpenFileTask;
 import org.openstreetmap.josm.actions.PreferencesAction;
 import org.openstreetmap.josm.actions.RestartAction;
 import org.openstreetmap.josm.actions.downloadtasks.DownloadGpsTask;
@@ -70,6 +72,7 @@ import org.openstreetmap.josm.actions.search.SearchAction;
 import org.openstreetmap.josm.data.Bounds;
 import org.openstreetmap.josm.data.UndoRedoHandler;
 import org.openstreetmap.josm.data.Version;
+import org.openstreetmap.josm.data.oauth.OAuthAccessTokenHolder;
 import org.openstreetmap.josm.data.osm.DataSet;
 import org.openstreetmap.josm.data.osm.OsmPrimitive;
 import org.openstreetmap.josm.data.osm.search.SearchMode;
@@ -88,12 +91,12 @@ import org.openstreetmap.josm.gui.preferences.display.LafPreference;
 import org.openstreetmap.josm.gui.preferences.imagery.ImageryPreference;
 import org.openstreetmap.josm.gui.preferences.map.MapPaintPreference;
 import org.openstreetmap.josm.gui.preferences.projection.ProjectionPreference;
-import org.openstreetmap.josm.gui.preferences.server.OAuthAccessTokenHolder;
 import org.openstreetmap.josm.gui.preferences.server.ProxyPreference;
-import org.openstreetmap.josm.gui.progress.ProgressMonitorExecutor;
+import org.openstreetmap.josm.gui.progress.swing.ProgressMonitorExecutor;
 import org.openstreetmap.josm.gui.tagging.presets.TaggingPresets;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.util.RedirectInputMap;
+import org.openstreetmap.josm.gui.util.WindowGeometry;
 import org.openstreetmap.josm.io.CertificateAmendment;
 import org.openstreetmap.josm.io.DefaultProxySelector;
 import org.openstreetmap.josm.io.MessageNotifier;
@@ -101,6 +104,7 @@ import org.openstreetmap.josm.io.OnlineResource;
 import org.openstreetmap.josm.io.OsmApi;
 import org.openstreetmap.josm.io.OsmApiInitializationException;
 import org.openstreetmap.josm.io.OsmTransferCanceledException;
+import org.openstreetmap.josm.io.OsmTransferException;
 import org.openstreetmap.josm.io.auth.CredentialsManager;
 import org.openstreetmap.josm.io.auth.DefaultAuthenticator;
 import org.openstreetmap.josm.io.protocols.data.Handler;
@@ -115,14 +119,15 @@ import org.openstreetmap.josm.tools.Logging;
 import org.openstreetmap.josm.tools.OpenBrowser;
 import org.openstreetmap.josm.tools.OsmUrlToBounds;
 import org.openstreetmap.josm.tools.OverpassTurboQueryWizard;
+import org.openstreetmap.josm.tools.PlatformHook.NativeOsCallback;
 import org.openstreetmap.josm.tools.PlatformHookWindows;
 import org.openstreetmap.josm.tools.RightAndLefthandTraffic;
 import org.openstreetmap.josm.tools.Shortcut;
 import org.openstreetmap.josm.tools.Territories;
 import org.openstreetmap.josm.tools.Utils;
-import org.openstreetmap.josm.tools.WindowGeometry;
 import org.openstreetmap.josm.tools.bugreport.BugReport;
 import org.openstreetmap.josm.tools.bugreport.BugReportExceptionHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Main window class application.
@@ -209,11 +214,53 @@ public class MainApplication extends Main {
         this.mainFrame = mainFrame;
     }
 
+    /**
+     * Asks user to update its version of Java.
+     * @param updVersion target update version
+     * @param url download URL
+     * @param major true for a migration towards a major version of Java (8:9), false otherwise
+     * @param eolDate the EOL/expiration date
+     * @since 12270
+     */
+    public static void askUpdateJava(String updVersion, String url, String eolDate, boolean major) {
+        ExtendedDialog ed = new ExtendedDialog(
+                Main.parent,
+                tr("Outdated Java version"),
+                tr("OK"), tr("Update Java"), tr("Cancel"));
+        // Check if the dialog has not already been permanently hidden by user
+        if (!ed.toggleEnable("askUpdateJava"+updVersion).toggleCheckState()) {
+            ed.setButtonIcons("ok", "java", "cancel").setCancelButton(3);
+            ed.setMinimumSize(new Dimension(480, 300));
+            ed.setIcon(JOptionPane.WARNING_MESSAGE);
+            StringBuilder content = new StringBuilder(tr("You are running version {0} of Java.",
+                    "<b>"+System.getProperty("java.version")+"</b>")).append("<br><br>");
+            if ("Sun Microsystems Inc.".equals(System.getProperty("java.vendor")) && !platform.isOpenJDK()) {
+                content.append("<b>").append(tr("This version is no longer supported by {0} since {1} and is not recommended for use.",
+                        "Oracle", eolDate)).append("</b><br><br>");
+            }
+            content.append("<b>")
+                   .append(major ?
+                        tr("JOSM will soon stop working with this version; we highly recommend you to update to Java {0}.", updVersion) :
+                        tr("You may face critical Java bugs; we highly recommend you to update to Java {0}.", updVersion))
+                   .append("</b><br><br>")
+                   .append(tr("Would you like to update now ?"));
+            ed.setContent(content.toString());
+
+            if (ed.showDialog().getValue() == 2) {
+                try {
+                    platform.openUrl(url);
+                } catch (IOException e) {
+                    Logging.warn(e);
+                }
+            }
+        }
+    }
+
     @Override
     protected List<InitializationTask> beforeInitializationTasks() {
         return Arrays.asList(
             new InitializationTask(tr("Starting file watcher"), fileWatcher::start),
-            new InitializationTask(tr("Executing platform startup hook"), platform::startupHook),
+            new InitializationTask(tr("Executing platform startup hook"), () -> platform.startupHook(MainApplication::askUpdateJava)),
             new InitializationTask(tr("Building main menu"), this::initializeMainWindow),
             new InitializationTask(tr("Updating user interface"), () -> {
                 undoRedo.addCommandQueueListener(redoUndoListener);
@@ -352,6 +399,11 @@ public class MainApplication extends Main {
             if (ds == null) return null;
             return ds.getSelected();
         }
+    }
+
+    @Override
+    public DataSet getEditDataSet() {
+        return getLayerManager().getEditDataSet();
     }
 
     /**
@@ -677,6 +729,7 @@ public class MainApplication extends Main {
 
         // initialize the platform hook, and
         Main.determinePlatformHook();
+        Main.platform.setNativeOsCallback(new DefaultNativeOsCallback());
         // call the really early hook before we do anything else
         Main.platform.preStartupHook();
 
@@ -1138,6 +1191,43 @@ public class MainApplication extends Main {
                         ));
             }
             return false;
+        }
+    }
+
+    private static class DefaultNativeOsCallback implements NativeOsCallback {
+        @Override
+        public void openFiles(List<File> files) {
+            Executors.newSingleThreadExecutor(Utils.newThreadFactory("openFiles-%d", Thread.NORM_PRIORITY)).submit(
+                    new OpenFileTask(files, null) {
+                @Override
+                protected void realRun() throws SAXException, IOException, OsmTransferException {
+                    // Wait for JOSM startup is advanced enough to load a file
+                    while (Main.parent == null || !Main.parent.isVisible()) {
+                        try {
+                            Thread.sleep(25);
+                        } catch (InterruptedException e) {
+                            Logging.warn(e);
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                    super.realRun();
+                }
+            });
+        }
+
+        @Override
+        public boolean handleQuitRequest() {
+            return MainApplication.exitJosm(false, 0, null);
+        }
+
+        @Override
+        public void handleAbout() {
+            MainApplication.getMenu().about.actionPerformed(null);
+        }
+
+        @Override
+        public void handlePreferences() {
+            MainApplication.getMenu().preferences.actionPerformed(null);
         }
     }
 }

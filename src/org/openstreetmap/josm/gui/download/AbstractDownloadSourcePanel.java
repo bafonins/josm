@@ -7,6 +7,7 @@ import javax.swing.Icon;
 import javax.swing.JPanel;
 
 import org.openstreetmap.josm.data.Bounds;
+import org.openstreetmap.josm.gui.download.DownloadSourceSizingPolicy.FixedDownloadSourceSizePolicy;
 
 /**
  * GUI representation of {@link DownloadSource} that is shown to the user in
@@ -15,6 +16,11 @@ import org.openstreetmap.josm.data.Bounds;
  * @since 12652
  */
 public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
+
+    /**
+     * A prefix to be used for tab height preferences
+     */
+    public static final String TAB_SPLIT_NAMESPACE = "download.tabsplit.";
 
     /**
      * Called when creating a new {@link AbstractDownloadSourcePanel} for the given download source
@@ -96,5 +102,23 @@ public abstract class AbstractDownloadSourcePanel<T> extends JPanel {
      */
     public void triggerDownload(DownloadSettings downloadSettings) {
         getDownloadSource().doDownload(getData(), downloadSettings);
+    }
+
+    /**
+     * Returns a simple name describing this panel. This string can be used from other GUI parts
+     * of JOSM to save the user preferences related to the GUI settings. For example, the panel for downloading
+     * the OSM data can be named 'downloadosmpanel'. Note, choose the name such that it is unique to avoid
+     * collisions with other names.
+     * @return A simple name describing this panel.
+     */
+    public abstract String getSimpleName();
+
+    /**
+     * Gets the policy that defines how this component should be sized
+     * @return The sizing policy. A fixed policy on default.
+     * @since 12705
+     */
+    public DownloadSourceSizingPolicy getSizingPolicy() {
+        return new FixedDownloadSourceSizePolicy(this);
     }
 }

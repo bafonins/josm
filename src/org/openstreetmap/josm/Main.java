@@ -135,9 +135,7 @@ public abstract class Main {
 
     /**
      * The commands undo/redo handler.
-     * @deprecated Use {@link MainApplication#undoRedo} instead
      */
-    @Deprecated
     public final UndoRedoHandler undoRedo = MainApplication.undoRedo;
 
     /**
@@ -628,6 +626,15 @@ public abstract class Main {
      */
     public Collection<OsmPrimitive> getInProgressSelection() {
         return Collections.emptyList();
+    }
+
+    /**
+     * Gets the data set of the active edit layer.
+     * @return That data set, <code>null</code> if there is no edit layer.
+     * @since 12691
+     */
+    public DataSet getEditDataSet() {
+        return null;
     }
 
     /**

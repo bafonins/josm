@@ -28,9 +28,12 @@ import javax.swing.plaf.basic.BasicArrowButton;
 import org.openstreetmap.josm.actions.downloadtasks.DownloadOsmTask;
 import org.openstreetmap.josm.actions.downloadtasks.PostDownloadHandler;
 import org.openstreetmap.josm.data.Bounds;
+import org.openstreetmap.josm.data.preferences.AbstractProperty;
 import org.openstreetmap.josm.data.preferences.BooleanProperty;
+import org.openstreetmap.josm.data.preferences.IntegerProperty;
 import org.openstreetmap.josm.gui.ConditionalOptionPaneUtil;
 import org.openstreetmap.josm.gui.MainApplication;
+import org.openstreetmap.josm.gui.download.DownloadSourceSizingPolicy.AdjustableDownloadSizePolicy;
 import org.openstreetmap.josm.gui.preferences.server.OverpassServerPreference;
 import org.openstreetmap.josm.gui.util.GuiHelper;
 import org.openstreetmap.josm.gui.widgets.JosmTextArea;
@@ -70,11 +73,6 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
     }
 
     @Override
-    public void addGui(DownloadDialog dialog) {
-        dialog.addDownloadSource(this);
-    }
-
-    @Override
     public boolean onlyExpert() {
         return true;
     }
@@ -85,12 +83,15 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
      */
     public static class OverpassDownloadSourcePanel extends AbstractDownloadSourcePanel<OverpassDownloadData> {
 
-        private JosmTextArea overpassQuery;
-        private OverpassQueryList overpassQueryList;
-
+        private static final String SIMPLE_NAME = "overpassdownloadpanel";
+        private static final AbstractProperty<Integer> PANEL_SIZE_PROPERTY =
+                new IntegerProperty(TAB_SPLIT_NAMESPACE + SIMPLE_NAME, 150).cached();
         private static final BooleanProperty OVERPASS_QUERY_LIST_OPENED =
                 new BooleanProperty("download.overpass.query-list.opened", false);
         private static final String ACTION_IMG_SUBDIR = "dialogs";
+
+        private JosmTextArea overpassQuery;
+        private OverpassQueryList overpassQueryList;
 
         /**
          * Create a new {@link OverpassDownloadSourcePanel}
@@ -179,6 +180,8 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
             add(leftPanel, BorderLayout.WEST);
             add(innerPanel, BorderLayout.CENTER);
             add(listPanel, BorderLayout.EAST);
+
+            setMinimumSize(new Dimension(450, 240));
         }
 
         @Override
@@ -272,6 +275,16 @@ public class OverpassDownloadSource implements DownloadSource<OverpassDownloadSo
         @Override
         public Icon getIcon() {
             return ImageProvider.get("download-overpass");
+        }
+
+        @Override
+        public String getSimpleName() {
+            return SIMPLE_NAME;
+        }
+
+        @Override
+        public DownloadSourceSizingPolicy getSizingPolicy() {
+            return new AdjustableDownloadSizePolicy(PANEL_SIZE_PROPERTY);
         }
 
         /**

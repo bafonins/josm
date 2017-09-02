@@ -4,6 +4,7 @@ package org.openstreetmap.josm.gui.download;
 import static org.openstreetmap.josm.tools.I18n.tr;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.util.ArrayList;
@@ -40,6 +41,11 @@ import org.openstreetmap.josm.tools.Pair;
  * @since 12652
  */
 public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDownloadData> {
+    /**
+     * The simple name for the {@link OSMDownloadSourcePanel}
+     * @since 12706
+     */
+    public static final String SIMPLE_NAME = "osmdownloadpanel";
 
     @Override
     public AbstractDownloadSourcePanel<OSMDownloadData> createPanel() {
@@ -117,11 +123,6 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
     }
 
     @Override
-    public void addGui(DownloadDialog dialog) {
-        dialog.addDownloadSource(this);
-    }
-
-    @Override
     public boolean onlyExpert() {
         return false;
     }
@@ -142,8 +143,8 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
         private static final BooleanProperty DOWNLOAD_NOTES = new BooleanProperty("download.osm.notes", false);
 
         /**
-         * Creates a new {@link OSMDownloadSourcePanel}
-         * @param ds The osm download source the panel is for
+         * Creates a new {@link OSMDownloadSourcePanel}.
+         * @param ds The osm download source the panel is for.
          */
         public OSMDownloadSourcePanel(OSMDownloadSource ds) {
             super(ds);
@@ -174,6 +175,8 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
             add(cbDownloadGpxData, GBC.std().insets(1, 5, 1, 5));
             add(cbDownloadNotes, GBC.eol().insets(1, 5, 1, 5));
             add(sizeCheck, GBC.eol().anchor(GBC.EAST).insets(5, 5, 5, 2));
+
+            setMinimumSize(new Dimension(450, 115));
         }
 
         @Override
@@ -277,12 +280,20 @@ public class OSMDownloadSource implements DownloadSource<OSMDownloadSource.OSMDo
             updateSizeCheck(bbox);
         }
 
+        @Override
+        public String getSimpleName() {
+            return SIMPLE_NAME;
+        }
+
         private void updateSizeCheck(Bounds bbox) {
-            boolean isAreaTooLarge = false;
             if (bbox == null) {
                 sizeCheck.setText(tr("No area selected yet"));
                 sizeCheck.setForeground(Color.darkGray);
-            } else if (!isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
+                return;
+            }
+
+            boolean isAreaTooLarge = false;
+            if (!isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
                 isAreaTooLarge = false;
             } else if (isDownloadNotes() && !isDownloadOsmData() && !isDownloadGpxData()) {
                 // see max_note_request_area in https://github.com/openstreetmap/openstreetmap-website/blob/master/config/example.application.yml
