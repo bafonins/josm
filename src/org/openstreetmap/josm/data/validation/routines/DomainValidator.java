@@ -948,8 +948,6 @@ public final class DomainValidator extends AbstractValidator {
         "maserati", // maserati Fiat Chrysler Automobiles N.V.
         "mattel", // mattel Mattel Sites, Inc.
         "mba", // mba Lone Hollow, LLC
-        "mcd", // mcd McDonald's Corporation
-        "mcdonalds", // mcdonalds McDonald's Corporation
         "mckinsey", // mckinsey McKinsey Holdings, Inc.
         "med", // med Medistry LLC
         "media", // media Grand Glen, LLC
@@ -982,7 +980,6 @@ public final class DomainValidator extends AbstractValidator {
         "monash", // monash Monash University
         "money", // money Outer McCook, LLC
         "monster", // monster Monster Worldwide, Inc.
-        "montblanc", // montblanc Richemont DNS Inc.
         "mopar", // mopar FCA US LLC.
         "mormon", // mormon IRI Domain Management, LLC (&quot;Applicant&quot;)
         "mortgage", // mortgage United TLD Holdco, Ltd
